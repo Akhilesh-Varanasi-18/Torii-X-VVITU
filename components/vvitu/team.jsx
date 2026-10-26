@@ -1,0 +1,375 @@
+'use client'
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import teamData from './team-data';
+
+// Renders a role string in the uppercase pill while preserving the exact casing
+// of specific brand terms (e.g. "DevOps") that must not be flattened to all-caps.
+const CASE_EXACT_TERMS = ['DevOps'];
+
+// Members whose uniform photo hasn't been supplied yet fall back to a branded
+// initials avatar so the card never shows a broken-image icon. Built once per
+// name and cached. Sized to the same stage the real cutout PNGs occupy.
+const PLACEHOLDER_AVATAR_CACHE = {};
+function placeholderAvatar(name) {
+    if (PLACEHOLDER_AVATAR_CACHE[name]) return PLACEHOLDER_AVATAR_CACHE[name];
+    const initials = name
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => w[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480">
+        <defs><linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f4a99f"/><stop offset="1" stop-color="#e2544c"/>
+        </linearGradient></defs>
+        <rect width="400" height="480" rx="28" fill="url(#pg)" opacity="0.12"/>
+        <circle cx="200" cy="196" r="98" fill="url(#pg)"/>
+        <text x="200" y="196" dy="0.35em" text-anchor="middle" font-family="Poppins, Segoe UI, Arial, sans-serif" font-size="80" font-weight="700" fill="#ffffff">${initials}</text>
+        <text x="200" y="332" text-anchor="middle" font-family="Poppins, Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" letter-spacing="0.5" fill="#e2544c">Photo coming soon</text>
+    </svg>`;
+    const uri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    PLACEHOLDER_AVATAR_CACHE[name] = uri;
+    return uri;
+}
+
+function RoleText({ role }) {
+    const parts = role.split(new RegExp(`(${CASE_EXACT_TERMS.join('|')})`, 'g'));
+    return parts.map((part, i) =>
+        CASE_EXACT_TERMS.includes(part)
+            ? <span key={i} className="vvitu-tt-exact">{part}</span>
+            : <React.Fragment key={i}>{part}</React.Fragment>
+    );
+}
+
+const Team = () => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [direction, setDirection] = useState(1);
+    const [isPaused, setIsPaused] = useState(false);
+    const [isOpeningPortfolio, setIsOpeningPortfolio] = useState(false);
+    const [comingSoonMember, setComingSoonMember] = useState(null);
+    const reduceMotion = useReducedMotion();
+
+    // Open a member's portfolio in the same tab behind a short branded fade so the
+    // jump doesn't feel abrupt. Modified clicks (Ctrl/Cmd/middle) keep the browser's
+    // native "open in new tab"; reduced-motion users navigate immediately.
+    const openPortfolio = (e, url) => {
+        if (!url) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+        if (reduceMotion) return; // let the <a href> navigate normally
+        e.preventDefault();
+        setIsOpeningPortfolio(true);
+        window.setTimeout(() => { window.location.href = url; }, 520);
+    };
+
+    // Members whose portfolio isn't ready yet show a gentle "coming soon" toast that
+    // auto-fades, instead of a dead link. Keyed by member id so switching cards clears it.
+    const showComingSoon = (e, member) => {
+        e.preventDefault();
+        setComingSoonMember(member.id);
+    };
+
+    // Auto-dismiss the coming-soon toast after a short beat.
+    useEffect(() => {
+        if (!comingSoonMember) return undefined;
+        const t = window.setTimeout(() => setComingSoonMember(null), 2600);
+        return () => window.clearTimeout(t);
+    }, [comingSoonMember]);
+
+    // When a portfolio opens we navigate away with the overlay showing. The browser's
+    // back-forward cache can freeze this page in that state and restore it on "Back"
+    // (pageshow fires with persisted=true) — leaving the overlay stuck until a reload.
+    // Clearing it on pageshow (and when the tab becomes visible again) unsticks it.
+    useEffect(() => {
+        const clearOverlay = () => setIsOpeningPortfolio(false);
+        const onVisible = () => { if (document.visibilityState === 'visible') clearOverlay(); };
+        window.addEventListener('pageshow', clearOverlay);
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            window.removeEventListener('pageshow', clearOverlay);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
+    }, []);
+
+    const activeMember = teamData[currentIndex];
+    // PDFs are treated as downloads by mobile Chrome, and a download fired from our
+    // delayed JS navigation gets blocked ("blocked by Chrome"). So PDFs open natively
+    // in a new tab (a real user gesture); HTML keeps the smooth same-tab transition.
+    const portfolioIsPdf = /\.pdf(\?|#|$)/i.test(activeMember.portfolio || '');
+
+    const goToNext = useCallback(() => {
+        setDirection(1);
+        setCurrentIndex((prev) => (prev + 1) % teamData.length);
+    }, []);
+
+    const goToPrev = useCallback(() => {
+        setDirection(-1);
+        setCurrentIndex((prev) => (prev - 1 + teamData.length) % teamData.length);
+    }, []);
+
+    const selectMember = (index) => {
+        setDirection(index > currentIndex ? 1 : -1);
+        setCurrentIndex(index);
+    };
+
+    // Auto-advance every 5 seconds if not paused
+    useEffect(() => {
+        if (isPaused) return undefined;
+        const timer = setInterval(() => {
+            goToNext();
+        }, 5000);
+        return () => clearInterval(timer);
+    }, [isPaused, goToNext]);
+
+    return (
+        <section id="team" className="vvitu-team">
+            <div className="vvitu-team-container">
+                {/* Section Title */}
+                <div className="vvitu-section-title" data-sal="slide-up" data-sal-delay="100" data-sal-duration="800">
+                    <h2>Meet the <span>Team</span></h2>
+                    <p>
+                        Passionate educators and industry practitioners shaping the next generation of engineers 
+                        through hands-on mentorship, enterprise platforms, and competitive coding mastery.
+                    </p>
+                </div>
+
+                {/* Main Spotlight Showcase */}
+                <div 
+                    className="vvitu-team-spotlight-wrapper"
+                    onMouseEnter={() => setIsPaused(true)}
+                    onMouseLeave={() => setIsPaused(false)}
+                    onFocus={() => setIsPaused(true)}
+                    onBlur={() => setIsPaused(false)}
+                >
+                    <div className="vvitu-team-spotlight-card">
+                        {/* LEFT COLUMN: Cutout Image with Ambient Glow */}
+                        <div className="vvitu-team-left-visual">
+                            {/* Glowing radial ambient backdrop */}
+                            <div 
+                                className="vvitu-team-aura-glow"
+                                style={{ background: activeMember.accentColor }}
+                                aria-hidden="true"
+                            />
+
+                            <div className="vvitu-team-image-stage">
+                                <AnimatePresence mode="wait" initial={false}>
+                                    <motion.div
+                                        key={activeMember.id}
+                                        className="vvitu-team-photo-container"
+                                        initial={reduceMotion ? false : { opacity: 0, scale: 0.94, x: direction * -30 }}
+                                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                                        exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96, x: direction * 30 }}
+                                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                    >
+                                        <img
+                                            src={activeMember.photo}
+                                            alt={activeMember.name}
+                                            className="vvitu-team-cutout-img"
+                                            onError={(e) => {
+                                                if (e.currentTarget.dataset.fallback) return;
+                                                e.currentTarget.dataset.fallback = '1';
+                                                e.currentTarget.src = placeholderAvatar(activeMember.name);
+                                            }}
+                                        />
+                                    </motion.div>
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Prev / counter / next — floats on the image's top-right
+                                corner across all breakpoints (desktop, tablet & mobile). */}
+                            <div className="vvitu-team-nav-arrows">
+                                <button
+                                    type="button"
+                                    className="vvitu-team-arrow-btn"
+                                    onClick={goToPrev}
+                                    aria-label="Previous trainer"
+                                >
+                                    ‹
+                                </button>
+                                <span className="vvitu-team-counter">
+                                    0{currentIndex + 1} <small>/ 0{teamData.length}</small>
+                                </span>
+                                <button
+                                    type="button"
+                                    className="vvitu-team-arrow-btn"
+                                    onClick={goToNext}
+                                    aria-label="Next trainer"
+                                >
+                                    ›
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN: Trainer Profile, Highlights & Skill Points */}
+                        <div className="vvitu-team-right-info">
+                            <AnimatePresence mode="wait" initial={false}>
+                                <motion.div
+                                    key={activeMember.id}
+                                    className="vvitu-team-info-content"
+                                    style={{
+                                        '--member-accent': activeMember.accentColor,
+                                        '--member-accent-bg': activeMember.accentBg,
+                                    }}
+                                    initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={reduceMotion ? undefined : { opacity: 0, y: -18 }}
+                                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                                >
+                                    {/* Name, Role & LinkedIn */}
+                                    <div className="vvitu-team-identity">
+                                        <div className="vvitu-team-identity-text">
+                                            <h3 className="vvitu-team-member-name">{activeMember.name}</h3>
+                                            <span className="vvitu-team-role-pill"><RoleText role={activeMember.role} /></span>
+                                        </div>
+
+                                        <div className="vvitu-team-links">
+                                            {activeMember.linkedin && (
+                                                <a
+                                                    href={activeMember.linkedin}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="vvitu-team-linkedin-btn"
+                                                    aria-label={`Connect with ${activeMember.name} on LinkedIn`}
+                                                    title={`${activeMember.name} on LinkedIn`}
+                                                >
+                                                    <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true">
+                                                        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.64a1.5 1.5 0 0 0-1.5 1.5 1.5 1.5 0 0 0 1.5 1.5 1.5 1.5 0 0 0 1.5-1.5 1.5 1.5 0 0 0-1.5-1.5Z" />
+                                                    </svg>
+                                                </a>
+                                            )}
+
+                                            {(activeMember.portfolio || activeMember.portfolioComingSoon) && (
+                                                <a
+                                                    href={activeMember.portfolio || '#'}
+                                                    {...(activeMember.portfolioComingSoon
+                                                        ? { onClick: (e) => showComingSoon(e, activeMember) }
+                                                        : portfolioIsPdf
+                                                            ? { target: '_blank', rel: 'noopener noreferrer' }
+                                                            : { onClick: (e) => openPortfolio(e, activeMember.portfolio) })}
+                                                    className="vvitu-team-portfolio-btn"
+                                                    aria-label={activeMember.portfolioComingSoon
+                                                        ? `${activeMember.name}'s digital portfolio — coming soon`
+                                                        : `Open ${activeMember.name}'s digital portfolio`}
+                                                    title={activeMember.portfolioComingSoon
+                                                        ? `${activeMember.name} — Portfolio coming soon`
+                                                        : `${activeMember.name} — Digital Portfolio`}
+                                                >
+                                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                        <circle cx="12" cy="12" r="9" />
+                                                        <path d="M3.6 9h16.8M3.6 15h16.8" />
+                                                        <path d="M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
+                                                    </svg>
+                                                    <span>Portfolio</span>
+                                                    <svg className="vvitu-team-portfolio-arrow" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                        <path d="M7 17 17 7M8 7h9v9" />
+                                                    </svg>
+                                                </a>
+                                            )}
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {comingSoonMember === activeMember.id && (
+                                                <motion.div
+                                                    className="vvitu-team-comingsoon-toast"
+                                                    role="status"
+                                                    aria-live="polite"
+                                                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.96 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.96 }}
+                                                    transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                                                >
+                                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                        <circle cx="12" cy="12" r="9" />
+                                                        <path d="M12 7v5l3 2" />
+                                                    </svg>
+                                                    <span>Portfolio will be updated soon</span>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+
+                                    {/* Tagline */}
+                                    <p className="vvitu-team-member-tagline">{activeMember.tagline}</p>
+
+                                    {/* Skill Highlights */}
+                                    <div className="vvitu-team-highlights-box">
+                                        <span className="vvitu-team-highlights-label">
+                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                            </svg>
+                                            Key Highlights
+                                        </span>
+                                        <ul className="vvitu-team-points-list">
+                                            {activeMember.highlights.map((point, pIdx) => (
+                                                <li key={pIdx}>
+                                                    <span className="vvitu-team-check-icon">
+                                                        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.6">
+                                                            <polyline points="3 8 6.5 11.5 13 4" />
+                                                        </svg>
+                                                    </span>
+                                                    <span>{point}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    {/* Skills / Tech Tags */}
+                                    {activeMember.tags && (
+                                        <div className="vvitu-team-tags-row">
+                                            {activeMember.tags.map((tag, tIdx) => (
+                                                <span key={tIdx} className="vvitu-team-tag-pill">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+
+                            {/* BOTTOM CONTROLS & AVATAR THUMBNAIL SELECTOR */}
+                            <div className="vvitu-team-bottom-controls">
+                                {/* Thumbnail Avatars */}
+                                <div className="vvitu-team-avatars-nav" role="tablist" aria-label="Team members">
+                                    {teamData.map((member, idx) => (
+                                        <button
+                                            key={member.id}
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={idx === currentIndex}
+                                            className={`vvitu-team-avatar-thumb-btn ${idx === currentIndex ? 'active' : ''}`}
+                                            onClick={() => selectMember(idx)}
+                                            title={member.name}
+                                        >
+                                            <img
+                                                src={member.photo}
+                                                alt={member.name}
+                                                onError={(e) => {
+                                                    if (e.currentTarget.dataset.fallback) return;
+                                                    e.currentTarget.dataset.fallback = '1';
+                                                    e.currentTarget.src = placeholderAvatar(member.name);
+                                                }}
+                                            />
+                                            <span className="vvitu-team-avatar-thumb-label">{member.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {isOpeningPortfolio && (
+                <div className="vvitu-portfolio-transition" role="status" aria-live="polite">
+                    <div className="vvitu-portfolio-transition-card">
+                        <span className="vvitu-portfolio-spinner" aria-hidden="true" />
+                        <span className="vvitu-portfolio-transition-text">Opening portfolio…</span>
+                    </div>
+                </div>
+            )}
+        </section>
+    );
+};
+
+export default Team;

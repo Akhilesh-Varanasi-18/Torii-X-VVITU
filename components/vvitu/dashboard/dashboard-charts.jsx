@@ -1,0 +1,776 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import {
+    ResponsiveContainer,
+    AreaChart,
+    Area,
+    BarChart,
+    Bar,
+    PieChart,
+    Pie,
+    Cell,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    LabelList
+} from 'recharts';
+import {
+    BRAND,
+    PROGRAM_COLORS,
+    YEAR_COLORS,
+    GENDER_COLORS,
+    RESIDENCE_COLORS,
+    LAPTOP_COLORS,
+    CRT_FEE_COLORS,
+    ADMISSION_COLORS,
+    ADMISSION_TYPE_COLORS,
+    ADMISSION_TYPE_ORDER,
+    CGPA_BAND_ORDER,
+    CGPA_BAND_COLORS,
+    BACKLOG_ORDER,
+    BACKLOG_COLORS,
+    BRANCH_RAMP,
+    SLOT_COLORS,
+    shortBranch,
+    shortDay,
+    pct
+} from './dashboard-theme';
+
+// ── Shared custom tooltip ───────────────────
+function ChartTooltip({ active, payload, label, labelFormatter, valueSuffix = '' }) {
+    if (!active || !payload || !payload.length) return null;
+    return (
+        <div className="dash-tooltip">
+            {label != null && (
+                <div className="dash-tooltip-label">{labelFormatter ? labelFormatter(label) : label}</div>
+            )}
+            {payload.map((entry, i) => (
+                <div className="dash-tooltip-row" key={i}>
+                    <span className="dash-tooltip-dot" style={{ background: entry.color || entry.fill }} />
+                    <span>{entry.name}:</span>
+                    <b>{entry.value}{valueSuffix}</b>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// ── 1. Registrations over time ──────────────
+export function RegistrationsTrend({ data, span = 8 }) {
+    const [mode, setMode] = useState('cumulative');
+    const hasData = data && data.length > 0;
+
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                    <h3 className="dash-card-title">Registrations over time</h3>
+                    <p className="dash-card-sub">{mode === 'cumulative' ? 'Cumulative growth to date' : 'New sign-ups per day'}</p>
+                </div>
+                <div className="dash-range" role="tablist">
+                    <button className={mode === 'cumulative' ? 'is-active' : ''} onClick={() => setMode('cumulative')}>Cumulative</button>
+                    <button className={mode === 'daily' ? 'is-active' : ''} onClick={() => setMode('daily')}>Daily</button>
+                </div>
+            </div>
+            <div className="dash-card-body">
+                {!hasData ? (
+                    <EmptyChart label="No registrations in this range yet" />
+                ) : mode === 'cumulative' ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={data} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor={BRAND.primary} stopOpacity={0.32} />
+                                    <stop offset="100%" stopColor={BRAND.primary} stopOpacity={0.02} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="date" tickFormatter={shortDay} tickLine={false} axisLine={false} minTickGap={24} padding={{ left: 12, right: 12 }} />
+                            <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={40} />
+                            <Tooltip content={<ChartTooltip labelFormatter={shortDay} />} />
+                            <Area type="monotone" dataKey="cumulative" name="Total" stroke={BRAND.primary} strokeWidth={2.5} fill="url(#trendFill)" dot={{ r: 3, fill: BRAND.primary, strokeWidth: 0 }} />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={data} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="dailyFill" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor={BRAND.secondary} stopOpacity={1} />
+                                    <stop offset="100%" stopColor={BRAND.secondary} stopOpacity={0.72} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="date" tickFormatter={shortDay} tickLine={false} axisLine={false} minTickGap={24} padding={{ left: 24, right: 24 }} />
+                            <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={40} />
+                            <Tooltip cursor={{ fill: 'rgba(226,84,76,0.06)' }} content={<ChartTooltip labelFormatter={shortDay} />} />
+                            <Bar dataKey="count" name="Sign-ups" fill="url(#dailyFill)" radius={[6, 6, 0, 0]} maxBarSize={46} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 2. Gender donut ─────────────────────────
+export function GenderDonut({ data, span = 4 }) {
+    const total = data.reduce((s, d) => s + d.value, 0);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">Gender split</h3>
+                <p className="dash-card-sub">Male vs female registrations</p>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No data yet" /> : (
+                    <>
+                        <div className="dash-donut-wrap">
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie data={data} dataKey="value" nameKey="name" innerRadius={62} outerRadius={90} paddingAngle={2} stroke="none" startAngle={90} endAngle={-270}>
+                                        {data.map((d) => <Cell key={d.name} fill={GENDER_COLORS[d.name] || BRAND.muted} />)}
+                                    </Pie>
+                                    <Tooltip content={<ChartTooltip />} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="dash-donut-center">
+                                <strong>{total}</strong>
+                                <span>Students</span>
+                            </div>
+                        </div>
+                        <DonutLegend data={data} colorMap={GENDER_COLORS} total={total} />
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 3. Program / passout-year donut ─────────
+export function ProgramDonut({ data }) {
+    const total = data.reduce((s, d) => s + d.value, 0);
+    const sorted = [...data].sort((a, b) => (b.year || 0) - (a.year || 0));
+    return (
+        <div className="dash-card dash-card--5">
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">Program tracks</h3>
+                <p className="dash-card-sub">Enrolment by passout year → program</p>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No data yet" /> : (
+                    <>
+                        <div className="dash-donut-wrap">
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie data={sorted} dataKey="value" nameKey="name" innerRadius={62} outerRadius={90} paddingAngle={2} stroke="none">
+                                        {sorted.map((d) => <Cell key={d.name} fill={PROGRAM_COLORS[d.name] || BRAND.muted} />)}
+                                    </Pie>
+                                    <Tooltip content={<ChartTooltip />} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="dash-donut-center">
+                                <strong>{total}</strong>
+                                <span>Enrolled</span>
+                            </div>
+                        </div>
+                        <div className="dash-legend">
+                            {sorted.map((d) => (
+                                <div className="dash-legend-item" key={d.name}>
+                                    <span className="dash-legend-swatch" style={{ background: PROGRAM_COLORS[d.name] || BRAND.muted }} />
+                                    <span>{d.name}</span>
+                                    <span className="dash-legend-val">{d.value} · {pct(d.value, total)}%</span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 4. Branch horizontal bar ────────────────
+export function BranchBar({ data, span = 7 }) {
+    const sorted = useMemo(() => [...data].sort((a, b) => b.value - a.value), [data]);
+    const height = Math.max(220, sorted.length * 38);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">Registrations by branch</h3>
+                <p className="dash-card-sub">Ranked highest to lowest</p>
+            </div>
+            <div className="dash-card-body">
+                {sorted.length === 0 ? <EmptyChart label="No data yet" /> : (
+                    <ResponsiveContainer width="100%" height={height}>
+                        <BarChart data={sorted} layout="vertical" margin={{ top: 0, right: 34, left: 8, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                            <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} />
+                            <YAxis type="category" dataKey="name" tickFormatter={shortBranch} tickLine={false} axisLine={false} width={78} />
+                            <Tooltip cursor={{ fill: 'rgba(226,84,76,0.06)' }} content={<ChartTooltip />} />
+                            <Bar dataKey="value" name="Students" radius={[0, 6, 6, 0]} maxBarSize={30}>
+                                {sorted.map((d, i) => <Cell key={d.name} fill={BRANCH_RAMP[Math.min(i, BRANCH_RAMP.length - 1)]} />)}
+                                <LabelList dataKey="value" position="right" style={{ fill: BRAND.muted, fontSize: 12, fontWeight: 600 }} />
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Shared 100% split bar (pure CSS) ────────
+// Segments are sized by an explicit percentage width, and every segment is always
+// rendered — a zero collapses to width 0 in place — so a change of data never adds
+// or removes an element mid-transition. A real-but-tiny share is floored at
+// MIN_SHARE so it stays visible. (The previous flex-grow layout, with segments
+// mounting and unmounting as values crossed zero, is what left a bar painted a
+// single colour while the browser interpolated between two programs' figures.)
+const MIN_SHARE = 7;
+function SplitBar({ rows, total, colors }) {
+    const floored = rows.map((r) => (total > 0 && r.value > 0 ? Math.max((r.value / total) * 100, MIN_SHARE) : 0));
+    const sum = floored.reduce((s, v) => s + v, 0) || 1;
+    const shares = floored.map((v) => (v / sum) * 100);
+    return (
+        <div className="dash-splitbar" role="img" aria-label={rows.map((r) => `${r.name}: ${r.value}`).join(', ')}>
+            {rows.map((r, i) => (
+                <div
+                    key={r.name}
+                    className={`dash-splitbar-seg${r.value > 0 ? '' : ' is-empty'}`}
+                    style={{ width: `${shares[i]}%`, background: colors[r.name] }}
+                    title={`${r.name}: ${r.value}`}
+                >
+                    {shares[i] >= 12 ? `${pct(r.value, total)}%` : null}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// ── 5. Residence ────────────────────────────
+export function ResidenceSplit({ data, span = 6 }) {
+    const total = data.reduce((s, d) => s + d.value, 0);
+    const order = ['Hosteler', 'Day Scholar'];
+    const rows = order.map((name) => ({ name, value: data.find((d) => d.name === name)?.value || 0 }));
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">Residence</h3>
+                <p className="dash-card-sub">Hostelers vs day scholars</p>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No data yet" /> : (
+                    <>
+                        <SplitBar rows={rows} total={total} colors={RESIDENCE_COLORS} />
+                        <div className="dash-splitbar-labels">
+                            <div className="dash-splitbar-label">
+                                <strong>{rows[0].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: RESIDENCE_COLORS.Hosteler }} /> Hostelers</span>
+                            </div>
+                            <div className="dash-splitbar-label dash-splitbar-label--right">
+                                <strong>{rows[1].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: RESIDENCE_COLORS['Day Scholar'] }} /> Day Scholars</span>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 5b. Laptop availability 100% split bar ──
+export function LaptopSplit({ data, span = 6 }) {
+    const total = data.reduce((s, d) => s + d.value, 0);
+    const order = ['Yes', 'No'];
+    const rows = order.map((name) => ({ name, value: data.find((d) => d.name === name)?.value || 0 }));
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">Laptop availability</h3>
+                <p className="dash-card-sub">Students with vs without a laptop</p>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No data yet" /> : (
+                    <>
+                        <SplitBar rows={rows} total={total} colors={LAPTOP_COLORS} />
+                        <div className="dash-splitbar-labels">
+                            <div className="dash-splitbar-label">
+                                <strong>{rows[0].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: LAPTOP_COLORS.Yes }} /> Have a laptop</span>
+                            </div>
+                            <div className="dash-splitbar-label dash-splitbar-label--right">
+                                <strong>{rows[1].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: LAPTOP_COLORS.No }} /> No laptop</span>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 5c. CRT enrollment 100% split bar ──
+export function CrtFeeSplit({ data }) {
+    const total = data.reduce((s, d) => s + d.value, 0);
+    const order = ['Yes', 'No'];
+    const rows = order.map((name) => ({ name, value: data.find((d) => d.name === name)?.value || 0 }));
+    return (
+        <div className="dash-card dash-card--6">
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">Enrolled for CRT</h3>
+                <p className="dash-card-sub">Students who have enrolled vs not yet</p>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No data yet" /> : (
+                    <>
+                        <SplitBar rows={rows} total={total} colors={CRT_FEE_COLORS} />
+                        <div className="dash-splitbar-labels">
+                            <div className="dash-splitbar-label">
+                                <strong>{rows[0].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: CRT_FEE_COLORS.Yes }} /> Enrolled</span>
+                            </div>
+                            <div className="dash-splitbar-label dash-splitbar-label--right">
+                                <strong>{rows[1].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: CRT_FEE_COLORS.No }} /> Not yet</span>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 5c-ii. Admission basis: rank-based vs management (100% split bar) ──
+export function AdmissionSplit({ data, span = 6 }) {
+    const total = data.reduce((s, d) => s + d.value, 0);
+    const order = ['Rank-based', 'Management'];
+    const rows = order.map((name) => ({ name, value: data.find((d) => d.name === name)?.value || 0 }));
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">Admission basis</h3>
+                <p className="dash-card-sub">Rank-based (EAPCET / JEE) vs management quota</p>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No rank data yet" /> : (
+                    <>
+                        <SplitBar rows={rows} total={total} colors={ADMISSION_COLORS} />
+                        <div className="dash-splitbar-labels">
+                            <div className="dash-splitbar-label">
+                                <strong>{rows[0].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: ADMISSION_COLORS['Rank-based'] }} /> Rank-based</span>
+                            </div>
+                            <div className="dash-splitbar-label dash-splitbar-label--right">
+                                <strong>{rows[1].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: ADMISSION_COLORS.Management }} /> Management</span>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 5c-iii. How the student joined: regular vs lateral entry ──────────────
+// Asked by every intake with `academics: true`, because it decides which CGPA
+// the form goes on to ask for — a lateral-entry student has a diploma CGPA and
+// no B.Tech one yet. That makes this split the key to reading the two CGPA
+// charts beside it: the students counted here as lateral are exactly the ones
+// missing from the B.Tech CGPA chart.
+export function AdmissionTypeSplit({ data, span = 4 }) {
+    const rows = ADMISSION_TYPE_ORDER.map((name) => ({ name, value: data?.find((d) => d.name === name)?.value || 0 }));
+    const total = rows.reduce((s, d) => s + d.value, 0);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head dash-card-head--split">
+                <div>
+                    <h3 className="dash-card-title">How they joined</h3>
+                    <p className="dash-card-sub">Regular first-year entry vs lateral entry from a diploma</p>
+                </div>
+                {total > 0 && (
+                    <div className="dash-stat-chip">
+                        <strong>{pct(rows[1].value, total)}%</strong>
+                        <span>lateral entry</span>
+                    </div>
+                )}
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No admission data yet" /> : (
+                    <>
+                        <SplitBar rows={rows} total={total} colors={ADMISSION_TYPE_COLORS} />
+                        <div className="dash-splitbar-labels">
+                            <div className="dash-splitbar-label">
+                                <strong>{rows[0].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: ADMISSION_TYPE_COLORS.Regular }} /> Regular</span>
+                            </div>
+                            <div className="dash-splitbar-label dash-splitbar-label--right">
+                                <strong>{rows[1].value}</strong>
+                                <span><span className="dash-legend-swatch" style={{ background: ADMISSION_TYPE_COLORS['Lateral Entry'] }} /> Lateral entry</span>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 5d. Laptop Yes/No by program (grouped bars) ──
+export function LaptopByProgram({ data, span = 6 }) {
+    const rows = data || [];
+    const total = rows.reduce((s, d) => s + (d.Yes || 0) + (d.No || 0), 0);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                    <h3 className="dash-card-title">Laptop by program</h3>
+                    <p className="dash-card-sub">Students with vs without a laptop, per program</p>
+                </div>
+                <div className="dash-legend" style={{ marginTop: 0 }}>
+                    <div className="dash-legend-item">
+                        <span className="dash-legend-swatch" style={{ background: LAPTOP_COLORS.Yes }} />
+                        <span>Has laptop</span>
+                    </div>
+                    <div className="dash-legend-item">
+                        <span className="dash-legend-swatch" style={{ background: LAPTOP_COLORS.No }} />
+                        <span>No laptop</span>
+                    </div>
+                </div>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No data yet" /> : (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={rows} margin={{ top: 20, right: 8, left: 0, bottom: 0 }} barGap={6} barCategoryGap="26%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="short" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                            <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={34} tick={{ fontSize: 12 }} />
+                            <Tooltip cursor={{ fill: 'rgba(226,84,76,0.06)' }} content={<ChartTooltip labelFormatter={(l) => rows.find((r) => r.short === l)?.program || l} />} />
+                            <Bar dataKey="Yes" name="Has laptop" fill={LAPTOP_COLORS.Yes} radius={[6, 6, 0, 0]} maxBarSize={48}>
+                                <LabelList dataKey="Yes" position="top" style={{ fontSize: 11, fontWeight: 700, fill: BRAND.ink }} />
+                            </Bar>
+                            <Bar dataKey="No" name="No laptop" fill={LAPTOP_COLORS.No} radius={[6, 6, 0, 0]} maxBarSize={48}>
+                                <LabelList dataKey="No" position="top" style={{ fontSize: 11, fontWeight: 700, fill: BRAND.ink }} />
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 6. Branch × Year stacked bar ────────────
+export function BranchYearStacked({ branchByYear, byBranch }) {
+    const { rows, years } = useMemo(() => {
+        const order = [...byBranch].sort((a, b) => b.value - a.value).map((b) => b.name);
+        const yearsSet = new Set();
+        const map = new Map();
+        branchByYear.forEach(({ branch, year, value }) => {
+            yearsSet.add(String(year));
+            if (!map.has(branch)) map.set(branch, { name: branch });
+            map.get(branch)[String(year)] = value;
+        });
+        const sortedYears = [...yearsSet].sort((a, b) => Number(b) - Number(a));
+        const rowsOut = order.map((name) => ({ name, ...(map.get(name) || {}) }));
+        return { rows: rowsOut, years: sortedYears };
+    }, [branchByYear, byBranch]);
+
+    const height = Math.max(220, rows.length * 38);
+    return (
+        <div className="dash-card dash-card--12">
+            <div className="dash-card-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                    <h3 className="dash-card-title">Branch × Year mix</h3>
+                    <p className="dash-card-sub">How each branch splits across passout years</p>
+                </div>
+                <div className="dash-legend" style={{ marginTop: 0 }}>
+                    {years.map((y) => (
+                        <div className="dash-legend-item" key={y}>
+                            <span className="dash-legend-swatch" style={{ background: YEAR_COLORS[y] || BRAND.muted }} />
+                            <span>{y}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className="dash-card-body">
+                {rows.length === 0 ? <EmptyChart label="No data yet" /> : (
+                    <ResponsiveContainer width="100%" height={height}>
+                        <BarChart data={rows} layout="vertical" margin={{ top: 0, right: 16, left: 8, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                            <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} />
+                            <YAxis type="category" dataKey="name" tickFormatter={shortBranch} tickLine={false} axisLine={false} width={78} />
+                            <Tooltip cursor={{ fill: 'rgba(226,84,76,0.06)' }} content={<ChartTooltip />} />
+                            {years.map((y, i) => (
+                                <Bar key={y} dataKey={y} name={y} stackId="year" fill={YEAR_COLORS[y] || BRAND.muted}
+                                     radius={i === years.length - 1 ? [0, 6, 6, 0] : [0, 0, 0, 0]} maxBarSize={30} />
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Small shared bits ───────────────────────
+function DonutLegend({ data, colorMap, total }) {
+    return (
+        <div className="dash-legend">
+            {data.map((d) => (
+                <div className="dash-legend-item" key={d.name}>
+                    <span className="dash-legend-swatch" style={{ background: colorMap[d.name] || BRAND.muted }} />
+                    <span>{d.name}</span>
+                    <span className="dash-legend-val">{d.value} · {pct(d.value, total)}%</span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function EmptyChart({ label }) {
+    return (
+        <div style={{ height: 200, display: 'grid', placeItems: 'center', color: BRAND.muted, fontSize: 13 }}>
+            {label}
+        </div>
+    );
+}
+
+// ── Moon Coder: uptake against the SkillUp shortlist ───────────────────────
+// One progress bar per SkillUp batch (registered / eligible) with the overall
+// figure as the headline. Eligible counts come from the coding-profiles roster.
+export function MoonUptake({ data, span = 4 }) {
+    const info = data || { eligible: 0, registered: 0, registeredInRange: 0, byBatch: [] };
+    const overall = pct(info.registered, info.eligible);
+    const rows = info.byBatch || [];
+    const remaining = Math.max(0, info.eligible - info.registered);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">{info.programName || 'Moon Coder'} uptake</h3>
+                <p className="dash-card-sub">Registered out of the {info.eligible || 0} shortlisted SkillUp Coder students, per batch</p>
+            </div>
+            <div className="dash-card-body">
+                {!info.eligible ? <EmptyChart label="Shortlist roster not loaded yet" /> : (
+                    <div className="dash-uptake">
+                        <div className="dash-uptake-head">
+                            <div className="dash-uptake-headline">
+                                <strong>{info.registered.toLocaleString('en-IN')}</strong>
+                                <span>of {info.eligible.toLocaleString('en-IN')} registered</span>
+                            </div>
+                            <div className="dash-uptake-ring" style={{ '--p': overall }} role="img" aria-label={`${overall}% registered`}>
+                                <span>{overall}%</span>
+                            </div>
+                        </div>
+                        <div className="dash-uptake-rows">
+                            {rows.map((r) => {
+                                const p = pct(r.registered, r.eligible);
+                                return (
+                                    <div className="dash-uptake-row" key={r.batch}>
+                                        <div className="dash-uptake-row-head">
+                                            <span className="dash-uptake-batch">{r.batch}</span>
+                                            <span className="dash-uptake-count"><b>{r.registered}</b> / {r.eligible} · {p}%</span>
+                                        </div>
+                                        <div className="dash-uptake-track">
+                                            <div className="dash-uptake-fill" style={{ width: `${Math.min(100, p)}%`, background: PROGRAM_COLORS['Moon Coder'] }} />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="dash-uptake-foot">
+                            {remaining > 0
+                                ? `${remaining.toLocaleString('en-IN')} shortlisted students still to register`
+                                : 'Every shortlisted student has registered'}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Moon Coder: CGPA bands ─────────────────────────────────────────────────
+// `title` / `subject` are props rather than literals because this chart is used
+// twice now — once for the B.Tech CGPA and once for the diploma CGPA that
+// lateral-entry students give instead — and because the intake that collects
+// CGPA is no longer hardcoded to Moon Coder. The old copy read "Moon Coder
+// registrations by CGPA band" on every site, including ones that do not run
+// Moon Coder at all.
+export function CgpaBands({ data, academics, span = 4, title = 'Overall CGPA', subject = 'Registrations', emptyLabel = 'No CGPA data yet' }) {
+    const rows = CGPA_BAND_ORDER.map((name) => ({ name, value: data?.find((d) => d.name === name)?.value || 0 }));
+    const total = rows.reduce((s, d) => s + d.value, 0);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head dash-card-head--split">
+                <div>
+                    <h3 className="dash-card-title">{title}</h3>
+                    <p className="dash-card-sub">{subject} by CGPA band</p>
+                </div>
+                {academics?.avgCgpa != null && (
+                    <div className="dash-stat-chip">
+                        <strong>{academics.avgCgpa.toFixed(2)}</strong>
+                        <span>average CGPA</span>
+                    </div>
+                )}
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label={emptyLabel} /> : (
+                    <ResponsiveContainer width="100%" height={260}>
+                        <BarChart data={rows} margin={{ top: 22, right: 8, left: 0, bottom: 0 }} barCategoryGap="28%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                            <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={34} tick={{ fontSize: 12 }} />
+                            <Tooltip cursor={{ fill: 'rgba(142,86,255,0.06)' }} content={<ChartTooltip valueSuffix=" students" />} />
+                            <Bar dataKey="value" name="Students" radius={[8, 8, 0, 0]} maxBarSize={56}>
+                                {rows.map((d) => <Cell key={d.name} fill={CGPA_BAND_COLORS[d.name] || BRAND.muted} />)}
+                                <LabelList dataKey="value" position="top" style={{ fontSize: 11, fontWeight: 700, fill: BRAND.ink }} />
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Moon Coder: active backlogs ────────────────────────────────────────────
+const backlogLabel = (name) => {
+    if (name === 'None') return 'No backlogs';
+    if (name === '1') return '1 backlog';
+    return `${name} backlogs`;
+};
+
+export function BacklogSplit({ data, span = 4, subject = 'Registrations' }) {
+    const rows = BACKLOG_ORDER.map((name) => ({ name, value: data?.find((d) => d.name === name)?.value || 0 }));
+    const total = rows.reduce((s, d) => s + d.value, 0);
+    const clear = rows[0].value;
+    const nonEmpty = rows.filter((d) => d.value > 0);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head dash-card-head--split">
+                <div>
+                    <h3 className="dash-card-title">Active backlogs</h3>
+                    <p className="dash-card-sub">{subject} by number of active backlogs</p>
+                </div>
+                {total > 0 && (
+                    <div className="dash-stat-chip">
+                        <strong>{pct(clear, total)}%</strong>
+                        <span>backlog-free</span>
+                    </div>
+                )}
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No backlog data yet" /> : (
+                    <>
+                        <div className="dash-donut-wrap">
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie data={nonEmpty} dataKey="value" nameKey="name" innerRadius={62} outerRadius={90} paddingAngle={2} stroke="none">
+                                        {nonEmpty.map((d) => <Cell key={d.name} fill={BACKLOG_COLORS[d.name] || BRAND.muted} />)}
+                                    </Pie>
+                                    <Tooltip content={<ChartTooltip valueSuffix=" students" />} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="dash-donut-center">
+                                <strong>{clear}</strong>
+                                <span>No backlogs</span>
+                            </div>
+                        </div>
+                        <div className="dash-legend">
+                            {rows.map((d) => (
+                                <div className="dash-legend-item" key={d.name}>
+                                    <span className="dash-legend-swatch" style={{ background: BACKLOG_COLORS[d.name] || BRAND.muted }} />
+                                    <span>{backlogLabel(d.name)}</span>
+                                    <span className="dash-legend-val">{d.value} · {pct(d.value, total)}%</span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Moon Coder: class time slots ───────────────────────────────────────────
+// Which of the offered slots registrants chose, overall and per SkillUp batch.
+// `data` rows are { name: <slot label>, value }; colours follow catalogue order.
+export function TimeSlotSplit({ data, span = 5 }) {
+    const rows = (data || []).map((d) => ({ name: d.name, value: d.value || 0 }));
+    const total = rows.reduce((s, r) => s + r.value, 0);
+    const colors = Object.fromEntries(rows.map((r, i) => [r.name, SLOT_COLORS[i % SLOT_COLORS.length]]));
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head">
+                <h3 className="dash-card-title">Class time slot</h3>
+                <p className="dash-card-sub">Which slot Moon Coder registrants chose</p>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No slot choices yet" /> : (
+                    <>
+                        <SplitBar rows={rows} total={total} colors={colors} />
+                        <div className="dash-splitbar-labels">
+                            {rows.map((r, i) => (
+                                <div key={r.name} className={`dash-splitbar-label${rows.length > 1 && i === rows.length - 1 ? ' dash-splitbar-label--right' : ''}`}>
+                                    <strong>{r.value}</strong>
+                                    <span><span className="dash-legend-swatch" style={{ background: colors[r.name] }} /> {r.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// Slot choice per SkillUp batch (grouped bars) — tells the team how many seats
+// each slot needs from each batch. `slots` is the ordered list of slot labels,
+// which are also the row keys: { batch, '<slot label>': n, … }.
+export function SlotByBatch({ data, slots, span = 7 }) {
+    const rows = data || [];
+    const keys = slots || [];
+    const total = rows.reduce((s, r) => s + keys.reduce((t, k) => t + (r[k] || 0), 0), 0);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                    <h3 className="dash-card-title">Time slot by batch</h3>
+                    <p className="dash-card-sub">Slot choices per SkillUp batch</p>
+                </div>
+                <div className="dash-legend" style={{ marginTop: 0 }}>
+                    {keys.map((k, i) => (
+                        <div key={k} className="dash-legend-item">
+                            <span className="dash-legend-swatch" style={{ background: SLOT_COLORS[i % SLOT_COLORS.length] }} />
+                            <span>{k}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No slot choices yet" /> : (
+                    <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={rows} margin={{ top: 20, right: 8, left: 0, bottom: 0 }} barGap={6} barCategoryGap="26%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="batch" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                            <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={34} tick={{ fontSize: 12 }} />
+                            <Tooltip cursor={{ fill: 'rgba(226,84,76,0.06)' }} content={<ChartTooltip />} />
+                            {keys.map((k, i) => (
+                                <Bar key={k} dataKey={k} name={k} fill={SLOT_COLORS[i % SLOT_COLORS.length]} radius={[6, 6, 0, 0]} maxBarSize={44}>
+                                    <LabelList dataKey={k} position="top" style={{ fontSize: 11, fontWeight: 700, fill: BRAND.ink }} />
+                                </Bar>
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+        </div>
+    );
+}
