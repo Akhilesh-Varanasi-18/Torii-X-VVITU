@@ -48,6 +48,11 @@ No migration step — indexes are created lazily on first access.
 > network whose resolver does not serve SRV records. That is DNS, not credentials — use
 > the seed-list URI instead. Both are in `.env.local`; see §3 of `CLAUDE.md`.
 
+## Deploying
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) — what to run, the one git-ignored file a
+deploy needs, and the two Atlas settings that bite.
+
 ## Colour system
 
 Every colour lives in `public/assets/scss/vvitu/_vvitu-theme.scss` as a `--vvitu-*`
