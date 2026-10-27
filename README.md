@@ -60,9 +60,9 @@ custom property. **Nothing is hardcoded** — write `var(--vvitu-primary)`, neve
 `#E2544C`. If you need a colour that doesn't exist, add a token.
 `torii-color-palette.html` in the repo root is the reference palette.
 
-## Before this site takes a registration
+## Before a wider launch
 
-Search the codebase for `TODO(VVITU)`. The WhatsApp invite links and the B.Tech branch
-list are still SRKR's — and a branch VVITU runs that is missing from the list means
-students in that branch cannot register at all. CLAUDE.md §0 has the full list, including
-the photography and syllabus copy that still needs replacing.
+Search the codebase for `TODO(VVITU)`. The branch list is now VVITU's six departments
+with a free-text fallback, and the main WhatsApp community invite is live. Still
+outstanding: the year-wise WhatsApp groups, most of the photography, and the syllabus
+wording. CLAUDE.md §0 has the full list and what each one blocks.

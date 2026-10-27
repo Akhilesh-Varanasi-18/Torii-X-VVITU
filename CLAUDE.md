@@ -42,23 +42,31 @@ Three things changed in the restore beyond the rename:
 
 ### ⚠️ Content still carried over from SRKR
 
-The replica copied SRKR's content wholesale. These are **wrong for VVITU** and are
-flagged with `TODO(VVITU)` in the code:
+The replica copied SRKR's content wholesale. What remains wrong for VVITU, with
+`TODO(VVITU)` against it in the code:
 
-1. **WhatsApp invite links** (`lib/site-config.js`) — all four still point at SRKR's
-   groups. A VVITU student tapping "Join Community" lands in the wrong place.
-2. **The B.Tech branch list** (`lib/registration-schema.js`) — SRKR's departments. A
-   branch VVITU runs but that is missing here **cannot register at all**, because
-   `validateRegistration()` rejects anything outside `BRANCH_VALUES`.
-3. **Photography** — `public/assets/images/vvitu/project-images/` is SRKR's: the MOU
-   signing, campus shots and the hero gallery. At least one hero slide has "SRKR"
-   visible in frame.
-4. **Programs, courses and syllabus copy** (`components/vvitu/programs-data.js`) — the
-   SRKR curriculum, pending the VVITU revisions.
-5. **Team members** (`components/vvitu/team-data.js`) — only matters once the Team
-   section is restored.
+1. **The year-wise WhatsApp groups and the Moon Coder group**
+   (`lib/site-config.js`) — not created yet, so they render as non-clickable
+   "Link coming soon" rows. SRKR's invites were *removed* rather than left in
+   place: a live link here would drop a VVITU student into another college's
+   group, which is worse than no link. ✅ The **main community invite is live**
+   (2026-10-27).
+2. **Photography** — most of `public/assets/images/vvitu/project-images/` is still
+   SRKR's: campus shots and parts of the hero gallery. Already handled: the MOU
+   signing slide is commented out (it was SRKR's signing), and the AI partners
+   slide was replaced with VVITU's own.
+3. **Syllabus copy** (`components/vvitu/programs-data.js`) — the module text is
+   still SRKR's wording, pending VVITU's revisions. The *structure* is correct:
+   AI Ready is the only open intake, its five courses are set, and the
+   AI-integration content was stripped out.
+4. **Team members** (`components/vvitu/team-data.js`) — only matters if the Team
+   section is ever restored.
 
-Fix 1 and 2 **before opening any intake**; 3 and 4 before launch.
+**Done since this list was written:** the B.Tech branch list is now VVITU's six
+departments with an `OTHER_BRANCH` free-text fallback, so no VVITU student is
+blocked by a missing branch.
+
+Fix 1 before advertising the groups; 2 and 3 before a wider launch.
 
 ---
 
