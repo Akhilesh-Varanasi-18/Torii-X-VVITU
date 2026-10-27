@@ -131,7 +131,9 @@ const Programs = ({ onOpenRegister }) => {
                                         />
                                         {/* Status badge (left) and year pill (right) share one
                                             row, so a long year label can never collide with the
-                                            badge on a narrow card. */}
+                                            badge on a narrow card. An ELIGIBILITY label is the
+                                            exception and leaves this row entirely — see the
+                                            banner-bottom block below for why. */}
                                         {/* A Coming Soon card carries no status badge and no year
                                             pill — the track isn't on offer, so an intake status and a
                                             year are both noise. Live cards keep the whole row. */}
@@ -155,24 +157,49 @@ const Programs = ({ onOpenRegister }) => {
                                                     aria-label={`Registrations are open now for ${program.name} — register`}
                                                 >
                                                     <span className="vvitu-program-open-dot" aria-hidden="true" />
-                                                    <span className="vvitu-program-open-text">Registrations are open now</span>
+                                                    {/* "Registrations Open", not "Registrations are
+                                                        open now": the longer line cost 235px of a
+                                                        378px row on a 3-up desktop card and said
+                                                        nothing more. The pulsing dot already carries
+                                                        the "right now" part. */}
+                                                    <span className="vvitu-program-open-text">Registrations Open</span>
                                                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                                         <path d="M5 12h14M13 6l6 6-6 6" />
                                                     </svg>
                                                 </button>
                                             )}
-                                            {/* Usually the passout year, read as a quiet label.
-                                                A program can put its eligibility here instead
-                                                (Moon Coder: "Exclusive for Hostelers") and set
-                                                `yearHighlight` to make the pill an accent one —
-                                                because who the batch excludes is not a detail
-                                                to be skimmed past. */}
-                                            {!program.comingSoon && (
-                                                <span className={`vvitu-program-year-pill${program.yearHighlight ? ' is-exclusive' : ''}`}>
+                                            {/* The passout year, read as a quiet label. A program
+                                                that sets `yearHighlight` puts its ELIGIBILITY in
+                                                this field instead and renders it below rather than
+                                                here, so this stays the quiet-label slot it was
+                                                designed to be. */}
+                                            {!program.comingSoon && !program.yearHighlight && (
+                                                <span className="vvitu-program-year-pill">
                                                     {withOrdinalSup(program.year)}
                                                 </span>
                                             )}
                                         </div>
+
+                                        {/* ELIGIBILITY sits at the foot of the banner, not in the
+                                            top row. Two emphatic chips cannot share that row: the
+                                            status badge and this one consumed 100% of it at every
+                                            width (378px of 378px on desktop, 328px of 328px on a
+                                            phone), which forced "Exclusive for Hostelers" to wrap
+                                            onto two ragged lines taller than the badge beside it.
+                                            Down here it has the full card width, so it never wraps
+                                            however long the label gets — and it lands directly
+                                            above the tagline, so a day scholar reads "this batch
+                                            is not for me" before reading what the batch teaches. */}
+                                        {!program.comingSoon && program.yearHighlight && (
+                                            <div className="vvitu-program-banner-bottom">
+                                                <span className="vvitu-program-eligibility-chip">
+                                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
+                                                        <path d="M12 2.6l2.7 5.9 6.3.7-4.7 4.3 1.3 6.4L12 16.6 6.4 19.9l1.3-6.4L3 9.2l6.3-.7z" />
+                                                    </svg>
+                                                    {withOrdinalSup(program.year)}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Card Content Body */}

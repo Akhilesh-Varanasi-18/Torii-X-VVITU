@@ -213,6 +213,98 @@ const BranchSelect = ({ groups, value, onChange, error }) => {
     );
 };
 
+// The study-year picker — the same branded listbox as BranchSelect above, not a
+// native <select>.
+//
+// It started as a native select on the theory that an OS picker is the fastest
+// thing to answer on a phone. On a real phone it was the opposite: the picker
+// dismissed itself the instant it opened, so the year — and therefore the
+// passout year that is derived from it — could not be answered at all on the
+// devices most of these registrations arrive from.
+//
+// The app was measured out of it first: on a touch tap the select took focus and
+// KEPT it for 1.6s, was never remounted, and never moved a pixel. Nothing in
+// React was closing it. That leaves the browser's own picker, which we do not
+// control — so the fix is to stop depending on it rather than to keep tuning
+// around it. Reusing the branch listbox also settles the inconsistency the old
+// code acknowledged: a branded popover for branch sitting directly above a
+// browser-default select.
+const YearSelect = ({ years, value, onChange, error, id }) => {
+    const [open, setOpen] = useState(false);
+    const wrapRef = useRef(null);
+    const selected = years.find((y) => y.key === value) || null;
+
+    useEffect(() => {
+        if (!open) return undefined;
+        const onDocClick = (e) => {
+            if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+        };
+        const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+        document.addEventListener('mousedown', onDocClick);
+        document.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('mousedown', onDocClick);
+            document.removeEventListener('keydown', onKey);
+        };
+    }, [open]);
+
+    return (
+        <div ref={wrapRef} className={`vvitu-reg-select ${open ? 'is-open' : ''} ${error ? 'has-error' : ''}`}>
+            <button
+                type="button"
+                id={id}
+                className="vvitu-reg-select-trigger"
+                onClick={() => setOpen((o) => !o)}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                aria-invalid={error ? 'true' : undefined}
+            >
+                <span className="vvitu-reg-select-icon">
+                    <svg {...ico}><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 10h18" /></svg>
+                </span>
+                <span className={`vvitu-reg-select-value ${selected ? '' : 'is-placeholder'}`}>
+                    {selected ? selected.label : 'Select your current year...'}
+                </span>
+                {/* The passout year rides along on the trigger once a year is
+                    chosen, so the student can confirm the thing the answer is
+                    actually for without reopening the list. */}
+                {selected && <span className="vvitu-reg-select-note">{selected.passoutYear} passout</span>}
+                <svg className="vvitu-reg-select-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
+            </button>
+
+            {open && (
+                <div className="vvitu-reg-select-menu" role="listbox" aria-label="Current year of study">
+                    {years.map((y) => {
+                        const isSel = value === y.key;
+                        return (
+                            <button
+                                type="button"
+                                key={y.key}
+                                role="option"
+                                aria-selected={isSel}
+                                className={`vvitu-reg-select-option ${isSel ? 'is-selected' : ''}`}
+                                onClick={() => { onChange(y.key); setOpen(false); }}
+                            >
+                                <span>
+                                    {y.label}
+                                    <small className="vvitu-reg-select-opt-note">{y.passoutYear} passout</small>
+                                </span>
+                                {isSel && (
+                                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 8 6.5 11.5 13 4" />
+                                    </svg>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // Step 1 of a roster-gated intake: a type-ahead over the shortlist. Suggestions
 // show name · roll · branch · batch only; picking one fetches the full pre-fill
 // record and hands it up through onPick.
@@ -833,44 +925,23 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
     // sits at the top of the form — before the details that do not depend on
     // it — rather than being buried among the academics.
     //
-    // A <select> rather than the card grid the time slots use: four options
-    // that differ by one word each gain nothing from being tiles, and a native
-    // select is faster to answer on a phone, which is where most of these
-    // registrations come from.
+    // A list rather than the card grid the time slots use: four options that
+    // differ by one word each gain nothing from being tiles. It is the in-page
+    // YearSelect listbox, NOT a native <select> — see that component for why the
+    // OS picker had to go.
     const renderStudyYear = () => (
         <div className={`vvitu-reg-field ${errors.studyYear ? 'has-error' : ''}`}>
             <label htmlFor="vvitu-reg-studyyear">
                 Which year are you in right now? <span className="required">*</span>
                 <small className="vvitu-reg-hint"> (This batch is open to every year)</small>
             </label>
-            {/* Wrapped in the same input shell every other field uses, with the
-                icon and the chevron, so it does not land in the middle of the
-                form looking like an unstyled browser default next to the custom
-                branch picker directly above it. */}
-            <div className="vvitu-reg-input-wrap vvitu-reg-select-wrap">
-                <span className="vvitu-reg-input-icon">
-                    <svg {...ico}><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 10h18" /></svg>
-                </span>
-                <select
-                    id="vvitu-reg-studyyear"
-                    name="studyYear"
-                    value={formData.studyYear || ''}
-                    onChange={handleChange}
-                    aria-invalid={errors.studyYear ? 'true' : undefined}
-                >
-                    <option value="">Select your current year</option>
-                    {program.studyYears.map((y) => (
-                        <option key={y.key} value={y.key}>
-                            {y.label} · {y.passoutYear} passout
-                        </option>
-                    ))}
-                </select>
-                <span className="vvitu-reg-select-chevron" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="m6 9 6 6 6-6" />
-                    </svg>
-                </span>
-            </div>
+            <YearSelect
+                id="vvitu-reg-studyyear"
+                years={program.studyYears}
+                value={formData.studyYear}
+                onChange={(key) => selectValue('studyYear', key)}
+                error={errors.studyYear}
+            />
             {errors.studyYear && <span className="vvitu-reg-error">{errors.studyYear}</span>}
         </div>
     );

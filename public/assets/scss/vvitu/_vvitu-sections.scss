@@ -1027,6 +1027,94 @@
     }
   }
 
+  // The foot of the banner: where an ELIGIBILITY chip lives (`yearHighlight`).
+  // It gets a row of its own because the top row has no spare space — measured
+  // at 100% occupancy on both a 3-up desktop card and a phone — and because a
+  // chip that answers "is this batch for me?" belongs next to the tagline that
+  // says what the batch is, not stranded in the opposite corner.
+  //
+  // Full card width, so the label never wraps however long it gets. These rules
+  // are NESTED inside .vvitu-program-card rather than appended flat at the end
+  // of the file, so they carry the same (0,2,0) weight as the per-program colour
+  // overrides above and cannot be silently out-specified. CLAUDE.md §8.4b.
+  .vvitu-program-banner-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    display: flex;
+    padding: 0 10px 10px;
+    box-sizing: border-box;
+    pointer-events: none; // the banner image stays inert — only the chip reacts
+
+    > * { pointer-events: auto; }
+
+    // A scrim under the chip. The chip is legible on the Moon Coder artwork as
+    // it stands, but a banner is swappable art — this guarantees contrast for
+    // whatever image lands here next, and it softens the hard banner/body seam.
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -38px 0 0;
+      background: linear-gradient(to top, rgba(15, 23, 42, 0.62), rgba(15, 23, 42, 0)); // --vvitu-heading
+      pointer-events: none;
+    }
+
+    @media (max-width: 767px) {
+      padding: 0 8px 8px;
+    }
+  }
+
+  // The eligibility chip itself. It keeps the brand gradient — who a batch
+  // excludes is the one thing on this card that must not be skimmed past — but
+  // it is now a single clean line with room to breathe, rather than a wrapped
+  // block crushed against the status badge.
+  .vvitu-program-eligibility-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 5px 13px 5px 10px;
+    border-radius: 999px;
+    font-family: var(--vvitu-font-primary);
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+    line-height: 1.35;
+    white-space: nowrap;
+    color: var(--vvitu-white);
+    background: var(--vvitu-gradient-primary);
+    border: 1px solid rgba(255, 255, 255, 0.3); // --vvitu-white
+    box-shadow:
+      0 6px 18px rgba(226, 84, 76, 0.42),            // --vvitu-primary
+      inset 0 1px 0 rgba(255, 255, 255, 0.28);       // --vvitu-white
+
+    svg {
+      flex-shrink: 0;
+      opacity: 0.95;
+    }
+
+    // A raised ordinal must not be shouted at. `year` normally carries one
+    // (2ⁿᵈ Year) and a program could still set `yearHighlight` on such a label.
+    sup { text-transform: none; }
+
+    @media (max-width: 767px) {
+      font-size: 9.5px;
+      padding: 4px 11px 4px 9px;
+      gap: 5px;
+    }
+
+    // Below ~360px the letter-spacing is the first thing to give; the label
+    // still has to fit on one line, which is the whole point of moving it here.
+    @media (max-width: 360px) {
+      font-size: 9px;
+      letter-spacing: 0.2px;
+    }
+  }
+
   .vvitu-program-year-pill {
     margin-left: auto; // stays right even when there is no badge beside it
     min-width: 0;
@@ -4328,6 +4416,37 @@
     white-space: nowrap;
 
     &.is-placeholder { color: #94A3B8; }
+  }
+
+  // The consequence of the choice, carried on the trigger and beside each
+  // option: a student picks a YEAR, but what the form stores is a PASSOUT year.
+  // Showing it here means the derived value is never a surprise on the success
+  // screen. Quiet, because it is a consequence rather than a second choice.
+  .vvitu-reg-select-note {
+    flex: 0 0 auto;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: var(--vvitu-muted);
+    white-space: nowrap;
+  }
+
+  .vvitu-reg-select-opt-note {
+    display: block;
+    margin-top: 1px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--vvitu-muted);
+  }
+
+  // The option's label column has to be allowed to shrink, or the two-line
+  // label pushes the tick off the right edge of the menu.
+  .vvitu-reg-select-option > span {
+    min-width: 0;
+  }
+
+  .vvitu-reg-select-option.is-selected .vvitu-reg-select-opt-note {
+    color: var(--vvitu-primary);
   }
 
   .vvitu-reg-select-chevron {
@@ -8692,34 +8811,29 @@
 .vvitu-hero { min-height: calc(100vh - var(--vvitu-header-h)); }
 
 // ===============================================================
-// EXCLUSIVITY PILL + PENDING-SYLLABUS PILL
+// PENDING-SYLLABUS PILL
 // ---------------------------------------------------------------
-// Two small states added when Moon Coder opened as a hostelers-only batch.
+// RETIRED: `.vvitu-program-year-pill.is-exclusive`
 //
-// 1. The year pill normally carries a passout year and is deliberately quiet —
-//    a neutral outline that lets the program name lead. Moon Coder puts its
-//    ELIGIBILITY there instead ("Exclusive for Hostelers"), and that is the
-//    single most important thing on the card: a day scholar needs to know this
-//    batch is not for them before they read anything else. So when a program
-//    sets `yearHighlight`, the pill fills with the brand gradient and stops
-//    being a label you can skip.
+// The exclusivity label used to be a gradient fill on the year pill, sharing
+// the banner's top row with the intake-status badge. It had to leave that row:
+// the two chips measured 378px of a 378px row on a 3-up desktop card and 328px
+// of 328px on a phone, so the label was permanently squeezed to its minimum
+// width and wrapped onto two lines taller than the badge beside it. No amount
+// of font or padding tuning buys space in a row that is already 100% full.
 //
-//    This is a flat (0,1,0) selector appended after the per-program colour
-//    overrides above, which are (0,2,0) — `&.mooncoder .vvitu-program-year-pill`
-//    beats it on specificity, so the colour has to be forced. CLAUDE.md §8.4b.
+// It now renders as `.vvitu-program-eligibility-chip` inside
+// `.vvitu-program-banner-bottom` — both nested in the `.vvitu-program-card`
+// block above, which is also what retires the specificity workaround this rule
+// needed. To put it back in the top row, restore the flat selector here AND
+// re-add the `is-exclusive` branch in components/vvitu/programs.jsx; be aware
+// that the (0,2,0) `&.mooncoder .vvitu-program-year-pill` override will beat a
+// flat (0,1,0) rule, which is why this one had to force the colour. §8.4b.
 // ===============================================================
-.vvitu-program-card .vvitu-program-year-pill.is-exclusive {
-  color: var(--vvitu-white);
-  background: var(--vvitu-gradient-primary);
-  border-color: transparent;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-  box-shadow: 0 4px 14px rgba(237, 114, 54, 0.3); // --vvitu-secondary
-}
 
-// 2. A course whose syllabus has not been delivered yet. Saying "0 Modules"
-//    reads as a bug; this reads as a promise, so it is tinted rather than
-//    styled like the normal count pill.
+// A course whose syllabus has not been delivered yet. Saying "0 Modules"
+// reads as a bug; this reads as a promise, so it is tinted rather than
+// styled like the normal count pill.
 .vvitu-meta-pill.is-pending {
   color: var(--vvitu-secondary);
   background: var(--vvitu-bg-warm-tint);
@@ -8728,40 +8842,53 @@
 }
 
 // ===============================================================
-// NATIVE SELECT INSIDE THE REGISTRATION INPUT SHELL
+// NO FORM CONTROL UNDER 16px ON A TOUCH DEVICE
 // ---------------------------------------------------------------
-// `.vvitu-reg-input-wrap input, select` already gives a select the same box as
-// every text field, so a wrapped select needs only two things: the browser's
-// own arrow suppressed, and room on the right for the chevron drawn in the
-// markup. Without `appearance: none` the native arrow sits on top of ours.
+// iOS Safari — iPhone AND iPad — zooms the page in whenever it focuses a form
+// control whose computed font-size is below 16px. Not a preference, not a
+// setting: 16px is the threshold, and every control in this form sat at 12.5px,
+// so tapping ANY field zoomed the page and left the student to pinch back out.
+// `maximumScale` is deliberately not set in app/layout.jsx — locking zoom is an
+// accessibility regression and the wrong way to buy this off. Meeting the
+// threshold is the right way.
 //
-// A native select is deliberate here rather than the custom picker the branch
-// field uses: four options that differ by one word do not need a searchable
-// listbox, and the OS picker is faster to answer on a phone, which is where
-// most of these registrations come from.
-.vvitu-reg-select-wrap {
-  select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    padding-right: 38px;
-    cursor: pointer;
+// The zoom also re-scales the viewport underneath an open OS picker, which is
+// the most likely reason the year dropdown was dismissing itself on phones and
+// tablets. That picker is gone now (see YearSelect in registration-modal.jsx),
+// but this stays: the text fields have the same problem, and it is a defect in
+// its own right on the devices most of these registrations arrive from.
+//
+// Scoped to coarse pointers so the desktop form is untouched — a 16px value in
+// a 42px field is right on a phone and oversized on a mouse-driven screen.
+@media (hover: none) and (pointer: coarse) {
+  .vvitu-reg-form {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+
+      // The placeholder is not what triggers the zoom, so it stays at the size
+      // the form was designed around rather than being dragged up with it.
+      &::placeholder { font-size: 13px; }
+    }
   }
 
-  .vvitu-reg-select-chevron {
-    position: absolute;
-    right: 12px;
-    display: flex;
-    align-items: center;
-    color: var(--vvitu-muted);
-    pointer-events: none;
-    transition: color 0.2s ease;
-  }
+  // The branch and year pickers are <button>s, not form controls, so they never
+  // triggered the zoom — but they sit in the same column as the fields above
+  // and would now read a size smaller than everything around them.
+  .vvitu-reg-select .vvitu-reg-select-trigger,
+  .vvitu-reg-select .vvitu-reg-select-option { font-size: 15px; }
 
-  &:focus-within .vvitu-reg-select-chevron {
-    color: var(--vvitu-primary);
-  }
+  .vvitu-reg-select .vvitu-reg-select-note,
+  .vvitu-reg-select .vvitu-reg-select-opt-note { font-size: 12px; }
 }
+
+// RETIRED: `.vvitu-reg-select-wrap` — the shell that dressed a native <select>
+// as one of the text fields (appearance: none, room for our own chevron). The
+// study-year field was its only user and now renders the in-page YearSelect
+// listbox instead. To bring a native select back, restore this block and the
+// `.vvitu-reg-input-wrap.vvitu-reg-select-wrap` markup — but read the YearSelect
+// comment first, because the OS picker is what the field was moved off.
 
 // ===============================================================
 // "(optional)" MARKER ON A FORM LABEL
