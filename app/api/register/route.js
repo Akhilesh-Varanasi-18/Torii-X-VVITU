@@ -179,7 +179,16 @@ export async function POST(request) {
     // 5. Build the record. Academic fields are stored as numbers (they feed the
     //    dashboard's CGPA bands and backlog split); the time slot keeps its label
     //    and key; the pre-fill block records where the details came from.
-    const { cgpa, activeBacklogs, admissionType, diplomaCgpa, timeSlot, timeSlotKey, ...studentValues } = values;
+    const { cgpa, activeBacklogs, admissionType, diplomaCgpa, timeSlot, timeSlotKey, studyYear, studyYearKey, ...studentValues } = values;
+
+    // A year-spanning intake (Moon Coder) takes its year from the student, so
+    // the program's own `yearLabel` would be wrong on the record — it names one
+    // cohort while the batch holds four. Build the label from what they chose.
+    // Every other program keeps its fixed label.
+    const resolvedYearLabel = validated.studyYears && studyYear
+        ? `${studyYear} (${values.passoutYear} passout)`
+        : validated.yearLabel;
+
     const document = {
         ...studentValues,
         // Academics only exist for programs that ask for them. diplomaCgpa is
@@ -189,11 +198,14 @@ export async function POST(request) {
         ...(validated.academics ? { cgpa, activeBacklogs, admissionType } : {}),
         ...(validated.academics && diplomaCgpa !== null ? { diplomaCgpa } : {}),
         ...(validated.timeSlots ? { timeSlot, timeSlotKey } : {}),
+        // Only written by the intakes that ask — on every other program it
+        // would be an empty string reading as "answered, blank".
+        ...(validated.studyYears ? { studyYear, studyYearKey } : {}),
         ...(identity ? { batch: identity.student.batch, prefill: { source: 'skillup-roster', rollKey: identity.rollKey, editedFields: [] } } : {}),
         programName: validated.programName,
         programCode: validated.code,
         programTrack: validated.badge,
-        yearLabel: validated.yearLabel,
+        yearLabel: resolvedYearLabel,
         status: 'registered',
         source: 'vvitu-landing-page',
         createdAt: new Date(),

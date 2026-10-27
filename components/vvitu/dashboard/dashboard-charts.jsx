@@ -27,6 +27,7 @@ import {
     ADMISSION_COLORS,
     ADMISSION_TYPE_COLORS,
     ADMISSION_TYPE_ORDER,
+    STUDY_YEAR_COLORS,
     CGPA_BAND_ORDER,
     CGPA_BAND_COLORS,
     BACKLOG_ORDER,
@@ -416,6 +417,48 @@ export function AdmissionTypeSplit({ data, span = 4 }) {
                             </div>
                         </div>
                     </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── 5c-iv. Which year the hostelers are in ────────────────────────────────
+// Only an intake open to every year produces this (Moon Coder). For every
+// other program the passout year is decided by which program they joined, so
+// they contribute nothing here and the chart describes just the batch that
+// genuinely spans years.
+export function StudyYearSplit({ data, span = 6 }) {
+    const rows = data || [];
+    const total = rows.reduce((s, d) => s + d.value, 0);
+    return (
+        <div className={`dash-card dash-card--${span}`}>
+            <div className="dash-card-head dash-card-head--split">
+                <div>
+                    <h3 className="dash-card-title">Current year</h3>
+                    <p className="dash-card-sub">Which year the registered hostelers are in</p>
+                </div>
+                {total > 0 && (
+                    <div className="dash-stat-chip">
+                        <strong>{total}</strong>
+                        <span>across {rows.filter((d) => d.value > 0).length} years</span>
+                    </div>
+                )}
+            </div>
+            <div className="dash-card-body">
+                {total === 0 ? <EmptyChart label="No year data yet" /> : (
+                    <ResponsiveContainer width="100%" height={240}>
+                        <BarChart data={rows} margin={{ top: 22, right: 8, left: 0, bottom: 0 }} barCategoryGap="30%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                            <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={34} tick={{ fontSize: 12 }} />
+                            <Tooltip cursor={{ fill: 'rgba(237,114,54,0.06)' }} content={<ChartTooltip valueSuffix=" students" />} />
+                            <Bar dataKey="value" name="Students" radius={[8, 8, 0, 0]} maxBarSize={54}>
+                                {rows.map((d, i) => <Cell key={d.name} fill={STUDY_YEAR_COLORS[i % STUDY_YEAR_COLORS.length]} />)}
+                                <LabelList dataKey="value" position="top" style={{ fontSize: 11, fontWeight: 700, fill: BRAND.ink }} />
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
                 )}
             </div>
         </div>

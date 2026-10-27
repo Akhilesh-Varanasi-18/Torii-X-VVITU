@@ -84,7 +84,8 @@ const EMPTY_FORM = {
     // Both optional — a blank rank means "not given", never zero.
     eapcetRank: '',
     jeeRank: '',
-    timeSlot: ''
+    timeSlot: '',
+    studyYear: ''
 };
 
 const ADMISSION_OPTIONS = [
@@ -470,6 +471,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
     // leaving the step out entirely.
     const groupReady = Boolean(program.whatsappGroup) && isWhatsAppLinkReady(program.whatsappGroup.url);
     const slotLabel = (key) => program.timeSlots?.find((s) => s.key === key)?.label || '';
+    const studyYearOption = (key) => program.studyYears?.find((y) => y.key === key) || null;
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -520,7 +522,8 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
             branch: student.branch || '',
             cgpa: '',
             activeBacklogs: '',
-            timeSlot: ''
+            timeSlot: '',
+            studyYear: ''
         }));
         setErrors({});
         setSubmitError('');
@@ -781,6 +784,53 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
     );
 
     // The class time slot — exactly one of the offered slots must be chosen.
+    // Asked only by an intake that spans years (Moon Coder). It is the single
+    // thing that decides the student's passout year, so it is required and it
+    // sits at the top of the form — before the details that do not depend on
+    // it — rather than being buried among the academics.
+    //
+    // A <select> rather than the card grid the time slots use: four options
+    // that differ by one word each gain nothing from being tiles, and a native
+    // select is faster to answer on a phone, which is where most of these
+    // registrations come from.
+    const renderStudyYear = () => (
+        <div className={`vvitu-reg-field ${errors.studyYear ? 'has-error' : ''}`}>
+            <label htmlFor="vvitu-reg-studyyear">
+                Which year are you in right now? <span className="required">*</span>
+                <small className="vvitu-reg-hint"> (This batch is open to every year)</small>
+            </label>
+            {/* Wrapped in the same input shell every other field uses, with the
+                icon and the chevron, so it does not land in the middle of the
+                form looking like an unstyled browser default next to the custom
+                branch picker directly above it. */}
+            <div className="vvitu-reg-input-wrap vvitu-reg-select-wrap">
+                <span className="vvitu-reg-input-icon">
+                    <svg {...ico}><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 10h18" /></svg>
+                </span>
+                <select
+                    id="vvitu-reg-studyyear"
+                    name="studyYear"
+                    value={formData.studyYear || ''}
+                    onChange={handleChange}
+                    aria-invalid={errors.studyYear ? 'true' : undefined}
+                >
+                    <option value="">Select your current year</option>
+                    {program.studyYears.map((y) => (
+                        <option key={y.key} value={y.key}>
+                            {y.label} · {y.passoutYear} passout
+                        </option>
+                    ))}
+                </select>
+                <span className="vvitu-reg-select-chevron" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m6 9 6 6 6-6" />
+                    </svg>
+                </span>
+            </div>
+            {errors.studyYear && <span className="vvitu-reg-error">{errors.studyYear}</span>}
+        </div>
+    );
+
     const renderTimeSlots = () => (
         <div className={`vvitu-reg-field vvitu-reg-slots ${errors.timeSlot ? 'has-error' : ''}`}>
             <label id="vvitu-reg-slot-label">
@@ -1254,7 +1304,11 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                 {errors.programKey && <span className="vvitu-reg-error">{errors.programKey}</span>}
                             </div>
 
-                            {/* Row 7: Academic details — mandatory for programs that collect them */}
+                            {/* Row 7: Current year — only for an intake open to every
+                                year, where it is what produces the passout year. */}
+                            {program.studyYears && renderStudyYear()}
+
+                            {/* Row 8: Academic details — mandatory for programs that collect them */}
                             {program.academics && (
                                 <div className="vvitu-reg-field vvitu-reg-academics">
                                     <label>
@@ -1266,7 +1320,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                 </div>
                             )}
 
-                            {/* Row 8: Class time slot — for programs that offer them */}
+                            {/* Row 9: Class time slot — for programs that offer them */}
                             {program.timeSlots && renderTimeSlots()}
 
                             {/* Mapped program live preview */}
@@ -1285,7 +1339,14 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                     <div className="vvitu-reg-program-details">
                                         <div className="vvitu-reg-program-tags">
                                             <span className="vvitu-reg-tag-badge" style={{ color: program.color }}>{program.badge}</span>
-                                            <span className="vvitu-reg-tag-year">{program.yearLabel}</span>
+                                            {/* A year-spanning intake (Moon Coder) has no single year
+                                                to show here — printing the program's nominal one would
+                                                tell a final-year hosteler they are in the 2nd-year
+                                                batch. Its audience line carries the real rule instead,
+                                                and the student picks their year in the form below. */}
+                                            {program.studyYears
+                                                ? <span className="vvitu-reg-tag-year">{program.audience}</span>
+                                                : <span className="vvitu-reg-tag-year">{program.yearLabel}</span>}
                                         </div>
                                         <h4 className="vvitu-reg-program-title">
                                             Assigned Program: <strong style={{ color: program.color }}>{program.programName}</strong>
@@ -1363,7 +1424,14 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                 ['JEE Rank', formData.jeeRank],
                                 ['SkillUp Batch', formData.batch || identity?.batch],
                                 program.timeSlots ? ['Class Time Slot', slotLabel(formData.timeSlot) || formData.timeSlot] : null,
-                                ['Passout Year', program.passoutYear],
+                                // For a year-spanning intake both of these come from what
+                                // the student picked, not from the program — showing the
+                                // program's nominal year back to them would contradict
+                                // the answer they just gave.
+                                program.studyYears ? ['Current Year', studyYearOption(formData.studyYear)?.label] : null,
+                                ['Passout Year', program.studyYears
+                                    ? studyYearOption(formData.studyYear)?.passoutYear
+                                    : program.passoutYear],
                                 ['Assigned Program', program.programName]
                             ]
                                 .filter((row) => row && row[1] !== undefined && row[1] !== null && row[1] !== '')

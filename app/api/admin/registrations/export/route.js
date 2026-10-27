@@ -35,6 +35,10 @@ const COLUMNS = [
     { header: 'Admission Type', key: 'admissionType', width: 16 },
     { header: 'Diploma CGPA', key: 'diplomaCgpa', width: 14 },
     { header: 'SkillUp Batch', key: 'batch', width: 14 },
+    // Only Moon Coder writes this — it is the one intake open to every year, so
+    // the column is blank for everyone else, whose passout year is fixed by
+    // which program they joined.
+    { header: 'Current Year', key: 'studyYear', width: 14 },
     { header: 'Time Slot', key: 'timeSlot', width: 20 },
     // Pre-fill audit: which roster entry the form was filled from and what the
     // student changed before confirming.

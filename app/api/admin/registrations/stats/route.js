@@ -104,6 +104,14 @@ export async function GET(request) {
                             { $match: { activeBacklogs: { $type: 'number' } } },
                             { $group: { _id: { $min: ['$activeBacklogs', 3] }, n: { $sum: 1 } } }
                         ],
+                        // Which year the student is in, for the one intake open to
+                        // every year (Moon Coder). Everyone else has a fixed
+                        // passout year, so they contribute nothing here and the
+                        // chart shows only the batch that actually spans years.
+                        byStudyYear: [
+                            { $match: { studyYear: { $type: 'string', $ne: '' } } },
+                            { $group: { _id: '$studyYear', n: { $sum: 1 } } }
+                        ],
                         // How the student joined — regular first-year entry vs
                         // lateral entry from a diploma. Collected by every intake
                         // with `academics: true` and written to the Excel export,
@@ -239,6 +247,11 @@ export async function GET(request) {
             // one hardcoded program, so adding `academics: true` to an intake is
             // all it takes for its charts to appear.
             academics: Boolean(p.academics),
+            // True for an intake open to every year, which is the only kind that
+            // produces a "Current Year" distribution worth charting. Same idea
+            // as `academics` above: the dashboard keys off the capability, never
+            // off a program name.
+            studyYears: Boolean(p.studyYears),
             total: perProgramCount.get(p.code) || 0
         }));
 
@@ -287,6 +300,17 @@ export async function GET(request) {
         const byDiplomaCgpaBand = CGPA_BAND_LABELS.map((name, i) => ({ name, value: diplomaCounts.get(CGPA_BOUNDARIES[i]) || 0 }));
 
         const byAdmissionType = clean(facet.byAdmissionType).map((r) => ({ name: r._id, value: r.n }));
+
+        // Fixed order so the bars do not reshuffle as registrations arrive. The
+        // labels must match STUDY_YEARS in lib/registration-schema.js.
+        const STUDY_YEAR_ORDER = ['1st Year', '2nd Year', '3rd Year', 'Final Year'];
+        const studyYearCounts = new Map(clean(facet.byStudyYear).map((r) => [r._id, r.n]));
+        const byStudyYear = STUDY_YEAR_ORDER
+            .map((name) => ({ name, value: studyYearCounts.get(name) || 0 }))
+            // Anything unexpected (a renamed year) still shows rather than vanishing.
+            .concat([...studyYearCounts.keys()]
+                .filter((k) => !STUDY_YEAR_ORDER.includes(k))
+                .map((name) => ({ name, value: studyYearCounts.get(name) })));
 
         const academicsRow = facet.academics[0] || null;
         const academics = {
@@ -356,6 +380,7 @@ export async function GET(request) {
             byBacklogs,
             byDiplomaCgpaBand,
             byAdmissionType,
+            byStudyYear,
             academics,
             byTimeSlot,
             slotByBatch,

@@ -639,172 +639,188 @@ const COURSE_AWS_CLOUD_DEVOPS = {
                 ]
             };
 
-// Offered by Moon Coder. This syllabus deliberately contains NO AI content —
-// Moon Coder is not an AI track, so the Now Assist / GenAI / AI Agents material
-// this course used to carry was removed: one whole module (the old Module 14,
-// "AI Agents & Generative AI Development"), the predictive-intelligence and Now
-// Assist topics inside the reporting module, one learning outcome, and the AI
-// half of the capstone. 15 modules became 14. If AI is ever wanted back it
-// belongs in a course of its own rather than threaded through this one.
+// Offered by Moon Coder. NO AI CONTENT, deliberately — Moon Coder is not an AI
+// track, so the Now Assist / GenAI / AI Agents material this course used to
+// carry is gone and must not come back here; it belongs in a course of its own.
+//
+// Built from the two official syllabus sheets VVITU supplied (2026-10-27), which
+// are organised by CERTIFICATION, not by teaching order:
+//   • CSA  — Certified System Administrator (6 exam domains)
+//   • CAD  — Certified Application Developer (3 domains)
+// Those module names and topics are the spine. The earlier VVITU syllabus was a
+// different cut of the same material, so rather than keeping both and
+// duplicating half of it, every topic from the old version was folded into the
+// domain it belongs to. Nothing was dropped: users/groups/roles, update sets,
+// import sets, data policies, scheduled jobs, system logs, Flow Designer,
+// IntegrationHub and the ATF work all survive, just under the official headings.
+//
+// Each track ends with an exam checkpoint. Those two modules are NOT on the
+// client sheets — they are kept from the previous syllabus because the course
+// outcomes promise CSA and CAD preparation, and a certification track with no
+// revision module does not deliver that.
 const COURSE_SERVICENOW = {
-                id: 'moon-servicenow',
-                title: 'ServiceNow Platform Engineering',
-                level: 'Intermediate to Advanced',
-                prerequisites: 'JavaScript Fundamentals & Relational Data Basics',
-                overview: 'Master ServiceNow administration, GlideRecord scripting, Flow Designer, IntegrationHub, and CSA / CAD certification prep.',
-                outcomes: [
-                    'Configure ServiceNow tables, forms, lists, UI policies, and business rules',
-                    'Implement Access Control Lists (ACLs), Security Rules, and delegated administration',
-                    'Develop server-side & client-side scripts using GlideRecord, GlideAjax, and Script Includes',
-                    'Automate enterprise workflows with Flow Designer and build integrations via IntegrationHub',
-                    'Build reports, dashboards and Performance Analytics over enterprise service data',
-                    'Prepare for Certified System Administrator (CSA) & Certified Application Developer (CAD) exams'
-                ],
-                modules: [
-                    {
-                        moduleNumber: 'Module 1',
-                        title: 'Platform Orientation & Core Concepts',
-                        duration: 'CSA Track',
-                        topics: [
-                            'Now Platform Architecture, Instance Model & PDI Setup',
-                            'Platform Navigation: UI16, Lists, Filters, Forms & Related Lists',
-                            'Tables & Data Model: Fields, Field Types, Dictionary & References'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 2',
-                        title: 'Users, Groups, Roles & Security Basics',
-                        duration: 'CSA Track',
-                        topics: [
-                            'Users, Groups, Roles & Company/Department Records',
-                            'Introduction to Access Control Lists (ACLs)',
-                            'Delegated Administration & Role Hierarchy'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 3',
-                        title: 'Forms, Lists & Client-Side Configuration',
-                        duration: 'CSA Track',
-                        topics: [
-                            'Form & List Layout Customization & List Control',
-                            'UI Policies vs Client Scripts Best Practices',
-                            'Business Rules (Before, After, Async, Display)'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 4',
-                        title: 'Notifications, SLAs & Data Management',
-                        duration: 'CSA Track',
-                        topics: [
-                            'Email Notifications, Templates & SLA / OLA Configuration',
-                            'Update Sets: Creation, Capturing & Instance Migration',
-                            'Import Sets & Transform Maps: Coalescing & Field Mapping'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 5',
-                        title: 'ITSM Core Applications & CMDB',
-                        duration: 'CSA Track',
-                        topics: [
-                            'Incident Management Lifecycle, States & Assignment',
-                            'Problem & Change Management (CAB & Risk Assessment)',
-                            'Service Catalog, Catalog Items, Variables & Record Producers',
-                            'Configuration Management Database (CMDB) & Discovery Overview'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 6',
-                        title: 'Advanced Administration & Security',
-                        duration: 'CSA Track',
-                        topics: [
-                            'Access Control Lists (ACL) Deep-Dive: Roles, Conditions & Scripting',
-                            'Data Policies, System Properties & Scheduled Jobs',
-                            'System Logs, Troubleshooting & Script Debugger Basics'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 7',
-                        title: 'Reporting, Dashboards & Performance Analytics',
-                        duration: 'CSA Track',
-                        topics: [
-                            'Reports, Report Types, Gauges & Scheduled Report Delivery',
-                            'Dashboards, Widgets, Interactive Filters & Sharing',
-                            'Performance Analytics: Indicators, Breakdowns & Time Series'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 8',
-                        title: 'CSA Exam Prep & Certification Checkpoint',
-                        duration: 'CSA Track',
-                        topics: [
-                            'Full CSA Domain Review: Interface, UI, Users & Security',
-                            'Automated Test Framework (ATF) Introduction',
-                            'Timed Full-Length Mock Exams & Gap Analysis',
-                            'Checkpoint: Certified System Administrator (CSA) Prep'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 9',
-                        title: 'Scripting Foundations (Server & Client)',
-                        duration: 'CAD Track',
-                        topics: [
-                            'JavaScript Refresher for ServiceNow (ES5 / ES6 Focus)',
-                            'Server-Side: GlideRecord, GlideAggregate & Script Includes',
-                            'Client-Side: GlideForm (g_form), GlideUser (g_user) & GlideAjax',
-                            'Debugging: Background Scripts & gs.info Best Practices'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 10',
-                        title: 'Scoped Application Development',
-                        duration: 'CAD Track',
-                        topics: [
-                            'ServiceNow Studio IDE & Scoped Application Architecture',
-                            'Custom Tables, Application Menus & Cross-Scope Access',
-                            'Scoped Business Rules, Script Includes & Client Scripts'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 11',
-                        title: 'Custom UI & Access Control',
-                        duration: 'CAD Track',
-                        topics: [
-                            'UI Actions, UI Pages & UI Macros Customization',
-                            'Scoped Access Control Lists (ACLs) & Custom Role Design'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 12',
-                        title: 'Flow Designer & Process Automation',
-                        duration: 'CAD Track',
-                        topics: [
-                            'Flow Designer: Triggers, Actions, Flows vs Subflows',
-                            'Advanced Flow Automation: Approvals, Error Handling & Custom Actions'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 13',
-                        title: 'IntegrationHub & Web Services',
-                        duration: 'CAD Track',
-                        topics: [
-                            'Scripted REST APIs, Inbound REST Messages & SOAP Basics',
-                            'IntegrationHub Spokes, Connections & Credential Aliases',
-                            'Building Custom IntegrationHub Actions & Data Pipelines'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 14',
-                        title: 'Testing, Capstone & CAD Exam Prep',
-                        duration: 'CAD Track',
-                        topics: [
-                            'Automated Test Framework (ATF) Test Suites for Scoped Apps',
-                            'Performance Optimization & GlideRecord Anti-Patterns Review',
-                            'Capstone Project: Custom Scoped App with Flow Automation & IntegrationHub',
-                            'Full CAD Domain Review, Mock Exams & Exam Checkpoint'
-                        ]
-                    }
-                ]
-            };
+    id: 'moon-servicenow',
+    title: 'ServiceNow Platform Engineering',
+    level: 'Intermediate to Advanced',
+    prerequisites: 'JavaScript Fundamentals & Relational Data Basics',
+    overview: 'Two certification tracks in one course — Certified System Administrator (CSA) then Certified Application Developer (CAD) — covering platform administration, ITSM, data and access control, then scripting, scoped app development, Flow Designer and integrations.',
+    outcomes: [
+        'Navigate and configure a ServiceNow instance: applications, plugins, UI and personalization',
+        'Configure lists, forms, UI policies and business rules across Incident, Problem and Change',
+        'Run Self Service: Knowledge, Service Catalog, record producers and Virtual Agent',
+        'Model data properly — tables, dictionary, CMDB, import sets and access control',
+        'Script the platform server-side and client-side with the Glide APIs',
+        'Build scoped applications, automate with Flow Designer and integrate over REST and SOAP',
+        'Sit the Certified System Administrator (CSA) and Certified Application Developer (CAD) exams'
+    ],
+    modules: [
+        {
+            moduleNumber: 'Module 1',
+            title: 'Platform Overview and Navigation',
+            duration: 'CSA Track',
+            topics: [
+                'ServiceNow Platform overview',
+                'Platform capabilities and services',
+                'The ServiceNow Instance: architecture, instance model & PDI setup',
+                'Next Experience Unified Navigation',
+                'Platform navigation: lists, forms and related lists'
+            ]
+        },
+        {
+            moduleNumber: 'Module 2',
+            title: 'Instance Configuration',
+            duration: 'CSA Track',
+            topics: [
+                'Installing applications and plugins',
+                'Personalizing / customizing the instance',
+                'Common user interfaces in the Platform',
+                'System properties, data policies and scheduled jobs',
+                'System logs, troubleshooting and the script debugger'
+            ]
+        },
+        {
+            moduleNumber: 'Module 3',
+            title: 'Configuring Applications for Collaboration',
+            duration: 'CSA Track',
+            topics: [
+                'Lists, Filters and Tags',
+                'Lists and Forms',
+                'Form Configuration: layout, list control, UI policies vs client scripts',
+                'Incident Management lifecycle, states and assignment',
+                'Change Management (CAB and risk assessment)',
+                'Problem Management',
+                'Visual Task Boards (VTBs)',
+                'Reporting and Dashboards: report types, gauges, widgets, interactive filters',
+                'Performance Analytics: indicators, breakdowns and time series',
+                'Notifications: email notifications, templates, SLA / OLA configuration'
+            ]
+        },
+        {
+            moduleNumber: 'Module 4',
+            title: 'Self Service & Automation',
+            duration: 'CSA Track',
+            topics: [
+                'Knowledge Management',
+                'Service Catalog: catalog items, variables and record producers',
+                'Creation of Applications and modules',
+                'Virtual Agent'
+            ]
+        },
+        {
+            moduleNumber: 'Module 5',
+            title: 'Database Management',
+            duration: 'CSA Track',
+            topics: [
+                'Data schema and importing data: import sets, transform maps, coalescing & field mapping',
+                'Tables & data model: fields, field types, dictionary and references',
+                'Users, groups, roles and company / department records',
+                'Application / Access Control: ACL deep-dive, conditions, scripting and delegated administration',
+                'Configuration Management Database (CMDB) and Discovery overview'
+            ]
+        },
+        {
+            moduleNumber: 'Module 6',
+            title: 'Data Migration and Integration',
+            duration: 'CSA Track',
+            topics: [
+                'UI Policies',
+                'Business Rules (before, after, async, display)',
+                'Update Sets: creation, capturing and instance migration'
+            ]
+        },
+        {
+            moduleNumber: 'Module 7',
+            title: 'CSA Exam Prep & Certification Checkpoint',
+            duration: 'CSA Track',
+            topics: [
+                'Full CSA domain review: interface, UI, users and security',
+                'Automated Test Framework (ATF) introduction',
+                'Timed full-length mock exams and gap analysis',
+                'Checkpoint: Certified System Administrator (CSA)'
+            ]
+        },
+        {
+            moduleNumber: 'Module 8',
+            title: 'Application Automation',
+            duration: 'CAD Track',
+            topics: [
+                'JavaScript Fundamentals (ES5 / ES6 for ServiceNow)',
+                'Glide API overview: server-side vs client-side',
+                'GlideRecord: querying, inserting, updating and deleting',
+                'GlideForm (g_form): reading and controlling the form',
+                'GlideUser (g_user): roles and session data on the client',
+                'Client Scripts: onLoad, onChange, onSubmit and onCellEdit',
+                'Debugging: background scripts and gs.info best practices'
+            ]
+        },
+        {
+            moduleNumber: 'Module 9',
+            title: 'Application User Interface',
+            duration: 'CAD Track',
+            topics: [
+                'UI Actions, UI Pages and UI Macros',
+                'Scheduled Jobs and scheduled script execution',
+                'ACLs: scoped access control and custom role design',
+                'Business Rules in scoped applications, with Script Includes'
+            ]
+        },
+        {
+            moduleNumber: 'Module 10',
+            title: 'Designing & Creating Applications',
+            duration: 'CAD Track',
+            topics: [
+                'GlideAjax: calling Script Includes from the client',
+                'UI Policies in scoped applications',
+                'SLAs and SLM: definitions, schedules and breach handling',
+                'REST & SOAP APIs: scripted REST APIs, inbound REST messages, SOAP basics',
+                'IntegrationHub: spokes, connections, credential aliases and custom actions',
+                'Scoped Applications & Studio: architecture, custom tables, menus, cross-scope access',
+                'Flow Designer: triggers, actions, flows vs subflows, approvals and error handling'
+            ]
+        },
+        {
+            moduleNumber: 'Module 11',
+            title: 'Server-Side Glide APIs',
+            duration: 'CAD Track',
+            topics: [
+                'GlideSystem (gs): session, user, logging and utility methods',
+                'GlideAggregate: counts, sums and grouped aggregation',
+                'GlideDate, GlideDateTime and GlideDuration: date maths and time zones'
+            ]
+        },
+        {
+            moduleNumber: 'Module 12',
+            title: 'Testing, Capstone & CAD Exam Prep',
+            duration: 'CAD Track',
+            topics: [
+                'Automated Test Framework (ATF) test suites for scoped apps',
+                'Performance optimization and GlideRecord anti-patterns review',
+                'Capstone project: custom scoped app with Flow Automation & IntegrationHub',
+                'Full CAD domain review, mock exams and exam checkpoint'
+            ]
+        }
+    ]
+};
 
 
 // ── Shared course objects ───────────────────────────────────────────────────
@@ -993,19 +1009,359 @@ const COURSE_GOOGLE_FLUTTER = {
 
 
 // ── Data Analytics (Moon Coder) ─────────────────────────────────────────────
-// The fourth Moon Coder track. VVITU has not supplied the module breakdown yet,
-// so `modules` is deliberately an EMPTY ARRAY rather than invented content — the
-// syllabus modal reads its length and renders "Syllabus coming soon" instead of
-// a module list, and the course card says the same rather than claiming
-// "0 Modules". Drop the real modules in here when they arrive; nothing else
-// needs touching.
+// Built from the syllabus VVITU supplied on 2026-10-27. Three tools, taught in
+// order: Excel (10 modules) → Power BI (10) → Tableau (5).
+//
+// The source sheet restarts its numbering at "Module 1" for each tool. Here the
+// modules run 1–25 straight through and the TOOL is carried in `duration`,
+// which is the same slot the ServiceNow course uses for CSA / CAD. A flat list
+// with three "Module 1"s in it would read as a mistake.
 const COURSE_DATA_ANALYTICS = {
     id: 'moon-data-analytics',
     title: 'Data Analytics',
     level: 'Beginner to Advanced',
-    prerequisites: 'Basic Programming Fundamentals',
-    overview: 'The data track of the Moon Coder batch — turning raw data into decisions. The detailed module breakdown is being finalised with VVITU and will be published here.',
-    modules: []
+    prerequisites: 'Basic computer literacy — no prior analytics experience needed',
+    overview: 'Twenty-five modules across the three tools analysts are actually hired for: Excel from formulas to Power Query and dashboards, Power BI from data modelling through DAX to publishing and row-level security, then Tableau from first chart to published stories.',
+    outcomes: [
+        'Clean, shape and model real datasets in Excel with Power Query and Power Pivot',
+        'Build PivotTables, dynamic array formulas and interactive Excel dashboards',
+        'Model data properly in Power BI — star schemas, relationships and date tables',
+        'Write DAX from aggregations through CALCULATE, context transition and time intelligence',
+        'Design readable reports with drill-through, bookmarks and custom tooltips',
+        'Publish to the Power BI Service with scheduled refresh and row-level security',
+        'Build and publish Tableau dashboards and data stories',
+        'Deliver two end-to-end capstone projects: an Excel dashboard and a Power BI report'
+    ],
+    modules: [
+        {
+            moduleNumber: 'Module 1',
+            title: 'Excel Foundations for Analytics',
+            duration: 'Excel',
+            topics: [
+                'Excel interface, workbooks and worksheets',
+                'Data types and cell formatting',
+                'Cell references: relative, absolute, mixed',
+                'Basic formulas and operators',
+                'Named ranges',
+                'Keyboard shortcuts for productivity'
+            ]
+        },
+        {
+            moduleNumber: 'Module 2',
+            title: 'Data Cleaning & Preparation',
+            duration: 'Excel',
+            topics: [
+                'Removing duplicates and blanks',
+                'Text to Columns and Flash Fill',
+                'TRIM, CLEAN, PROPER, UPPER, LOWER',
+                'LEFT, RIGHT, MID, LEN, FIND, SUBSTITUTE',
+                'Data Validation and drop-down lists',
+                'Excel Tables (Ctrl+T) and structured references',
+                'Handling errors and number formats'
+            ]
+        },
+        {
+            moduleNumber: 'Module 3',
+            title: 'Logical & Statistical Functions',
+            duration: 'Excel',
+            topics: [
+                'IF, nested IF and IFS',
+                'AND, OR, NOT, IFERROR',
+                'COUNTIF(S), SUMIF(S), AVERAGEIF(S)',
+                'MAXIFS and MINIFS',
+                'Statistical functions: MEDIAN, MODE, STDEV, PERCENTILE',
+                'Date functions: TODAY, DATEDIF, EOMONTH, NETWORKDAYS'
+            ]
+        },
+        {
+            moduleNumber: 'Module 4',
+            title: 'Lookup & Dynamic Array Functions',
+            duration: 'Excel',
+            topics: [
+                'VLOOKUP and HLOOKUP',
+                'INDEX and MATCH',
+                'XLOOKUP and XMATCH',
+                'FILTER, SORT, SORTBY, UNIQUE',
+                'SEQUENCE and spill ranges',
+                'LET and LAMBDA functions',
+                'INDIRECT and OFFSET'
+            ]
+        },
+        {
+            moduleNumber: 'Module 5',
+            title: 'PivotTables & PivotCharts',
+            duration: 'Excel',
+            topics: [
+                'Creating PivotTables',
+                'Grouping dates and numbers',
+                'Calculated fields and items',
+                'Show Values As (% of total, running total)',
+                'Slicers and Timelines',
+                'PivotCharts',
+                'Refreshing and changing data source'
+            ]
+        },
+        {
+            moduleNumber: 'Module 6',
+            title: 'Data Visualization in Excel',
+            duration: 'Excel',
+            topics: [
+                'Choosing the right chart type',
+                'Column, bar, line and pie charts',
+                'Combo and dual-axis charts',
+                'Sparklines',
+                'Conditional formatting and icon sets',
+                'Waterfall, histogram and map charts'
+            ]
+        },
+        {
+            moduleNumber: 'Module 7',
+            title: 'Power Query (Get & Transform)',
+            duration: 'Excel',
+            topics: [
+                'Importing data from CSV, Excel, folder and web',
+                'Power Query Editor interface',
+                'Transforming columns and data types',
+                'Merge and Append queries',
+                'Pivot and Unpivot',
+                'Applied steps and query refresh'
+            ]
+        },
+        {
+            moduleNumber: 'Module 8',
+            title: 'Power Pivot & Data Modeling',
+            duration: 'Excel',
+            topics: [
+                'Introduction to the Data Model',
+                'Creating relationships between tables',
+                'Star schema basics',
+                'Introduction to DAX in Power Pivot',
+                'Measures vs calculated columns',
+                'Building multi-table PivotTables'
+            ]
+        },
+        {
+            moduleNumber: 'Module 9',
+            title: 'What-If Analysis & Automation',
+            duration: 'Excel',
+            topics: [
+                'Goal Seek',
+                'Scenario Manager',
+                'Data Tables (one and two variable)',
+                'Solver add-in',
+                'Recording macros',
+                'Introduction to VBA'
+            ]
+        },
+        {
+            moduleNumber: 'Module 10',
+            title: 'Excel Dashboard Project',
+            duration: 'Excel',
+            topics: [
+                'Dashboard planning and KPI selection',
+                'Designing layout and theme',
+                'Interactive dashboard with slicers',
+                'Dynamic charts using formulas',
+                'Protecting sheets and sharing',
+                'Capstone: end-to-end sales dashboard'
+            ]
+        },
+        {
+            moduleNumber: 'Module 11',
+            title: 'Introduction to Power BI',
+            duration: 'Power BI',
+            topics: [
+                'What is Business Intelligence',
+                'Power BI Desktop, Service and Mobile',
+                'Installing Power BI Desktop',
+                'Power BI interface: Report, Data, Model views',
+                'Power BI workflow: Get data to Publish'
+            ]
+        },
+        {
+            moduleNumber: 'Module 12',
+            title: 'Data Connection & Power Query',
+            duration: 'Power BI',
+            topics: [
+                'Connecting to Excel, CSV, SQL and web sources',
+                'Import vs DirectQuery modes',
+                'Power Query Editor transformations',
+                'Merge and Append queries',
+                'Pivot, Unpivot and column splitting',
+                'Custom and conditional columns',
+                'Parameters and query folding',
+                'Introduction to M language'
+            ]
+        },
+        {
+            moduleNumber: 'Module 13',
+            title: 'Data Modeling',
+            duration: 'Power BI',
+            topics: [
+                'Fact and dimension tables',
+                'Star and snowflake schema',
+                'Relationships and cardinality',
+                'Cross-filter direction',
+                'Creating a Date (calendar) table',
+                'Hierarchies',
+                'Model optimization best practices'
+            ]
+        },
+        {
+            moduleNumber: 'Module 14',
+            title: 'DAX Fundamentals',
+            duration: 'Power BI',
+            topics: [
+                'DAX syntax and data types',
+                'Calculated columns vs measures',
+                'Aggregation functions: SUM, AVERAGE, COUNT, DISTINCTCOUNT',
+                'Iterator functions: SUMX, AVERAGEX',
+                'Logical functions: IF, SWITCH',
+                'Text and date functions in DAX'
+            ]
+        },
+        {
+            moduleNumber: 'Module 15',
+            title: 'Advanced DAX',
+            duration: 'Power BI',
+            topics: [
+                'Row context vs filter context',
+                'CALCULATE and context transition',
+                'FILTER, ALL, ALLEXCEPT, REMOVEFILTERS',
+                'Time intelligence: TOTALYTD, SAMEPERIODLASTYEAR, DATEADD',
+                'Variables (VAR / RETURN)',
+                'RANKX and TOPN',
+                'RELATED and RELATEDTABLE',
+                'USERELATIONSHIP and inactive relationships'
+            ]
+        },
+        {
+            moduleNumber: 'Module 16',
+            title: 'Data Visualization & Report Design',
+            duration: 'Power BI',
+            topics: [
+                'Core visuals: bar, line, area, pie, donut',
+                'Table, matrix and card visuals',
+                'Maps and geo visuals',
+                'KPI and gauge visuals',
+                'Slicers and filters pane',
+                'Conditional formatting',
+                'Themes and report layout design',
+                'Custom visuals from AppSource'
+            ]
+        },
+        {
+            moduleNumber: 'Module 17',
+            title: 'Interactive & Advanced Reports',
+            duration: 'Power BI',
+            topics: [
+                'Drill-down and drill-through',
+                'Bookmarks and Selection pane',
+                'Buttons and page navigation',
+                'Custom tooltips',
+                'Field parameters and What-If parameters',
+                'Smart visuals: Key Influencers, Decomposition Tree and Q&A'
+            ]
+        },
+        {
+            moduleNumber: 'Module 18',
+            title: 'Power BI Service & Collaboration',
+            duration: 'Power BI',
+            topics: [
+                'Publishing reports to Power BI Service',
+                'Workspaces and apps',
+                'Dashboards and pinning tiles',
+                'Scheduled refresh and Gateway',
+                'Sharing and permissions',
+                'Subscriptions and alerts'
+            ]
+        },
+        {
+            moduleNumber: 'Module 19',
+            title: 'Security & Performance',
+            duration: 'Power BI',
+            topics: [
+                'Row-Level Security (static and dynamic)',
+                'Testing roles',
+                'Performance Analyzer',
+                'Reducing model size',
+                'Incremental refresh basics'
+            ]
+        },
+        {
+            moduleNumber: 'Module 20',
+            title: 'Power BI Capstone Project',
+            duration: 'Power BI',
+            topics: [
+                'Business requirement gathering',
+                'Data preparation and modeling',
+                'DAX measures for KPIs',
+                'Multi-page interactive report',
+                'Publishing and presenting insights'
+            ]
+        },
+        {
+            moduleNumber: 'Module 21',
+            title: 'Introduction to Tableau',
+            duration: 'Tableau',
+            topics: [
+                'What is Tableau and its products',
+                'Installing Tableau Public / Desktop',
+                'Tableau interface and workspace',
+                'Dimensions vs Measures',
+                'Discrete vs Continuous fields'
+            ]
+        },
+        {
+            moduleNumber: 'Module 22',
+            title: 'Connecting & Preparing Data',
+            duration: 'Tableau',
+            topics: [
+                'Connecting to Excel and CSV',
+                'Live vs Extract connections',
+                'Data Source page and field types',
+                'Joins, Unions and Relationships',
+                'Data Interpreter and renaming fields'
+            ]
+        },
+        {
+            moduleNumber: 'Module 23',
+            title: 'Basic Charts',
+            duration: 'Tableau',
+            topics: [
+                'Bar and column charts',
+                'Line charts',
+                'Pie charts',
+                'Text tables and highlight tables',
+                'Scatter plots',
+                'Maps (symbol and filled)'
+            ]
+        },
+        {
+            moduleNumber: 'Module 24',
+            title: 'Filters, Sorting & Calculations',
+            duration: 'Tableau',
+            topics: [
+                'Filters and quick filters',
+                'Sorting and grouping',
+                'Sets and hierarchies',
+                'Basic calculated fields',
+                'Quick table calculations'
+            ]
+        },
+        {
+            moduleNumber: 'Module 25',
+            title: 'Dashboards & Stories',
+            duration: 'Tableau',
+            topics: [
+                'Creating a dashboard',
+                'Layout containers and formatting',
+                'Dashboard actions (filter, highlight)',
+                'Creating Stories',
+                'Publishing to Tableau Public'
+            ]
+        }
+    ]
 };
 
 // ── PARKED: Moon Coder's previous curriculum ────────────────────────────────

@@ -14,6 +14,7 @@ import {
     LaptopSplit,
     AdmissionSplit,
     AdmissionTypeSplit,
+    StudyYearSplit,
     LaptopByProgram,
     BranchYearStacked,
     MoonUptake,
@@ -279,6 +280,12 @@ export default function RegistrationsAnalytics() {
     // the moment you selected AI Ready. The flag now travels in the stats
     // payload, so adding `academics: true` to an intake is all it takes.
     const academicPrograms = (programs || []).filter((p) => p.academics);
+    // Same capability-not-name rule: only an intake open to every year has a
+    // current-year distribution worth charting.
+    const yearSpanPrograms = (programs || []).filter((p) => p.studyYears);
+    const showStudyYear = shown === ALL
+        ? yearSpanPrograms.length > 0
+        : Boolean(yearSpanPrograms.find((p) => p.key === shown));
     const showMoon = Boolean(data?.moonCoder) && (shown === ALL || shown === 'mooncoder');
     const showAcademics = shown === ALL
         ? academicPrograms.length > 0
@@ -435,10 +442,22 @@ export default function RegistrationsAnalytics() {
                                 <h2>{data.moonCoder.programName} intake</h2>
                                 {data.moonCoder.open && <span className="dash-section-tag">Registrations open</span>}
                             </div>
+                            {/* MoonUptake and SlotByBatch are PARKED, not deleted.
+                                Both measure against the SkillUp Coder roster —
+                                "registered out of the shortlist, per batch" — and
+                                VVITU's Moon Coder is not roster-gated: it is open to
+                                every hosteler, and `batch` is never written. They
+                                would have drawn a permanently empty chart captioned
+                                with a shortlist that does not exist.
+
+                                What replaces them is the question this intake
+                                actually raises: it spans four years, so which ones
+                                turned up?
+                                    <MoonUptake data={data.moonCoder} span={5} />
+                                    <SlotByBatch data={data.slotByBatch || []} slots={data.moonCoder.timeSlots || []} span={12} /> */}
                             <div className="dash-grid">
-                                <MoonUptake data={data.moonCoder} span={5} />
-                                <TimeSlotSplit data={data.byTimeSlot || []} span={7} />
-                                <SlotByBatch data={data.slotByBatch || []} slots={data.moonCoder.timeSlots || []} span={12} />
+                                {showStudyYear && <StudyYearSplit data={data.byStudyYear || []} span={6} />}
+                                <TimeSlotSplit data={data.byTimeSlot || []} span={showStudyYear ? 6 : 12} />
                             </div>
                         </>
                     )}

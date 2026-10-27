@@ -8726,3 +8726,39 @@
   border-color: rgba(237, 114, 54, 0.28); // --vvitu-secondary
   font-style: normal;
 }
+
+// ===============================================================
+// NATIVE SELECT INSIDE THE REGISTRATION INPUT SHELL
+// ---------------------------------------------------------------
+// `.vvitu-reg-input-wrap input, select` already gives a select the same box as
+// every text field, so a wrapped select needs only two things: the browser's
+// own arrow suppressed, and room on the right for the chevron drawn in the
+// markup. Without `appearance: none` the native arrow sits on top of ours.
+//
+// A native select is deliberate here rather than the custom picker the branch
+// field uses: four options that differ by one word do not need a searchable
+// listbox, and the OS picker is faster to answer on a phone, which is where
+// most of these registrations come from.
+.vvitu-reg-select-wrap {
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 38px;
+    cursor: pointer;
+  }
+
+  .vvitu-reg-select-chevron {
+    position: absolute;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    color: var(--vvitu-muted);
+    pointer-events: none;
+    transition: color 0.2s ease;
+  }
+
+  &:focus-within .vvitu-reg-select-chevron {
+    color: var(--vvitu-primary);
+  }
+}

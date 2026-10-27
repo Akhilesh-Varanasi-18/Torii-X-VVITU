@@ -92,6 +92,10 @@ export const ADMISSION_TYPE_COLORS = {
     'Lateral Entry': BRAND.tertiary
 };
 
+// One colour per study year, 1st through Final. Four stops of the house
+// ramp so the bars read as a progression rather than four unrelated groups.
+export const STUDY_YEAR_COLORS = [BRAND.tertiary, BRAND.secondary, BRAND.primary, BRAND.primaryHover];
+
 // Fixed order so the split bar does not reshuffle as the counts change.
 export const ADMISSION_TYPE_ORDER = ['Regular', 'Lateral Entry'];
 

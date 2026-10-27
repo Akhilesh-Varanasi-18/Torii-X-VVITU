@@ -158,7 +158,7 @@ const coursesList = [
         categoryLabel: 'Platform Eng',
         programName: 'Moon Coder',
         programYear: 'Hostelers',
-        modulesCount: '14 Modules',
+        modulesCount: '12 Modules',
         accentColor: 'var(--vvitu-primary)',
         accentGradient: 'linear-gradient(135deg, var(--vvitu-secondary) 0%, var(--vvitu-primary) 100%)',
         accentBg: 'var(--vvitu-bg-coral-tint)',
@@ -175,7 +175,7 @@ const coursesList = [
         ],
         // 'Now Assist AI' replaced with Performance Analytics — the AI module is
         // gone from the syllabus, so the tag cannot advertise it.
-        tags: ['Now Platform', 'GlideRecord Scripting', 'Flow Designer', 'Performance Analytics', 'CSA & CAD Prep'],
+        tags: ['Now Platform', 'GlideRecord & Glide APIs', 'Flow Designer', 'IntegrationHub', 'CSA & CAD Prep'],
         courseIndex: 2,
     },
 {
@@ -190,7 +190,7 @@ const coursesList = [
         categoryLabel: 'Data',
         programName: 'Moon Coder',
         programYear: 'Hostelers',
-        modulesCount: 'Syllabus coming soon',
+        modulesCount: '25 Modules',
         accentColor: 'var(--vvitu-secondary)',
         accentGradient: 'linear-gradient(135deg, var(--vvitu-tertiary) 0%, var(--vvitu-secondary) 100%)',
         accentBg: 'var(--vvitu-bg-warm-tint)',
@@ -202,12 +202,12 @@ const coursesList = [
                 <circle cx="20" cy="7" r="1.2" />
             </svg>
         ),
-        description: 'The data track of the Moon Coder batch — turning raw data into decisions. Detailed modules are being finalised with VVITU.',
+        description: 'Excel, Power BI and Tableau end to end — cleaning and modelling data, DAX, interactive reports, dashboards and published stories.',
         highlights: [
-            'Part of the four-track Moon Coder batch',
-            'Detailed syllabus publishing soon'
+            'Three tools: Excel, Power BI and Tableau',
+            'Two capstone dashboard projects'
         ],
-        tags: ['Data Foundations', 'Analysis', 'Visualization', 'Reporting'],
+        tags: ['Excel & Power Query', 'Power Pivot', 'Power BI & DAX', 'Tableau', 'Dashboards'],
         courseIndex: 3,
     },
 ];
