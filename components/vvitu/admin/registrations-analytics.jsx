@@ -436,28 +436,32 @@ export default function RegistrationsAnalytics() {
                         </>
                     )}
 
-                    {showMoon && (
+                    {showMoon && showStudyYear && (
                         <>
                             <div className="dash-section-head">
                                 <h2>{data.moonCoder.programName} intake</h2>
                                 {data.moonCoder.open && <span className="dash-section-tag">Registrations open</span>}
                             </div>
-                            {/* MoonUptake and SlotByBatch are PARKED, not deleted.
-                                Both measure against the SkillUp Coder roster —
-                                "registered out of the shortlist, per batch" — and
-                                VVITU's Moon Coder is not roster-gated: it is open to
-                                every hosteler, and `batch` is never written. They
-                                would have drawn a permanently empty chart captioned
-                                with a shortlist that does not exist.
+                            {/* Three charts are PARKED here, not deleted, and all
+                                three for the same reason: they measure something
+                                VVITU's Moon Coder no longer collects.
 
-                                What replaces them is the question this intake
-                                actually raises: it spans four years, so which ones
-                                turned up?
+                                MoonUptake and SlotByBatch count against the SkillUp
+                                Coder roster — "registered out of the shortlist, per
+                                batch" — and this intake is not roster-gated; it is
+                                open to every hosteler and `batch` is never written.
+                                TimeSlotSplit went the same way on 2026-10-27, when
+                                the class-time question was dropped from the form.
+
+                                Each would have drawn a permanently empty chart
+                                captioned with a question nobody is asked. What is
+                                left is the one this intake actually raises: it spans
+                                four years, so which ones turned up?
                                     <MoonUptake data={data.moonCoder} span={5} />
+                                    <TimeSlotSplit data={data.byTimeSlot || []} span={6} />
                                     <SlotByBatch data={data.slotByBatch || []} slots={data.moonCoder.timeSlots || []} span={12} /> */}
                             <div className="dash-grid">
-                                {showStudyYear && <StudyYearSplit data={data.byStudyYear || []} span={6} />}
-                                <TimeSlotSplit data={data.byTimeSlot || []} span={showStudyYear ? 6 : 12} />
+                                <StudyYearSplit data={data.byStudyYear || []} span={12} />
                             </div>
                         </>
                     )}
