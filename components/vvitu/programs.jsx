@@ -161,8 +161,16 @@ const Programs = ({ onOpenRegister }) => {
                                                     </svg>
                                                 </button>
                                             )}
+                                            {/* Usually the passout year, read as a quiet label.
+                                                A program can put its eligibility here instead
+                                                (Moon Coder: "Exclusive for Hostelers") and set
+                                                `yearHighlight` to make the pill an accent one —
+                                                because who the batch excludes is not a detail
+                                                to be skimmed past. */}
                                             {!program.comingSoon && (
-                                                <span className="vvitu-program-year-pill">{withOrdinalSup(program.year)}</span>
+                                                <span className={`vvitu-program-year-pill${program.yearHighlight ? ' is-exclusive' : ''}`}>
+                                                    {withOrdinalSup(program.year)}
+                                                </span>
                                             )}
                                         </div>
                                     </div>

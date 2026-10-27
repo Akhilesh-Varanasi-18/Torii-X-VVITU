@@ -229,11 +229,22 @@ const ProgramDetailModal = ({
                                         )}
                                         <h3 className="vvitu-ccard-title">{course.title}</h3>
                                         <p className="vvitu-ccard-overview">{course.overview}</p>
+                                        {/* A course whose syllabus has not been finalised yet
+                                            carries no modules. Saying "0 Modules" would read as
+                                            a bug rather than as work in progress, so it says so
+                                            plainly instead — and its card does not invite a
+                                            click through to an empty syllabus. */}
                                         <div className="vvitu-ccard-meta-row">
-                                            <span className="vvitu-meta-pill"><IconLayers /> {course.modules.length} Modules</span>
+                                            {course.modules?.length ? (
+                                                <span className="vvitu-meta-pill"><IconLayers /> {course.modules.length} Modules</span>
+                                            ) : (
+                                                <span className="vvitu-meta-pill is-pending"><IconLayers /> Syllabus coming soon</span>
+                                            )}
                                         </div>
                                         <div className="vvitu-ccard-action">
-                                            <span className="vvitu-ccard-btn">Explore Syllabus <IconArrow /></span>
+                                            <span className="vvitu-ccard-btn">
+                                                {course.modules?.length ? 'Explore Syllabus' : 'View Overview'} <IconArrow />
+                                            </span>
                                         </div>
                                     </div>
                                 ))}
@@ -284,14 +295,25 @@ const ProgramDetailModal = ({
                                     <p className="vvitu-syll-hero-lead">{currentCourse.overview}</p>
 
                                     <div className="vvitu-syll-stats">
-                                        <div className="vvitu-syll-stat">
-                                            <span className="vvitu-syll-stat-ic"><IconLayers /></span>
-                                            <span className="vvitu-syll-stat-body"><strong>{currentCourse.modules.length}</strong><span>Modules</span></span>
-                                        </div>
-                                        <div className="vvitu-syll-stat">
-                                            <span className="vvitu-syll-stat-ic"><IconHash /></span>
-                                            <span className="vvitu-syll-stat-body"><strong>{totalTopics}</strong><span>Topics</span></span>
-                                        </div>
+                                        {/* Module and topic counts are meaningless until the
+                                            syllabus lands; one honest line replaces two zeros. */}
+                                        {currentCourse.modules?.length ? (
+                                            <>
+                                                <div className="vvitu-syll-stat">
+                                                    <span className="vvitu-syll-stat-ic"><IconLayers /></span>
+                                                    <span className="vvitu-syll-stat-body"><strong>{currentCourse.modules.length}</strong><span>Modules</span></span>
+                                                </div>
+                                                <div className="vvitu-syll-stat">
+                                                    <span className="vvitu-syll-stat-ic"><IconHash /></span>
+                                                    <span className="vvitu-syll-stat-body"><strong>{totalTopics}</strong><span>Topics</span></span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="vvitu-syll-stat is-text">
+                                                <span className="vvitu-syll-stat-ic"><IconLayers /></span>
+                                                <span className="vvitu-syll-stat-body"><strong>Coming soon</strong><span>Detailed syllabus</span></span>
+                                            </div>
+                                        )}
                                         {currentCourse.level && (
                                             <div className="vvitu-syll-stat is-text">
                                                 <span className="vvitu-syll-stat-ic"><IconGauge /></span>

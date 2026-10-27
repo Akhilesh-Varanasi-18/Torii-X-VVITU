@@ -147,13 +147,76 @@ const coursesList = [
         tags: ['LLM Foundations', 'Prompt Engineering', 'RAG Systems', 'AI Agents', 'Cloud Deployment'],
         courseIndex: 4,
     },
+{
+        // Now a MOON CODER course, not an AI Ready one, and AI-free: see the
+        // note on COURSE_SERVICENOW in programs-data.js for what was removed.
+        // `courseIndex` is its position in mooncoder's `courses` array.
+        id: 'moon-servicenow',
+        programId: 'mooncoder',
+        title: 'ServiceNow Platform Engineering',
+        category: 'cloud',
+        categoryLabel: 'Platform Eng',
+        programName: 'Moon Coder',
+        programYear: 'Hostelers',
+        modulesCount: '14 Modules',
+        accentColor: 'var(--vvitu-primary)',
+        accentGradient: 'linear-gradient(135deg, var(--vvitu-secondary) 0%, var(--vvitu-primary) 100%)',
+        accentBg: 'var(--vvitu-bg-coral-tint)',
+        icon: (
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+        ),
+        description: 'Enterprise IT automation, GlideRecord scripting, Flow Designer, IntegrationHub, and CSA / CAD certification prep.',
+        highlights: [
+            'GlideRecord & client-server script includes',
+            'CSA & CAD certification checkpoint prep'
+        ],
+        // 'Now Assist AI' replaced with Performance Analytics — the AI module is
+        // gone from the syllabus, so the tag cannot advertise it.
+        tags: ['Now Platform', 'GlideRecord Scripting', 'Flow Designer', 'Performance Analytics', 'CSA & CAD Prep'],
+        courseIndex: 2,
+    },
+{
+        // Moon Coder's fourth track. VVITU has not supplied the module
+        // breakdown yet — see COURSE_DATA_ANALYTICS in programs-data.js, whose
+        // `modules` is an empty array on purpose. The card says "Syllabus coming
+        // soon" rather than inventing a count.
+        id: 'moon-data-analytics',
+        programId: 'mooncoder',
+        title: 'Data Analytics',
+        category: 'data',
+        categoryLabel: 'Data',
+        programName: 'Moon Coder',
+        programYear: 'Hostelers',
+        modulesCount: 'Syllabus coming soon',
+        accentColor: 'var(--vvitu-secondary)',
+        accentGradient: 'linear-gradient(135deg, var(--vvitu-tertiary) 0%, var(--vvitu-secondary) 100%)',
+        accentBg: 'var(--vvitu-bg-warm-tint)',
+        icon: (
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18" />
+                <path d="M7 15l3.5-4 3 3L20 7" />
+                <circle cx="7" cy="15" r="1.2" />
+                <circle cx="20" cy="7" r="1.2" />
+            </svg>
+        ),
+        description: 'The data track of the Moon Coder batch — turning raw data into decisions. Detailed modules are being finalised with VVITU.',
+        highlights: [
+            'Part of the four-track Moon Coder batch',
+            'Detailed syllabus publishing soon'
+        ],
+        tags: ['Data Foundations', 'Analysis', 'Visualization', 'Reporting'],
+        courseIndex: 3,
+    },
 ];
 
 // -------------------------------------------------------------------------
 // Parked course cards.
 //
-// VVITU is running the AI Ready track only, with the four courses above. These
-// four are the cards for tracks/courses that are not on offer — kept whole so
+// VVITU runs AI Ready Engineers and Moon Coder. The cards above cover both.
+// These are the cards for courses that are not on offer — kept whole so
 // restoring one is a matter of moving it back into `coursesList` and fixing its
 // `courseIndex` to match its position in that program's `courses` array in
 // programs-data.js (the card opens the syllabus modal at that index).
@@ -184,32 +247,6 @@ const PARKED_COURSES = [
         ],
         tags: ['AWS Core (EC2/S3/VPC)', 'Docker & EKS', 'Terraform IaC', 'Amazon Bedrock AI', 'AWS Cert Prep'],
         courseIndex: 2,
-    },
-{
-        id: 'aiready-servicenow',
-        programId: 'aiready',
-        title: 'ServiceNow Platform Engineering',
-        category: 'cloud',
-        categoryLabel: 'Platform Eng',
-        programName: 'AI Ready Program',
-        programYear: '3rd Year',
-        modulesCount: '15 Modules',
-        accentColor: 'var(--vvitu-primary)',
-        accentGradient: 'linear-gradient(135deg, var(--vvitu-secondary) 0%, var(--vvitu-primary) 100%)',
-        accentBg: 'var(--vvitu-bg-coral-tint)',
-        icon: (
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-        ),
-        description: 'Enterprise IT automation, GlideRecord scripting, Flow Designer, IntegrationHub, Now Assist AI, and CSA / CAD certification prep.',
-        highlights: [
-            'GlideRecord & client-server script includes',
-            'CSA & CAD certification checkpoint prep'
-        ],
-        tags: ['Now Platform', 'GlideRecord Scripting', 'Flow Designer', 'Now Assist AI', 'CSA & CAD Prep'],
-        courseIndex: 3,
     },
 {
         id: 'bamboo-c',

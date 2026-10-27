@@ -639,18 +639,25 @@ const COURSE_AWS_CLOUD_DEVOPS = {
                 ]
             };
 
+// Offered by Moon Coder. This syllabus deliberately contains NO AI content —
+// Moon Coder is not an AI track, so the Now Assist / GenAI / AI Agents material
+// this course used to carry was removed: one whole module (the old Module 14,
+// "AI Agents & Generative AI Development"), the predictive-intelligence and Now
+// Assist topics inside the reporting module, one learning outcome, and the AI
+// half of the capstone. 15 modules became 14. If AI is ever wanted back it
+// belongs in a course of its own rather than threaded through this one.
 const COURSE_SERVICENOW = {
-                id: 'aiready-servicenow',
+                id: 'moon-servicenow',
                 title: 'ServiceNow Platform Engineering',
                 level: 'Intermediate to Advanced',
                 prerequisites: 'JavaScript Fundamentals & Relational Data Basics',
-                overview: 'Master ServiceNow administration, GlideRecord scripting, Flow Designer, IntegrationHub, Now Assist AI, and CSA / CAD certification prep.',
+                overview: 'Master ServiceNow administration, GlideRecord scripting, Flow Designer, IntegrationHub, and CSA / CAD certification prep.',
                 outcomes: [
                     'Configure ServiceNow tables, forms, lists, UI policies, and business rules',
                     'Implement Access Control Lists (ACLs), Security Rules, and delegated administration',
                     'Develop server-side & client-side scripts using GlideRecord, GlideAjax, and Script Includes',
                     'Automate enterprise workflows with Flow Designer and build integrations via IntegrationHub',
-                    'Integrate Now Assist generative AI skills, predictive intelligence, and AI Agents',
+                    'Build reports, dashboards and Performance Analytics over enterprise service data',
                     'Prepare for Certified System Administrator (CSA) & Certified Application Developer (CAD) exams'
                 ],
                 modules: [
@@ -717,12 +724,12 @@ const COURSE_SERVICENOW = {
                     },
                     {
                         moduleNumber: 'Module 7',
-                        title: 'Reporting, Dashboards & AI Administration',
+                        title: 'Reporting, Dashboards & Performance Analytics',
                         duration: 'CSA Track',
                         topics: [
-                            'Reports, Dashboards, Gauges & Performance Analytics',
-                            'Predictive Intelligence: ML-Based Auto-Categorization & Assignment',
-                            'Now Assist AI Architecture & GenAI Platform Overview'
+                            'Reports, Report Types, Gauges & Scheduled Report Delivery',
+                            'Dashboards, Widgets, Interactive Filters & Sharing',
+                            'Performance Analytics: Indicators, Breakdowns & Time Series'
                         ]
                     },
                     {
@@ -787,28 +794,377 @@ const COURSE_SERVICENOW = {
                     },
                     {
                         moduleNumber: 'Module 14',
-                        title: 'AI Agents & Generative AI Development',
-                        duration: 'CAD Track',
-                        topics: [
-                            'Now Assist: GenAI Controller, LLM Connections & Now Assist Skills',
-                            'Embedding Generative AI Summarization into Custom Scoped Apps',
-                            'AI Agents on Now Platform: AI Agent Studio & Multi-Agent Orchestration',
-                            'Responsible AI: Data Governance, PII Guardrails & Security Policies'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 15',
                         title: 'Testing, Capstone & CAD Exam Prep',
                         duration: 'CAD Track',
                         topics: [
                             'Automated Test Framework (ATF) Test Suites for Scoped Apps',
                             'Performance Optimization & GlideRecord Anti-Patterns Review',
-                            'Capstone Project: Custom Scoped App with Flow Automation & Now Assist AI',
+                            'Capstone Project: Custom Scoped App with Flow Automation & IntegrationHub',
                             'Full CAD Domain Review, Mock Exams & Exam Checkpoint'
                         ]
                     }
                 ]
             };
+
+
+// ── Shared course objects ───────────────────────────────────────────────────
+// Full Stack Development and Google Flutter are offered by BOTH AI Ready
+// Engineers and Moon Coder, so they live here as single objects referenced from
+// each program's `courses` array rather than being duplicated. Edit the syllabus
+// once and both programs move together — which is the point, because they are
+// genuinely the same course taught to two intakes.
+//
+// Neither contains AI content: VVITU's Moon Coder track is explicitly not an
+// AI programme, and the AI-integration modules these two used to carry were
+// stripped out earlier for the same reason.
+const COURSE_FULL_STACK = {
+    id: 'aiready-fullstack',
+    title: 'Full Stack Development',
+    level: 'Beginner to Advanced',
+    prerequisites: 'Basic Programming Fundamentals',
+    overview: 'Master HTML5, CSS3, JavaScript, React.js, Node.js, Express, MongoDB, and cloud deployment.',
+    outcomes: [
+        'Build responsive, accessible frontend user interfaces with HTML5, CSS3, and React.js',
+        'Develop secure RESTful backend APIs with Node.js, Express.js, and JWT authentication',
+        'Model and query scalable NoSQL databases with MongoDB Atlas and Mongoose',
+        'Containerize applications with Docker and deploy to Vercel and AWS cloud infrastructure',
+        'Deliver an end-to-end production-ready SaaS full-stack capstone project'
+    ],
+    modules: [
+        {
+            moduleNumber: 'Module 1',
+            title: 'Web Fundamentals: HTML5 & Modern CSS',
+            topics: [
+                'HTML5 Semantic Elements, Forms & Input Validations',
+                'CSS3 Box Model, Flexbox & CSS Grid Layouts',
+                'Responsive Web Design: Media Queries & Mobile-First Design',
+                'Mini-Project: Responsive Developer Portfolio Landing Page'
+            ]
+        },
+        {
+            moduleNumber: 'Module 2',
+            title: 'JavaScript Mastery & Async Programming',
+            topics: [
+                'JavaScript Core: Variables, Data Types, Operators, Control Flow & Loops',
+                'Functions, Arrow Functions & Array/Object Methods',
+                'DOM Manipulation, Events, Browser Storage & Debugging',
+                'Scope, Hoisting & Closures',
+                'Async JavaScript: Callbacks, Promises, Async/Await & Error Handling',
+                'Modern ES6+ Features, Modules & JSON',
+                'Consuming REST APIs with Fetch API, Axios & NPM Basics'
+            ]
+        },
+        {
+            moduleNumber: 'Module 3',
+            title: 'Frontend with React',
+            topics: [
+                'React Basics & JSX',
+                'Components, Props & State',
+                'React Hooks: useState & useEffect',
+                'Forms Handling & Client-Side Routing',
+                'REST API Integration in React',
+                'Styling Approaches in React'
+            ]
+        },
+        {
+            moduleNumber: 'Module 4',
+            title: 'Backend with Node & Express',
+            topics: [
+                'Node.js Architecture & Runtime',
+                'Express.js Framework Fundamentals',
+                'Routing & Middleware',
+                'Building REST APIs & CRUD Operations',
+                'JWT Authentication Basics',
+                'API Testing with Postman'
+            ]
+        },
+        {
+            moduleNumber: 'Module 5',
+            title: 'MongoDB & Full MERN Stack',
+            topics: [
+                'MongoDB Basics & Documents',
+                'Mongoose Schemas & Models',
+                'Database Integration',
+                'Full MERN Stack Flow',
+                'Authentication Flow',
+                'Deployment Basics'
+            ]
+        },
+        {
+            moduleNumber: 'Module 6',
+            title: 'Authentication, Authorization & Security',
+            topics: [
+                'Password Hashing & Salt Generation with bcrypt',
+                'JSON Web Tokens (JWT): Authentication & Token Verification',
+                'Role-Based Access Control (RBAC): Admin vs User Routes',
+                'Web Security: CORS'
+            ]
+        },
+        {
+            moduleNumber: 'Module 7',
+            title: 'Cloud Deployment, DevOps & Production Capstone',
+            topics: [
+                'Environment Configurations & Production Secrets (.env)',
+                'Cloud Deployment: Frontend on Vercel & Backend on AWS / Render',
+                'Automated CI/CD Workflows with GitHub Actions',
+                'Full-Stack Capstone Project: Production SaaS Web Application'
+            ]
+        }
+    ]
+};
+
+const COURSE_GOOGLE_FLUTTER = {
+    id: 'aiready-flutter',
+    title: 'Google Flutter',
+    level: 'Beginner to Advanced',
+    prerequisites: 'Basic Programming Fundamentals',
+    overview: 'Build cross-platform mobile apps from Dart basics to Firebase backends and Play Store / App Store publishing.',
+    outcomes: [
+        'Build complete Android & iOS apps from a single codebase with Flutter',
+        'Master Material Design UI, theming, and state management with Provider',
+        'Integrate live REST APIs, Firebase Auth & Cloud Storage',
+        'Generate signed builds and publish to Google Play Store & Apple App Store',
+    ],
+    modules: [
+        {
+            moduleNumber: 'Module 1',
+            title: 'Introduction to Dart Programming',
+            topics: [
+                'Basics of Dart: Variables, Data Types, Operators & Keywords',
+                'Control Flow: if / else if / else, switch-case statements',
+                'Loops & Control Statements: for, while, do-while, break, continue',
+                'Functions, Methods, Optional Parameters & Lambda Expressions',
+                'Collections Framework: List, Set, Map & Collection Methods'
+            ]
+        },
+        {
+            moduleNumber: 'Module 2',
+            title: 'Object-Oriented Programming in Dart',
+            topics: [
+                'Classes, objects, constructors & named parameters',
+                'Inheritance, encapsulation, polymorphism & abstract classes',
+                'Static variables, methods & factory constructors',
+                'Enums, mixins & generic types'
+            ]
+        },
+        {
+            moduleNumber: 'Module 3',
+            title: 'Introduction to the Flutter Framework',
+            topics: [
+                'Flutter SDK installation, CLI setup & emulator config',
+                'Flutter project creation & folder structure walkthrough',
+                'Widget Tree concepts: Stateless vs Stateful Widgets',
+                'Core Layout Widgets: Container, Row, Column, Stack, ListView'
+            ]
+        },
+        {
+            moduleNumber: 'Module 4',
+            title: 'Material Design, Navigation & State Management',
+            topics: [
+                'Material Design: Scaffold, AppBar, Bottom Navigation Bar',
+                'UI Components: Buttons, Forms, Input Fields, Dialogs, Bottom Sheets',
+                'Theming & Styling: Colors, typography, dark/light mode',
+                'State Management: setState fundamentals & Provider architecture'
+            ]
+        },
+        {
+            moduleNumber: 'Module 5',
+            title: 'REST API Integration & Firebase Services',
+            topics: [
+                'HTTP package, REST API calls & JSON model serialization',
+                'Error handling, network timeouts & async loading states',
+                'Firebase Setup: Authentication (Email/Password & Google Sign-In)',
+                'Firebase Cloud Storage: File uploads & cloud image rendering'
+            ]
+        },
+        {
+            moduleNumber: 'Module 6',
+            title: 'App Deployment & Publishing',
+            topics: [
+                'Generating signed Android APK & Android App Bundle (AAB)',
+                'Keystore generation & release build configuration',
+                'Publishing to Google Play Store: Store listing & release tracks',
+                'Apple App Store preparation: Provisioning profiles & TestFlight',
+                'App versioning, OTA updates & staged rollouts'
+            ]
+        },
+]
+};
+
+
+// ── Data Analytics (Moon Coder) ─────────────────────────────────────────────
+// The fourth Moon Coder track. VVITU has not supplied the module breakdown yet,
+// so `modules` is deliberately an EMPTY ARRAY rather than invented content — the
+// syllabus modal reads its length and renders "Syllabus coming soon" instead of
+// a module list, and the course card says the same rather than claiming
+// "0 Modules". Drop the real modules in here when they arrive; nothing else
+// needs touching.
+const COURSE_DATA_ANALYTICS = {
+    id: 'moon-data-analytics',
+    title: 'Data Analytics',
+    level: 'Beginner to Advanced',
+    prerequisites: 'Basic Programming Fundamentals',
+    overview: 'The data track of the Moon Coder batch — turning raw data into decisions. The detailed module breakdown is being finalised with VVITU and will be published here.',
+    modules: []
+};
+
+// ── PARKED: Moon Coder's previous curriculum ────────────────────────────────
+// Moon Coder used to be a single 14-module core problem-solving and DSA track
+// with a weekly contest-upsolving timeline. VVITU replaced it with the four
+// industry tracks above. Kept intact rather than deleted — it is a lot of
+// authored content, and restoring it is one line in the `courses` array below.
+// Note it carries `contest`, which is what renders the highlighted
+// "Contest Upsolving" tab in the syllabus modal.
+const COURSE_MOON_DSA_MASTERY = {
+    id: 'moon-dsa-mastery',
+    title: 'Core Problem Solving & DSA Readiness',
+    level: '',
+    prerequisites: 'Beginner Friendly — Designed for BTech Coursework Pace',
+    overview: 'Sequential 14-module coverage from Arrays and Strings through Math, Sorting, Searching, Hashing, Linked Lists, Stacks, Queues, Two Pointers, and Backtracking — paired with weekly contest upsolving on CodeChef and LeetCode.',
+    // The program's specialty — rendered as the highlighted "Contest Upsolving" tab.
+    contest: MOON_CONTEST,
+    outcomes: [
+        'Compete every week on CodeChef and LeetCode, then upsolve what you missed',
+        'Solve standard problems in Arrays, Strings, Math, Sorting, and Searching',
+        'Implement core data structures: HashMaps, Linked Lists, Stacks, and Queues',
+        'Apply algorithmic patterns: Two Pointers, Sliding Window, Prefix Sum, and Backtracking',
+        'Build strong problem-solving foundations ready for competitive coding'
+    ],
+    modules: [
+        {
+            moduleNumber: 'Module 1',
+            title: 'Arrays',
+            duration: 'Core',
+            topics: [
+                '1D Arrays & Memory Layout',
+                '2D Arrays & Matrix Traversals',
+                'Basic Array Manipulations & Problem Solving'
+            ]
+        },
+        {
+            moduleNumber: 'Module 2',
+            title: 'Strings',
+            duration: 'Core',
+            topics: [
+                'String Basics & Memory Representation',
+                'String Manipulation Problems',
+                'Palindrome Checking & Pattern Matching'
+            ]
+        },
+        {
+            moduleNumber: 'Module 3',
+            title: 'Math & Number Problems',
+            duration: 'Core',
+            topics: [
+                'Number Theory & Digit Extraction Problems',
+                'Basic Math: GCD, LCM, Series & Prime Numbers'
+            ]
+        },
+        {
+            moduleNumber: 'Module 4',
+            title: 'Time & Space Complexity',
+            duration: 'Core',
+            topics: [
+                'Big-O Notation Fundamentals',
+                'Analyzing Loops, Nested Loops & Space Constraints'
+            ]
+        },
+        {
+            moduleNumber: 'Module 5',
+            title: 'Recursion',
+            duration: 'Core',
+            topics: [
+                'Recursion Fundamentals & Call Stack Memory',
+                'Array & String Recursion Problems',
+                'Introduction to Basic Backtracking'
+            ]
+        },
+        {
+            moduleNumber: 'Module 6',
+            title: 'Bit Manipulation (Basic)',
+            duration: 'Core',
+            topics: [
+                'Bitwise Operators (&, |, ^, ~, <<, >>)',
+                'Bitwise Masking & Problem Solving Basics'
+            ]
+        },
+        {
+            moduleNumber: 'Module 7',
+            title: 'Sorting',
+            duration: 'Core',
+            topics: [
+                'Bubble Sort Algorithm',
+                'Selection Sort Algorithm',
+                'Insertion Sort Algorithm'
+            ]
+        },
+        {
+            moduleNumber: 'Module 8',
+            title: 'Searching',
+            duration: 'Core',
+            topics: [
+                'Linear Search Implementation',
+                'Binary Search Fundamentals & Iterative / Recursive Logic'
+            ]
+        },
+        {
+            moduleNumber: 'Module 9',
+            title: 'Hashing',
+            duration: 'Core',
+            topics: [
+                'HashMap & HashSet Architecture',
+                'Frequency Counting & Fast Lookup Problems'
+            ]
+        },
+        {
+            moduleNumber: 'Module 10',
+            title: 'Linked List',
+            duration: 'Core',
+            topics: [
+                'Singly Linked List (Creation, Insertion, Deletion)',
+                'Doubly Linked List Implementation',
+                'Core Problems: Traversal, Reversal & Cycle Detection'
+            ]
+        },
+        {
+            moduleNumber: 'Module 11',
+            title: 'Stack',
+            duration: 'Core',
+            topics: [
+                'Stack Concepts & Array/Linked List Implementation',
+                'Basic Applications (Balanced Parentheses & Evaluation)'
+            ]
+        },
+        {
+            moduleNumber: 'Module 12',
+            title: 'Queue',
+            duration: 'Core',
+            topics: [
+                'Queue Concept & Implementation',
+                'Circular Queue & Deque Basics'
+            ]
+        },
+        {
+            moduleNumber: 'Module 13',
+            title: 'Two Pointer & Sliding Window',
+            duration: 'Core',
+            topics: [
+                'Two Pointer Technique (Opposite Ends & Same Direction)',
+                'Sliding Window Technique (Fixed & Dynamic Window)',
+                'Prefix Sum Basics & Subarray Problems'
+            ]
+        },
+        {
+            moduleNumber: 'Module 14',
+            title: 'Backtracking',
+            duration: 'Core',
+            topics: [
+                'Subsets & Permutations Generation',
+                'Basic Grid & Matrix Path Backtracking'
+            ]
+        }
+    ]
+};
 
 const programsData = [
     {
@@ -1191,178 +1547,8 @@ const programsData = [
         courses: [
             COURSE_PROBLEM_SOLVING_DSA,
             COURSE_ADVANCED_CP_DSA,
-            {
-                id: 'aiready-fullstack',
-                title: 'Full Stack Development',
-                level: 'Beginner to Advanced',
-                prerequisites: 'Basic Programming Fundamentals',
-                overview: 'Master HTML5, CSS3, JavaScript, React.js, Node.js, Express, MongoDB, and cloud deployment.',
-                outcomes: [
-                    'Build responsive, accessible frontend user interfaces with HTML5, CSS3, and React.js',
-                    'Develop secure RESTful backend APIs with Node.js, Express.js, and JWT authentication',
-                    'Model and query scalable NoSQL databases with MongoDB Atlas and Mongoose',
-                    'Containerize applications with Docker and deploy to Vercel and AWS cloud infrastructure',
-                    'Deliver an end-to-end production-ready SaaS full-stack capstone project'
-                ],
-                modules: [
-                    {
-                        moduleNumber: 'Module 1',
-                        title: 'Web Fundamentals: HTML5 & Modern CSS',
-                        topics: [
-                            'HTML5 Semantic Elements, Forms & Input Validations',
-                            'CSS3 Box Model, Flexbox & CSS Grid Layouts',
-                            'Responsive Web Design: Media Queries & Mobile-First Design',
-                            'Mini-Project: Responsive Developer Portfolio Landing Page'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 2',
-                        title: 'JavaScript Mastery & Async Programming',
-                        topics: [
-                            'JavaScript Core: Variables, Data Types, Operators, Control Flow & Loops',
-                            'Functions, Arrow Functions & Array/Object Methods',
-                            'DOM Manipulation, Events, Browser Storage & Debugging',
-                            'Scope, Hoisting & Closures',
-                            'Async JavaScript: Callbacks, Promises, Async/Await & Error Handling',
-                            'Modern ES6+ Features, Modules & JSON',
-                            'Consuming REST APIs with Fetch API, Axios & NPM Basics'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 3',
-                        title: 'Frontend with React',
-                        topics: [
-                            'React Basics & JSX',
-                            'Components, Props & State',
-                            'React Hooks: useState & useEffect',
-                            'Forms Handling & Client-Side Routing',
-                            'REST API Integration in React',
-                            'Styling Approaches in React'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 4',
-                        title: 'Backend with Node & Express',
-                        topics: [
-                            'Node.js Architecture & Runtime',
-                            'Express.js Framework Fundamentals',
-                            'Routing & Middleware',
-                            'Building REST APIs & CRUD Operations',
-                            'JWT Authentication Basics',
-                            'API Testing with Postman'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 5',
-                        title: 'MongoDB & Full MERN Stack',
-                        topics: [
-                            'MongoDB Basics & Documents',
-                            'Mongoose Schemas & Models',
-                            'Database Integration',
-                            'Full MERN Stack Flow',
-                            'Authentication Flow',
-                            'Deployment Basics'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 6',
-                        title: 'Authentication, Authorization & Security',
-                        topics: [
-                            'Password Hashing & Salt Generation with bcrypt',
-                            'JSON Web Tokens (JWT): Authentication & Token Verification',
-                            'Role-Based Access Control (RBAC): Admin vs User Routes',
-                            'Web Security: CORS'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 7',
-                        title: 'Cloud Deployment, DevOps & Production Capstone',
-                        topics: [
-                            'Environment Configurations & Production Secrets (.env)',
-                            'Cloud Deployment: Frontend on Vercel & Backend on AWS / Render',
-                            'Automated CI/CD Workflows with GitHub Actions',
-                            'Full-Stack Capstone Project: Production SaaS Web Application'
-                        ]
-                    }
-                ]
-            },
-            {
-                id: 'aiready-flutter',
-                title: 'Google Flutter',
-                level: 'Beginner to Advanced',
-                prerequisites: 'Basic Programming Fundamentals',
-                overview: 'Build cross-platform mobile apps from Dart basics to Firebase backends and Play Store / App Store publishing.',
-                outcomes: [
-                    'Build complete Android & iOS apps from a single codebase with Flutter',
-                    'Master Material Design UI, theming, and state management with Provider',
-                    'Integrate live REST APIs, Firebase Auth & Cloud Storage',
-                    'Generate signed builds and publish to Google Play Store & Apple App Store',
-                ],
-                modules: [
-                    {
-                        moduleNumber: 'Module 1',
-                        title: 'Introduction to Dart Programming',
-                        topics: [
-                            'Basics of Dart: Variables, Data Types, Operators & Keywords',
-                            'Control Flow: if / else if / else, switch-case statements',
-                            'Loops & Control Statements: for, while, do-while, break, continue',
-                            'Functions, Methods, Optional Parameters & Lambda Expressions',
-                            'Collections Framework: List, Set, Map & Collection Methods'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 2',
-                        title: 'Object-Oriented Programming in Dart',
-                        topics: [
-                            'Classes, objects, constructors & named parameters',
-                            'Inheritance, encapsulation, polymorphism & abstract classes',
-                            'Static variables, methods & factory constructors',
-                            'Enums, mixins & generic types'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 3',
-                        title: 'Introduction to the Flutter Framework',
-                        topics: [
-                            'Flutter SDK installation, CLI setup & emulator config',
-                            'Flutter project creation & folder structure walkthrough',
-                            'Widget Tree concepts: Stateless vs Stateful Widgets',
-                            'Core Layout Widgets: Container, Row, Column, Stack, ListView'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 4',
-                        title: 'Material Design, Navigation & State Management',
-                        topics: [
-                            'Material Design: Scaffold, AppBar, Bottom Navigation Bar',
-                            'UI Components: Buttons, Forms, Input Fields, Dialogs, Bottom Sheets',
-                            'Theming & Styling: Colors, typography, dark/light mode',
-                            'State Management: setState fundamentals & Provider architecture'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 5',
-                        title: 'REST API Integration & Firebase Services',
-                        topics: [
-                            'HTTP package, REST API calls & JSON model serialization',
-                            'Error handling, network timeouts & async loading states',
-                            'Firebase Setup: Authentication (Email/Password & Google Sign-In)',
-                            'Firebase Cloud Storage: File uploads & cloud image rendering'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 6',
-                        title: 'App Deployment & Publishing',
-                        topics: [
-                            'Generating signed Android APK & Android App Bundle (AAB)',
-                            'Keystore generation & release build configuration',
-                            'Publishing to Google Play Store: Store listing & release tracks',
-                            'Apple App Store preparation: Provisioning profiles & TestFlight',
-                            'App versioning, OTA updates & staged rollouts'
-                        ]
-                    },
-]
-            },
+            COURSE_FULL_STACK,
+            COURSE_GOOGLE_FLUTTER,
             {
                 id: 'aiready-ai-engineer',
                 title: 'AI Engineer',
@@ -1515,167 +1701,30 @@ const programsData = [
         id: 'mooncoder',
         icon: '🌙',
         name: 'Moon Coder',
-        year: 'Exclusive For 2029 Passouts',
+        // The pill that normally carries the passout year. VVITU asked for the
+        // year NOT to appear on this card — this batch is defined by who it is
+        // for, not by which year they are in — so the slot carries the
+        // eligibility instead, and `yearHighlight` makes it an accent pill
+        // rather than the usual neutral one. See .vvitu-program-year-pill.is-exclusive.
+        year: 'Exclusive for Hostelers',
+        yearHighlight: true,
         banner: '/assets/images/vvitu/project-images/Torii_Program_banners/Moon_coder.png',
-        tagline: 'Core Problem Solving & DSA Readiness',
-        description: 'Comprehensive 14-module core problem-solving curriculum taking learners from Arrays and Strings through Linear Data Structures, Two Pointers, and Backtracking — with weekly contest upsolving.',
-        badge: 'Master Problem Solving Track',
+        tagline: 'Full Stack, Flutter, ServiceNow & Data Analytics',
+        description: 'A four-track industry skilling batch for hostelers — Full Stack Development, Google Flutter, ServiceNow Platform Engineering and Data Analytics. No AI modules: this is a core engineering and enterprise-platform track.',
+        badge: 'Industry Skilling Track',
         themeColor: 'var(--vvitu-secondary)',
         accentBg: 'var(--vvitu-bg-warm-tint)',
-        // Not on offer — Coming Soon card (see the note on the Bamboo Coder card).
-        comingSoon: true,
+        // OPEN. Per CLAUDE.md §8.1 this flag is only half of it — the other half
+        // is `open: true` on the mooncoder entry in lib/registration-schema.js,
+        // which is what actually lets the write through. Flip one without the
+        // other and the card lies about the form, or the form about the card.
+        registrationsOpen: true,
         registrationKey: 'mooncoder',
         courses: [
-            {
-                id: 'moon-dsa-mastery',
-                title: 'Core Problem Solving & DSA Readiness',
-                level: '',
-                prerequisites: 'Beginner Friendly — Designed for BTech Coursework Pace',
-                overview: 'Sequential 14-module coverage from Arrays and Strings through Math, Sorting, Searching, Hashing, Linked Lists, Stacks, Queues, Two Pointers, and Backtracking — paired with weekly contest upsolving on CodeChef and LeetCode.',
-                // The program's specialty — rendered as the highlighted "Contest Upsolving" tab.
-                contest: MOON_CONTEST,
-                outcomes: [
-                    'Compete every week on CodeChef and LeetCode, then upsolve what you missed',
-                    'Solve standard problems in Arrays, Strings, Math, Sorting, and Searching',
-                    'Implement core data structures: HashMaps, Linked Lists, Stacks, and Queues',
-                    'Apply algorithmic patterns: Two Pointers, Sliding Window, Prefix Sum, and Backtracking',
-                    'Build strong problem-solving foundations ready for competitive coding'
-                ],
-                modules: [
-                    {
-                        moduleNumber: 'Module 1',
-                        title: 'Arrays',
-                        duration: 'Core',
-                        topics: [
-                            '1D Arrays & Memory Layout',
-                            '2D Arrays & Matrix Traversals',
-                            'Basic Array Manipulations & Problem Solving'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 2',
-                        title: 'Strings',
-                        duration: 'Core',
-                        topics: [
-                            'String Basics & Memory Representation',
-                            'String Manipulation Problems',
-                            'Palindrome Checking & Pattern Matching'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 3',
-                        title: 'Math & Number Problems',
-                        duration: 'Core',
-                        topics: [
-                            'Number Theory & Digit Extraction Problems',
-                            'Basic Math: GCD, LCM, Series & Prime Numbers'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 4',
-                        title: 'Time & Space Complexity',
-                        duration: 'Core',
-                        topics: [
-                            'Big-O Notation Fundamentals',
-                            'Analyzing Loops, Nested Loops & Space Constraints'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 5',
-                        title: 'Recursion',
-                        duration: 'Core',
-                        topics: [
-                            'Recursion Fundamentals & Call Stack Memory',
-                            'Array & String Recursion Problems',
-                            'Introduction to Basic Backtracking'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 6',
-                        title: 'Bit Manipulation (Basic)',
-                        duration: 'Core',
-                        topics: [
-                            'Bitwise Operators (&, |, ^, ~, <<, >>)',
-                            'Bitwise Masking & Problem Solving Basics'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 7',
-                        title: 'Sorting',
-                        duration: 'Core',
-                        topics: [
-                            'Bubble Sort Algorithm',
-                            'Selection Sort Algorithm',
-                            'Insertion Sort Algorithm'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 8',
-                        title: 'Searching',
-                        duration: 'Core',
-                        topics: [
-                            'Linear Search Implementation',
-                            'Binary Search Fundamentals & Iterative / Recursive Logic'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 9',
-                        title: 'Hashing',
-                        duration: 'Core',
-                        topics: [
-                            'HashMap & HashSet Architecture',
-                            'Frequency Counting & Fast Lookup Problems'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 10',
-                        title: 'Linked List',
-                        duration: 'Core',
-                        topics: [
-                            'Singly Linked List (Creation, Insertion, Deletion)',
-                            'Doubly Linked List Implementation',
-                            'Core Problems: Traversal, Reversal & Cycle Detection'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 11',
-                        title: 'Stack',
-                        duration: 'Core',
-                        topics: [
-                            'Stack Concepts & Array/Linked List Implementation',
-                            'Basic Applications (Balanced Parentheses & Evaluation)'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 12',
-                        title: 'Queue',
-                        duration: 'Core',
-                        topics: [
-                            'Queue Concept & Implementation',
-                            'Circular Queue & Deque Basics'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 13',
-                        title: 'Two Pointer & Sliding Window',
-                        duration: 'Core',
-                        topics: [
-                            'Two Pointer Technique (Opposite Ends & Same Direction)',
-                            'Sliding Window Technique (Fixed & Dynamic Window)',
-                            'Prefix Sum Basics & Subarray Problems'
-                        ]
-                    },
-                    {
-                        moduleNumber: 'Module 14',
-                        title: 'Backtracking',
-                        duration: 'Core',
-                        topics: [
-                            'Subsets & Permutations Generation',
-                            'Basic Grid & Matrix Path Backtracking'
-                        ]
-                    }
-                ]
-            }
+            COURSE_FULL_STACK,
+            COURSE_GOOGLE_FLUTTER,
+            COURSE_SERVICENOW,
+            COURSE_DATA_ANALYTICS
         ]
     }
 ];

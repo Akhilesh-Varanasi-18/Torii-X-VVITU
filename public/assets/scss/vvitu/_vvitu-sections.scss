@@ -8690,3 +8690,39 @@
 // header height ends up disagreeing with itself.
 .vvitu-mobile-nav { top: var(--vvitu-header-h); }
 .vvitu-hero { min-height: calc(100vh - var(--vvitu-header-h)); }
+
+// ===============================================================
+// EXCLUSIVITY PILL + PENDING-SYLLABUS PILL
+// ---------------------------------------------------------------
+// Two small states added when Moon Coder opened as a hostelers-only batch.
+//
+// 1. The year pill normally carries a passout year and is deliberately quiet —
+//    a neutral outline that lets the program name lead. Moon Coder puts its
+//    ELIGIBILITY there instead ("Exclusive for Hostelers"), and that is the
+//    single most important thing on the card: a day scholar needs to know this
+//    batch is not for them before they read anything else. So when a program
+//    sets `yearHighlight`, the pill fills with the brand gradient and stops
+//    being a label you can skip.
+//
+//    This is a flat (0,1,0) selector appended after the per-program colour
+//    overrides above, which are (0,2,0) — `&.mooncoder .vvitu-program-year-pill`
+//    beats it on specificity, so the colour has to be forced. CLAUDE.md §8.4b.
+// ===============================================================
+.vvitu-program-card .vvitu-program-year-pill.is-exclusive {
+  color: var(--vvitu-white);
+  background: var(--vvitu-gradient-primary);
+  border-color: transparent;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow: 0 4px 14px rgba(237, 114, 54, 0.3); // --vvitu-secondary
+}
+
+// 2. A course whose syllabus has not been delivered yet. Saying "0 Modules"
+//    reads as a bug; this reads as a promise, so it is tinted rather than
+//    styled like the normal count pill.
+.vvitu-meta-pill.is-pending {
+  color: var(--vvitu-secondary);
+  background: var(--vvitu-bg-warm-tint);
+  border-color: rgba(237, 114, 54, 0.28); // --vvitu-secondary
+  font-style: normal;
+}
