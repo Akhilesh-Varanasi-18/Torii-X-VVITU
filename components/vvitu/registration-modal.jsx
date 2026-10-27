@@ -83,7 +83,8 @@ const EMPTY_FORM = {
     diplomaCgpa: '',
     // Both optional — a blank rank means "not given", never zero.
     eapcetRank: '',
-    jeeRank: '',
+    jeeMainsRank: '',
+    jeeAdvancedRank: '',
     timeSlot: '',
     studyYear: ''
 };
@@ -489,7 +490,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
         } else if (name === 'diplomaCgpa') {
             const [whole = '', ...rest] = value.replace(/[^\d.]/g, '').split('.');
             nextValue = (rest.length ? `${whole}.${rest.join('')}` : whole).slice(0, FIELD_LIMITS.cgpa);
-        } else if (name === 'eapcetRank' || name === 'jeeRank') {
+        } else if (name === 'eapcetRank' || name === 'jeeMainsRank' || name === 'jeeAdvancedRank') {
             // Ranks are whole numbers; students often paste them with commas.
             nextValue = value.replace(/[^\d]/g, '').slice(0, FIELD_LIMITS[name]);
         }
@@ -638,27 +639,48 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
     // entry student joined at 2nd year from a diploma and reports the diploma
     // CGPA instead. Showing both to everyone asks half of them for a number
     // they do not have.
-    const isLateral = formData.admissionType === 'Lateral Entry';
+    //
+    // Which year the student picked, for a year-spanning intake. Mirrors the
+    // same resolution in validateRegistration() — if these two ever disagree,
+    // the form would ask a question the server ignores, or hide one it requires.
+    const selectedStudyYear = program.studyYears?.find((y) => y.key === formData.studyYear) || null;
+    const asksAdmission = Boolean(program.academics)
+        && (program.studyYears ? Boolean(selectedStudyYear?.asksAdmissionType) : true);
+    // Only lateral when we actually asked. Without this guard a student who
+    // picked 2nd year, answered "Lateral Entry", then switched to 3rd year would
+    // keep seeing the diploma field for a year where it does not apply.
+    const isLateral = asksAdmission && formData.admissionType === 'Lateral Entry';
 
     const renderAcademicInputs = () => (
         <>
-            <div className="vvitu-reg-field">
-                <label>
-                    How did you join? <span className="required">*</span>
-                    <small className="vvitu-reg-hint"> (Lateral entry = joined in 2nd year)</small>
-                </label>
-                {renderSegment('admissionType', ADMISSION_OPTIONS)}
-                {errors.admissionType && <span className="vvitu-reg-error">{errors.admissionType}</span>}
-            </div>
+            {/* Asked only where the answer is not already known. A year-spanning
+                intake (Moon Coder) asks it in 2nd year alone — that is the year
+                lateral students have just arrived with a diploma and no B.Tech
+                marks. In 1st year nobody is a lateral yet; by 3rd and Final year
+                every lateral has an overall CGPA like everyone else, so the
+                answer would change nothing. A fixed-year intake (AI Ready, 2nd
+                years) always asks, for the same reason. */}
+            {asksAdmission && (
+                <div className="vvitu-reg-field">
+                    <label>
+                        How did you join? <span className="required">*</span>
+                        <small className="vvitu-reg-hint"> (Lateral entry = joined in 2nd year)</small>
+                    </label>
+                    {renderSegment('admissionType', ADMISSION_OPTIONS)}
+                    {errors.admissionType && <span className="vvitu-reg-error">{errors.admissionType}</span>}
+                </div>
+            )}
 
-            {/* The CGPA pair only appears once we know which CGPA to ask for. */}
-            {formData.admissionType && (
+            {/* Where the question is not asked the student is Regular, so the
+                overall-CGPA pair shows straight away rather than waiting on an
+                answer that is never coming. */}
+            {(!asksAdmission || formData.admissionType) && (
                 <div className="vvitu-reg-row-2">
                     <div className="vvitu-reg-field">
                         {isLateral ? (
                             <>
                                 <label htmlFor="diplomaCgpa">
-                                    Overall Diploma CGPA <span className="required">*</span>
+                                    Overall Diploma CGPA <span className="vvitu-reg-opt">(optional)</span>
                                 </label>
                                 <div className="vvitu-reg-input-wrap">
                                     <span className="vvitu-reg-input-icon">
@@ -680,7 +702,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                         ) : (
                             <>
                                 <label htmlFor="cgpa">
-                                    Overall CGPA <span className="required">*</span>
+                                    Overall CGPA <span className="vvitu-reg-opt">(optional)</span>
                                 </label>
                                 <div className="vvitu-reg-input-wrap">
                                     <span className="vvitu-reg-input-icon">
@@ -704,7 +726,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
 
                     <div className="vvitu-reg-field">
                         <label htmlFor="activeBacklogs">
-                            Number of active backlogs <span className="required">*</span>
+                            Number of active backlogs <span className="vvitu-reg-opt">(optional)</span>
                             <small className="vvitu-reg-hint"> (0 if none)</small>
                         </label>
                         <div className="vvitu-reg-input-wrap">
@@ -760,24 +782,46 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                     {errors.eapcetRank && <span className="vvitu-reg-error">{errors.eapcetRank}</span>}
                 </div>
 
+                {/* Mains and Advanced are separate exams. One combined field made
+                    a student who sat both choose which rank to lose. */}
                 <div className="vvitu-reg-field">
-                    <label htmlFor="jeeRank" className="vvitu-reg-sublabel">JEE Mains / Advanced Rank</label>
+                    <label htmlFor="jeeMainsRank" className="vvitu-reg-sublabel">JEE Mains Rank <span className="vvitu-reg-opt">(if any)</span></label>
                     <div className="vvitu-reg-input-wrap">
                         <span className="vvitu-reg-input-icon">
                             <svg {...ico}><path d="M4 19h16" /><path d="M7 19V9M12 19V5M17 19v-7" /></svg>
                         </span>
                         <input
-                            type="text" id="jeeRank" name="jeeRank"
+                            type="text" id="jeeMainsRank" name="jeeMainsRank"
                             placeholder="e.g. 45678"
-                            value={formData.jeeRank} onChange={handleChange}
-                            className={errors.jeeRank ? 'has-error' : ''}
-                            maxLength={FIELD_LIMITS.jeeRank}
+                            value={formData.jeeMainsRank} onChange={handleChange}
+                            className={errors.jeeMainsRank ? 'has-error' : ''}
+                            maxLength={FIELD_LIMITS.jeeMainsRank}
                             inputMode="numeric"
                             autoComplete="off"
-                            aria-invalid={errors.jeeRank ? 'true' : 'false'}
+                            aria-invalid={errors.jeeMainsRank ? 'true' : 'false'}
                         />
                     </div>
-                    {errors.jeeRank && <span className="vvitu-reg-error">{errors.jeeRank}</span>}
+                    {errors.jeeMainsRank && <span className="vvitu-reg-error">{errors.jeeMainsRank}</span>}
+                </div>
+
+                <div className="vvitu-reg-field">
+                    <label htmlFor="jeeAdvancedRank" className="vvitu-reg-sublabel">JEE Advanced Rank <span className="vvitu-reg-opt">(if any)</span></label>
+                    <div className="vvitu-reg-input-wrap">
+                        <span className="vvitu-reg-input-icon">
+                            <svg {...ico}><path d="M4 19h16" /><path d="M7 19V9M12 19V5M17 19v-7" /></svg>
+                        </span>
+                        <input
+                            type="text" id="jeeAdvancedRank" name="jeeAdvancedRank"
+                            placeholder="e.g. 7890"
+                            value={formData.jeeAdvancedRank} onChange={handleChange}
+                            className={errors.jeeAdvancedRank ? 'has-error' : ''}
+                            maxLength={FIELD_LIMITS.jeeAdvancedRank}
+                            inputMode="numeric"
+                            autoComplete="off"
+                            aria-invalid={errors.jeeAdvancedRank ? 'true' : 'false'}
+                        />
+                    </div>
+                    {errors.jeeAdvancedRank && <span className="vvitu-reg-error">{errors.jeeAdvancedRank}</span>}
                 </div>
             </div>
         </div>
@@ -1312,8 +1356,8 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                             {program.academics && (
                                 <div className="vvitu-reg-field vvitu-reg-academics">
                                     <label>
-                                        Academic Details <span className="required">*</span>
-                                        <small className="vvitu-reg-hint"> (Mandatory — enter 0 backlogs if you have none)</small>
+                                        Academic Details
+                                        <small className="vvitu-reg-hint"> (All optional — fill in what you have)</small>
                                     </label>
                                     {renderAcademicInputs()}
                                     {renderEntranceRanks()}
@@ -1421,7 +1465,8 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                 program.academics && isLateral ? ['Overall Diploma CGPA', formData.diplomaCgpa] : null,
                                 program.academics ? ['Active Backlogs', formData.activeBacklogs] : null,
                                 ['EAPCET Rank', formData.eapcetRank],
-                                ['JEE Rank', formData.jeeRank],
+                                ['JEE Mains Rank', formData.jeeMainsRank],
+                                ['JEE Advanced Rank', formData.jeeAdvancedRank],
                                 ['SkillUp Batch', formData.batch || identity?.batch],
                                 program.timeSlots ? ['Class Time Slot', slotLabel(formData.timeSlot) || formData.timeSlot] : null,
                                 // For a year-spanning intake both of these come from what

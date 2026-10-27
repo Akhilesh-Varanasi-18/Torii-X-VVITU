@@ -77,7 +77,8 @@ export async function GET(request) {
                                             {
                                                 $and: [
                                                     { $eq: [{ $ifNull: ['$eapcetRank', ''] }, ''] },
-                                                    { $eq: [{ $ifNull: ['$jeeRank', ''] }, ''] }
+                                                    { $eq: [{ $ifNull: ['$jeeMainsRank', ''] }, ''] },
+                                                    { $eq: [{ $ifNull: ['$jeeAdvancedRank', ''] }, ''] }
                                                 ]
                                             },
                                             'Management',
