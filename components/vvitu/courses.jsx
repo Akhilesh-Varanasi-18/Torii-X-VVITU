@@ -147,6 +147,29 @@ const coursesList = [
         tags: ['LLM Foundations', 'Prompt Engineering', 'RAG Systems', 'AI Agents', 'Cloud Deployment'],
         courseIndex: 4,
     },
+    // Moon Coder's ServiceNow and Data Analytics cards used to sit here. The
+    // intake went back to Coming Soon on 2026-10-30, so they moved down into
+    // PARKED_COURSES with the rest of the not-on-offer cards — see the note
+    // there for how to bring them back. Everything left in this list is an
+    // AI Ready course, which is the only programme currently on offer.
+];
+
+// -------------------------------------------------------------------------
+// Parked course cards.
+//
+// AI Ready Engineers is the only intake VVITU is running, so the cards above
+// are all AI Ready ones. These are the cards for courses that are not on offer
+// — kept whole so restoring one is a matter of moving it back into
+// `coursesList` and checking its `courseIndex` still matches its position in
+// that program's `courses` array in programs-data.js (the card opens the
+// syllabus modal at that index).
+// -------------------------------------------------------------------------
+/*
+const PARKED_COURSES = [
+// --- Moon Coder (parked 2026-10-30, intake back to Coming Soon) ----------
+// Both cards are whole and their courseIndex values are already correct for
+// mooncoder's `courses` array in programs-data.js, which was not touched — so
+// restoring them is a straight move back into `coursesList`, no renumbering.
 {
         // Now a MOON CODER course, not an AI Ready one, and AI-free: see the
         // note on COURSE_SERVICENOW in programs-data.js for what was removed.
@@ -210,19 +233,6 @@ const coursesList = [
         tags: ['Excel & Power Query', 'Power Pivot', 'Power BI & DAX', 'Tableau', 'Dashboards'],
         courseIndex: 3,
     },
-];
-
-// -------------------------------------------------------------------------
-// Parked course cards.
-//
-// VVITU runs AI Ready Engineers and Moon Coder. The cards above cover both.
-// These are the cards for courses that are not on offer — kept whole so
-// restoring one is a matter of moving it back into `coursesList` and fixing its
-// `courseIndex` to match its position in that program's `courses` array in
-// programs-data.js (the card opens the syllabus modal at that index).
-// -------------------------------------------------------------------------
-/*
-const PARKED_COURSES = [
 {
         id: 'aiready-cloud-devops',
         programId: 'aiready',
