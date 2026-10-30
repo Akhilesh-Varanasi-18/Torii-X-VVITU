@@ -1885,15 +1885,23 @@ const programsData = [
         // by the card's year pill, which raises the ordinal — "2nd Year" shows
         // as 2ⁿᵈ Year, not the shouty 2ND YEAR it used to be.
         year: '2nd Year',
+        // Narrowed to hostelers on 2026-10-30. The year and the eligibility are
+        // two different facts and they get two different slots: the year stays
+        // the quiet pill top-right, the restriction gets the accent chip at the
+        // foot of the banner. Putting "2nd Year Hostelers" in one pill would
+        // have buried the half that decides whether a reader is eligible at all,
+        // behind the half they can work out for themselves.
+        eligibilityNote: 'Exclusive for Hostelers',
         banner: '/assets/images/vvitu/project-images/Torii_Program_banners/AI_ready_eng.png',
         tagline: 'Industry-Ready Problem Solving & Development',
-        description: 'Comprehensive industry preparation across problem solving and DSA, advanced competitive programming, full stack development and Google Flutter.',
+        description: 'Comprehensive industry preparation for 2nd year hostelers across problem solving and DSA, advanced competitive programming, full stack development and Google Flutter.',
         badge: 'Career & Industry Track',
         themeColor: 'var(--vvitu-tertiary)',
         accentBg: 'var(--vvitu-bg-warm-offwhite)',
-        // The only intake VVITU is running. Paired with `open: true` on the
-        // aiready program in lib/registration-schema.js, which is what the API
-        // enforces (§8.1). The card id 'aiready' already matches the schema key.
+        // The only intake VVITU is running again, now that Moon Coder is back
+        // to Coming Soon (2026-10-30). Paired with `open: true` on the aiready
+        // program in lib/registration-schema.js, which is what the API enforces
+        // (§8.1). The card id 'aiready' already matches the schema key.
         registrationsOpen: true,
         // Course order is the learning arc VVITU asked for: problem solving first,
         // then competitive depth, then the two build tracks. The first two are
@@ -2057,25 +2065,40 @@ const programsData = [
         id: 'mooncoder',
         icon: '🌙',
         name: 'Moon Coder',
-        // The pill that normally carries the passout year. VVITU asked for the
-        // year NOT to appear on this card — this batch is defined by who it is
-        // for, not by which year they are in — so the slot carries the
-        // eligibility instead, and `yearHighlight` makes it an accent pill
-        // rather than the usual neutral one. See .vvitu-program-year-pill.is-exclusive.
-        year: 'Exclusive for Hostelers',
-        yearHighlight: true,
+        // No `year`. VVITU asked for the year NOT to appear on this card — the
+        // batch is defined by who it is for, not by which year they are in — so
+        // it carries only the eligibility chip. The two are separate fields, so
+        // adding a year back here would not displace the chip.
+        //
+        // Both are inert while `comingSoon` is set (the card renders neither),
+        // and both are kept so reopening is a one-flag change, not a rewrite.
+        eligibilityNote: 'Exclusive for Hostelers',
         banner: '/assets/images/vvitu/project-images/Torii_Program_banners/Moon_coder.png',
         tagline: 'Full Stack, Flutter, ServiceNow & Data Analytics',
         description: 'A four-track industry skilling batch for hostelers — Full Stack Development, Google Flutter, ServiceNow Platform Engineering and Data Analytics. No AI modules: this is a core engineering and enterprise-platform track.',
         badge: 'Industry Skilling Track',
         themeColor: 'var(--vvitu-secondary)',
         accentBg: 'var(--vvitu-bg-warm-tint)',
-        // OPEN. Per CLAUDE.md §8.1 this flag is only half of it — the other half
-        // is `open: true` on the mooncoder entry in lib/registration-schema.js,
-        // which is what actually lets the write through. Flip one without the
-        // other and the card lies about the form, or the form about the card.
-        registrationsOpen: true,
-        registrationKey: 'mooncoder',
+        // CLOSED again on 2026-10-30 at VVITU's request — the intake is back to
+        // Coming Soon until they say otherwise. Per CLAUDE.md §8.1 this flag is
+        // only half of it: the other half is `open: false` on the mooncoder
+        // entry in lib/registration-schema.js, which is what actually refuses
+        // the write. Flip one without the other and the card lies about the
+        // form, or the form about the card.
+        //
+        // TO REOPEN: delete `comingSoon`, restore `registrationsOpen: true` and
+        // `registrationKey: 'mooncoder'` below, and set `open: true` in the
+        // schema. Nothing else was torn out — the eligibility chip, the banner
+        // and all four syllabi are untouched.
+        comingSoon: true,
+        // registrationsOpen: true,
+        // registrationKey: 'mooncoder',
+        //
+        // The four syllabi stay here while the intake is shut. They are what the
+        // "Courses We Offer" cards open (courses.jsx addresses them by
+        // programId + courseIndex), and that section is independent of whether
+        // the intake is taking registrations — so the curriculum VVITU supplied
+        // stays readable on the site either way.
         courses: [
             COURSE_FULL_STACK,
             COURSE_GOOGLE_FLUTTER,

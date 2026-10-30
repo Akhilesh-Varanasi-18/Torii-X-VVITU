@@ -1462,6 +1462,14 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                             {program.studyYears
                                                 ? <span className="vvitu-reg-tag-year">{program.audience}</span>
                                                 : <span className="vvitu-reg-tag-year">{program.yearLabel}</span>}
+                                            {/* Who the batch is for, when that is narrower than the
+                                                year. This panel is the confirmation of what is being
+                                                registered for, and a year label on its own ("2nd Year
+                                                (2025 – 2029)") would let a 2nd-year day scholar fill
+                                                the whole form before finding out. */}
+                                            {program.eligibilityNote && (
+                                                <span className="vvitu-reg-tag-eligibility">{program.eligibilityNote}</span>
+                                            )}
                                         </div>
                                         <h4 className="vvitu-reg-program-title">
                                             Assigned Program: <strong style={{ color: program.color }}>{program.programName}</strong>

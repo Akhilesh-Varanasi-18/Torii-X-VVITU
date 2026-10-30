@@ -1050,16 +1050,19 @@
 
     > * { pointer-events: auto; }
 
-    // A scrim under the chip. The chip is legible on the Moon Coder artwork as
-    // it stands, but a banner is swappable art — this guarantees contrast for
-    // whatever image lands here next, and it softens the hard banner/body seam.
-    &::before {
-      content: "";
-      position: absolute;
-      inset: -38px 0 0;
-      background: linear-gradient(to top, rgba(15, 23, 42, 0.62), rgba(15, 23, 42, 0)); // --vvitu-heading
-      pointer-events: none;
-    }
+    // NO SCRIM HERE. There was one — a full-width dark gradient, added as
+    // insurance so the chip would stay legible on whatever banner art landed
+    // here next. It was written against Moon Coder's near-black artwork and it
+    // only ever worked there. The moment the chip appeared on AI Ready, whose
+    // banner is near-white, the scrim read as a grey smudge smeared across the
+    // bottom of the image.
+    //
+    // It was never needed: the chip is an OPAQUE gradient pill with white
+    // 800-weight text, a light border and its own drop shadow, so it carries
+    // its own contrast on any background. Insurance that disfigures three cards
+    // out of four is not insurance. If a future banner really does swallow the
+    // chip, give that card a local shadow rather than bringing back a band
+    // across the whole banner.
 
     @media (max-width: 767px) {
       padding: 0 8px 8px;
@@ -5397,6 +5400,22 @@
       font-size: 9.5px;
       color: var(--vvitu-muted);
       font-weight: 600;
+    }
+
+    // Who the batch is for, when that is narrower than the year beside it.
+    // Tinted rather than muted: the year label is background information, this
+    // one can disqualify the reader, so it must not read as the same kind of
+    // note. `flex-wrap` on the row above means it drops to its own line on a
+    // narrow phone instead of squeezing the year.
+    .vvitu-reg-tag-eligibility {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 999px;
+      color: var(--vvitu-secondary);
+      background: var(--vvitu-bg-warm-tint);
+      border: 1px solid rgba(237, 114, 54, 0.3); // --vvitu-secondary
+      white-space: nowrap;
     }
   }
 

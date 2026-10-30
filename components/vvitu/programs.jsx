@@ -168,35 +168,40 @@ const Programs = ({ onOpenRegister }) => {
                                                     </svg>
                                                 </button>
                                             )}
-                                            {/* The passout year, read as a quiet label. A program
-                                                that sets `yearHighlight` puts its ELIGIBILITY in
-                                                this field instead and renders it below rather than
-                                                here, so this stays the quiet-label slot it was
-                                                designed to be. */}
-                                            {!program.comingSoon && !program.yearHighlight && (
+                                            {/* The year, read as a quiet label. A WHO-is-it-for rule
+                                                never goes in here — it has its own chip below — so
+                                                this stays the quiet-label slot it was designed to
+                                                be, and a card can now carry both at once. */}
+                                            {!program.comingSoon && program.year && (
                                                 <span className="vvitu-program-year-pill">
                                                     {withOrdinalSup(program.year)}
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* ELIGIBILITY sits at the foot of the banner, not in the
-                                            top row. Two emphatic chips cannot share that row: the
-                                            status badge and this one consumed 100% of it at every
-                                            width (378px of 378px on desktop, 328px of 328px on a
-                                            phone), which forced "Exclusive for Hostelers" to wrap
-                                            onto two ragged lines taller than the badge beside it.
-                                            Down here it has the full card width, so it never wraps
-                                            however long the label gets — and it lands directly
-                                            above the tagline, so a day scholar reads "this batch
-                                            is not for me" before reading what the batch teaches. */}
-                                        {!program.comingSoon && program.yearHighlight && (
+                                        {/* ELIGIBILITY — who the batch is for — sits at the foot of
+                                            the banner, never in the top row. Two emphatic chips
+                                            cannot share that row: the status badge and this one
+                                            consumed 100% of it at every width (378px of 378px on
+                                            desktop, 328px of 328px on a phone), which forced
+                                            "Exclusive for Hostelers" to wrap onto two ragged lines
+                                            taller than the badge beside it. Down here it has the
+                                            full card width, so it never wraps however long the
+                                            label gets — and it lands directly above the tagline,
+                                            so a day scholar reads "this batch is not for me"
+                                            before reading what the batch teaches.
+
+                                            Driven by its own `eligibilityNote` field rather than by
+                                            borrowing the year slot, so a card like AI Ready can say
+                                            BOTH "2ⁿᵈ Year" and "Exclusive for Hostelers" without
+                                            one of them having to give way. */}
+                                        {!program.comingSoon && program.eligibilityNote && (
                                             <div className="vvitu-program-banner-bottom">
                                                 <span className="vvitu-program-eligibility-chip">
                                                     <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
                                                         <path d="M12 2.6l2.7 5.9 6.3.7-4.7 4.3 1.3 6.4L12 16.6 6.4 19.9l1.3-6.4L3 9.2l6.3-.7z" />
                                                     </svg>
-                                                    {withOrdinalSup(program.year)}
+                                                    {program.eligibilityNote}
                                                 </span>
                                             </div>
                                         )}
