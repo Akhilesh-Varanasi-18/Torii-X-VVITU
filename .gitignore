@@ -40,3 +40,10 @@ next-env.d.ts
 
 # student data exports — contain names/mobiles/emails; never push these to a shared repo
 *.csv
+
+# Raw photo drop folder for the "What We Offer" section — originals only.
+# The 13 certification files alone are 162MB (6000x4000 each) and git keeps
+# every blob forever, so these must never be committed. The curated, web-sized
+# set the site actually loads is built from them by hand into
+# public/assets/images/vvitu/whatweoffer/ (~1MB total) and IS committed.
+public/assets/images/vvitu/WhatweOffer/

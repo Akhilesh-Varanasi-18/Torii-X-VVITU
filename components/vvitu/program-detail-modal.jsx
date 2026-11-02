@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { withOrdinalSup } from './ordinal';
+import WhatWeOffer from './what-we-offer';
 
 // ── Line-icon set (replaces the old emoji) ──────────────────────────────
 const ic = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' };
@@ -19,6 +20,7 @@ const IconSpark = () => (<svg viewBox="0 0 24 24" width="16" height="16" {...ic}
 const IconChevron = () => (<svg viewBox="0 0 24 24" width="15" height="15" {...ic} strokeWidth="2.4"><polyline points="9 18 15 12 9 6" /></svg>);
 const IconTrophy = () => (<svg viewBox="0 0 24 24" width="16" height="16" {...ic}><path d="M8 21h8M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" /><path d="M17 6h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4" /><path d="M7 6H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4" /></svg>);
 const IconLoop = () => (<svg viewBox="0 0 24 24" width="16" height="16" {...ic}><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>);
+const IconGift = () => (<svg viewBox="0 0 24 24" width="16" height="16" {...ic}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>);
 
 // Coding-themed header icon per program (replaces the old emoji), tinted in our
 // palette. Falls back to a generic </> for any unmapped program.
@@ -96,8 +98,15 @@ const ProgramDetailModal = ({
             // so its tab is highlighted and sits ahead of the module list.
             currentCourse.contest ? { id: 'contest', label: 'Contest Upsolving', icon: <IconTrophy />, highlight: true } : null,
             currentCourse.modules?.length ? { id: 'roadmap', label: 'Modules', icon: <IconLayers /> } : null,
+            // Everything the PROGRAMME gives that is not a module. Keyed off the
+            // program, not the course, so it reads the same whichever track the
+            // student is looking at — and it sits last because the curriculum
+            // should answer "what will I learn" before this answers "and what
+            // else do I get". Highlighted: it is the differentiator, and a rail
+            // tab is the only hint it exists.
+            program?.whatWeOffer ? { id: 'offer', label: 'What We Offer', icon: <IconGift />, highlight: true } : null,
         ].filter(Boolean);
-    }, [currentCourse]);
+    }, [currentCourse, program]);
 
     // Scroll-spy: highlight the section currently under the sticky rail.
     useEffect(() => {
@@ -412,6 +421,19 @@ const ProgramDetailModal = ({
                                 <section className="vvitu-syll-section" data-section="roadmap" ref={setRef('roadmap')}>
                                     <SectionHead eyebrow="Full curriculum" title="Modules & Topics" sub="Every module and the topics it covers, in learning order" icon={<IconLayers />} />
                                     <ModuleLadder modules={currentCourse.modules} totalTopics={totalTopics} reduceMotion={reduceMotion} />
+                                </section>
+                            )}
+
+                            {/* ── WHAT WE OFFER — everything beyond the syllabus ── */}
+                            {program.whatWeOffer && (
+                                <section className="vvitu-syll-section" data-section="offer" ref={setRef('offer')}>
+                                    <SectionHead
+                                        eyebrow="Beyond the syllabus"
+                                        title="What We Offer"
+                                        sub="The projects, contests, platforms and recognition that come with the programme — not as extras, but as how it runs"
+                                        icon={<IconGift />}
+                                    />
+                                    <WhatWeOffer reveal={reveal} reduceMotion={reduceMotion} />
                                 </section>
                             )}
                         </div>

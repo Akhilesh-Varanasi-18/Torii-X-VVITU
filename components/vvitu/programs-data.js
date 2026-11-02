@@ -1903,6 +1903,13 @@ const programsData = [
         // program in lib/registration-schema.js, which is what the API enforces
         // (§8.1). The card id 'aiready' already matches the schema key.
         registrationsOpen: true,
+        // Turns on the "What We Offer" section at the foot of this programme's
+        // syllabus view — the project journey, contests, platforms, startup
+        // chamber, certifications and Golden Day. Content lives in
+        // components/vvitu/what-we-offer-data.js. AI Ready only for now; if
+        // another programme ever runs the same thing, give that programme its
+        // own content rather than widening this flag silently.
+        whatWeOffer: true,
         // Course order is the learning arc VVITU asked for: problem solving first,
         // then competitive depth, then the two build tracks. The first two are
         // shared objects (see the top of this file) also used by SkillUp Coder
