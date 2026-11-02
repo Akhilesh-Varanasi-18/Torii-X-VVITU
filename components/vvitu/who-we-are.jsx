@@ -14,7 +14,10 @@ const gallerySlides = [
 	['Prarambh_Event.jpg', 'Prarambh Launch', 'Our grand launch ceremony welcoming an entire engineering cohort into the ToriiMinds journey.'],
 	['Bamboo_Coder.jpeg', 'Bamboo Coder', '1st Year foundation track mastering computational logic and hands-on coding in C.'],
 	['SkillUp_Coder.jpeg', 'SkillUp Coder', '2nd Year problem-solving track mastering Data Structures, Algorithms & LeetCode patterns.'],
-	['AI_Ready_Engineer.jpeg', 'AI Ready Engineer Program', '2nd Year industry track covering problem solving & DSA, advanced competitive programming, full stack development and Google Flutter.'],
+	// Full Stack and Google Flutter parked 2026-11-03 — restore this caption
+	// with them: '...advanced competitive programming, full stack development
+	// and Google Flutter.'
+	['AI_Ready_Engineer.jpeg', 'AI Ready Engineer Program', '2nd Year industry track covering problem solving & DSA, advanced competitive programming and applied AI engineering.'],
 	['Moon_Coder.jpeg', 'Moon Coder', 'Elite platform for learning advanced problem-solving methods. (Exclusive for 2029 Passouts)'],
 	['Owl_coder.jpeg', 'Owl Coder', 'Elite platform for advanced coders and competitive champions. (Exclusive for 2028 Passouts)'],
 	['owl_coder_Ai_Integrated_coding_platform.jpeg', 'Owl Coder AI Platform', 'AI-integrated coding platform delivering guided problem sets, live evaluation, and contest-grade practice for our competitive champions.'],

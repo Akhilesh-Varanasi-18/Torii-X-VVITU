@@ -1894,7 +1894,13 @@ const programsData = [
         eligibilityNote: 'Exclusive for Hostelers',
         banner: '/assets/images/vvitu/project-images/Torii_Program_banners/AI_ready_eng.png',
         tagline: 'Industry-Ready Problem Solving & Development',
-        description: 'Comprehensive industry preparation for 2nd year hostelers across problem solving and DSA, advanced competitive programming, full stack development and Google Flutter.',
+        // Full Stack and Google Flutter are parked (see `courses` below), so the
+        // card no longer advertises them — a description listing tracks the
+        // syllabus does not contain is a promise the page cannot keep.
+        // RESTORE WITH THEM: 'Comprehensive industry preparation for 2nd year
+        // hostelers across problem solving and DSA, advanced competitive
+        // programming, full stack development and Google Flutter.'
+        description: 'Comprehensive industry preparation for 2nd year hostelers across problem solving and DSA, advanced competitive programming and applied AI engineering.',
         badge: 'Career & Industry Track',
         themeColor: 'var(--vvitu-tertiary)',
         accentBg: 'var(--vvitu-bg-warm-offwhite)',
@@ -1911,15 +1917,31 @@ const programsData = [
         // own content rather than widening this flag silently.
         whatWeOffer: true,
         // Course order is the learning arc VVITU asked for: problem solving first,
-        // then competitive depth, then the two build tracks. The first two are
+        // then competitive depth, then the build track. The first two are
         // shared objects (see the top of this file) also used by SkillUp Coder
         // and Owl Coder. To offer AWS Cloud/DevOps or ServiceNow again, add
         // COURSE_AWS_CLOUD_DEVOPS / COURSE_SERVICENOW back into this array.
+        //
+        // ⚠️ THE LENGTH OF THIS ARRAY IS LOAD-BEARING. The "Courses We Offer"
+        // cards in components/vvitu/courses.jsx open the syllabus modal at a
+        // POSITION in this array (`courseIndex`), not by course id. Add or
+        // remove an entry here and every courseIndex after it shifts, silently
+        // opening the wrong syllabus. Re-check them whenever this changes.
         courses: [
             COURSE_PROBLEM_SOLVING_DSA,
             COURSE_ADVANCED_CP_DSA,
-            COURSE_FULL_STACK,
-            COURSE_GOOGLE_FLUTTER,
+            // PARKED 2026-11-03 at VVITU's request — Full Stack Development and
+            // Google Flutter are off the AI Ready offer for now. Both are shared
+            // consts defined at the top of this file and are still referenced by
+            // Moon Coder, so the syllabi themselves are untouched and nothing
+            // needs rebuilding to bring them back.
+            //
+            // TO RESTORE: uncomment the two lines below, AND move the
+            // `aiready-fullstack` / `aiready-flutter` cards out of
+            // PARKED_COURSES in courses.jsx, AND set the AI Engineer card's
+            // courseIndex back to 4 (it is 2 while these two are parked).
+            // COURSE_FULL_STACK,
+            // COURSE_GOOGLE_FLUTTER,
             {
                 id: 'aiready-ai-engineer',
                 title: 'AI Engineer',

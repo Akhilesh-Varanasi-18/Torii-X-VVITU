@@ -62,6 +62,69 @@ const coursesList = [
         tags: ['Advanced Graphs', 'Segment Trees', 'Tries & Bitmask DP', 'String Algorithms', 'Number Theory'],
         courseIndex: 1,
     },
+    // Full Stack Development and Google Flutter sat here. Parked 2026-11-03 at
+    // VVITU's request — see PARKED_COURSES below, and the matching note on the
+    // aiready `courses` array in programs-data.js.
+    {
+        id: 'aiready-ai-engineer',
+        programId: 'aiready',
+        title: 'AI Engineer',
+        category: 'dev',
+        categoryLabel: 'AI Engineering',
+        programName: 'AI Ready Program',
+        programYear: '2nd Year',
+        modulesCount: '16 Modules',
+        accentColor: 'var(--vvitu-primary)',
+        accentGradient: 'var(--vvitu-gradient-primary)',
+        accentBg: 'var(--vvitu-bg-coral-tint)',
+        // Newest course — same palette as the rest, but its corner glow breathes
+        // and the top accent bar sweeps, so the eye lands on it first.
+        featured: true,
+        icon: (
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="7" width="16" height="12" rx="2.5" />
+                <path d="M12 7V4M9 3h6" />
+                <circle cx="9" cy="13" r="1.2" />
+                <circle cx="15" cy="13" r="1.2" />
+                <path d="M1.5 11v4M22.5 11v4" />
+            </svg>
+        ),
+        description: 'A 16-module path from how large language models actually work through to shipping agentic, retrieval-grounded AI systems in production.',
+        highlights: [
+            'RAG pipelines grounded in your own data',
+            'Autonomous and multi-agent systems that plan and act'
+        ],
+        tags: ['LLM Foundations', 'Prompt Engineering', 'RAG Systems', 'AI Agents', 'Cloud Deployment'],
+        // 2, not 4: aiready's `courses` array lost Full Stack and Google Flutter,
+        // so AI Engineer moved from fifth position to third. Put this back to 4
+        // when those two are restored.
+        courseIndex: 2,
+    },
+    // Moon Coder's ServiceNow and Data Analytics cards used to sit here. The
+    // intake went back to Coming Soon on 2026-10-30, so they moved down into
+    // PARKED_COURSES with the rest of the not-on-offer cards — see the note
+    // there for how to bring them back. Everything left in this list is an
+    // AI Ready course, which is the only programme currently on offer.
+];
+
+// -------------------------------------------------------------------------
+// Parked course cards.
+//
+// AI Ready Engineers is the only intake VVITU is running, so the cards above
+// are all AI Ready ones. These are the cards for courses that are not on offer
+// — kept whole so restoring one is a matter of moving it back into
+// `coursesList` and checking its `courseIndex` still matches its position in
+// that program's `courses` array in programs-data.js (the card opens the
+// syllabus modal at that index).
+// -------------------------------------------------------------------------
+/*
+const PARKED_COURSES = [
+// --- AI Ready: Full Stack & Google Flutter (parked 2026-11-03) ----------
+// Their courseIndex values below are the OLD ones (2 and 3), correct for when
+// aiready's `courses` array still held them. Restoring these two means
+// uncommenting COURSE_FULL_STACK / COURSE_GOOGLE_FLUTTER in that array as
+// well — at which point 2 and 3 are right again and the AI Engineer card goes
+// back from 2 to 4.
 {
         id: 'aiready-fullstack',
         programId: 'aiready',
@@ -115,57 +178,6 @@ const coursesList = [
         tags: ['Dart OOP', 'Flutter SDK', 'Provider', 'Firebase Auth', 'Play & App Store'],
         courseIndex: 3,
     },
-    {
-        id: 'aiready-ai-engineer',
-        programId: 'aiready',
-        title: 'AI Engineer',
-        category: 'dev',
-        categoryLabel: 'AI Engineering',
-        programName: 'AI Ready Program',
-        programYear: '2nd Year',
-        modulesCount: '16 Modules',
-        accentColor: 'var(--vvitu-primary)',
-        accentGradient: 'var(--vvitu-gradient-primary)',
-        accentBg: 'var(--vvitu-bg-coral-tint)',
-        // Newest course — same palette as the rest, but its corner glow breathes
-        // and the top accent bar sweeps, so the eye lands on it first.
-        featured: true,
-        icon: (
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="7" width="16" height="12" rx="2.5" />
-                <path d="M12 7V4M9 3h6" />
-                <circle cx="9" cy="13" r="1.2" />
-                <circle cx="15" cy="13" r="1.2" />
-                <path d="M1.5 11v4M22.5 11v4" />
-            </svg>
-        ),
-        description: 'A 16-module path from how large language models actually work through to shipping agentic, retrieval-grounded AI systems in production.',
-        highlights: [
-            'RAG pipelines grounded in your own data',
-            'Autonomous and multi-agent systems that plan and act'
-        ],
-        tags: ['LLM Foundations', 'Prompt Engineering', 'RAG Systems', 'AI Agents', 'Cloud Deployment'],
-        courseIndex: 4,
-    },
-    // Moon Coder's ServiceNow and Data Analytics cards used to sit here. The
-    // intake went back to Coming Soon on 2026-10-30, so they moved down into
-    // PARKED_COURSES with the rest of the not-on-offer cards — see the note
-    // there for how to bring them back. Everything left in this list is an
-    // AI Ready course, which is the only programme currently on offer.
-];
-
-// -------------------------------------------------------------------------
-// Parked course cards.
-//
-// AI Ready Engineers is the only intake VVITU is running, so the cards above
-// are all AI Ready ones. These are the cards for courses that are not on offer
-// — kept whole so restoring one is a matter of moving it back into
-// `coursesList` and checking its `courseIndex` still matches its position in
-// that program's `courses` array in programs-data.js (the card opens the
-// syllabus modal at that index).
-// -------------------------------------------------------------------------
-/*
-const PARKED_COURSES = [
 // --- Moon Coder (parked 2026-10-30, intake back to Coming Soon) ----------
 // Both cards are whole and their courseIndex values are already correct for
 // mooncoder's `courses` array in programs-data.js, which was not touched — so
@@ -433,9 +445,15 @@ const Courses = () => {
                     {/* Section Header */}
                     <div className="vvitu-section-title" data-sal="slide-up" data-sal-delay="100" data-sal-duration="800">
                         <h2>Courses We <span>Offer</span></h2>
+                        {/* Names only what is on the list below it. Full Stack and
+                            Flutter were parked 2026-11-03, so the old line —
+                            "...advanced competitive programming, full-stack web
+                            development and cross-platform mobile engineering." —
+                            promised two courses the grid no longer shows. Restore
+                            it when those cards come back. */}
                         <p>
                             From core problem solving and algorithmic mastery to advanced competitive
-                            programming, full-stack web development and cross-platform mobile engineering.
+                            programming and production-ready AI engineering.
                         </p>
                     </div>
 
