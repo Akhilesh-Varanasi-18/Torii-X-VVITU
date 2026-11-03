@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { isAuthenticated } from '../../../../lib/dashboard-auth';
 import { getRegistrationsCollection, getAnnouncementsCollection } from '../../../../lib/mongodb';
 import { startOfISTDay } from '../../../../lib/analytics-range';
-import { REGISTRATION_PROGRAMS } from '../../../../lib/registration-schema';
+import { REGISTRATION_PROGRAMS, ROSTER_ELIGIBILITY } from '../../../../lib/registration-schema';
 import { eligibleRoster } from '../../../../lib/registration-eligibility';
 import { listPrograms, programStats } from '../../../../lib/coding-profiles/program-store';
 
@@ -32,7 +32,7 @@ export async function GET(request) {
             collection.countDocuments({ createdAt: { $gte: todayStart } }),
             collection.countDocuments({ createdAt: { $gte: weekStart } }),
             open ? collection.countDocuments({ programCode: open.code }) : 0,
-            open?.eligibility === 'skillup-roster' ? eligibleRoster().catch(() => []) : []
+            open?.eligibility === ROSTER_ELIGIBILITY ? eligibleRoster().catch(() => []) : []
         ]);
         return {
             total,

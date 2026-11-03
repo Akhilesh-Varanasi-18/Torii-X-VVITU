@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getRegistrationsCollection } from '../../../lib/mongodb';
-import { validateRegistration, normalizeRoll, PROGRAM_BY_KEY } from '../../../lib/registration-schema';
-import { prefillFor } from '../../../lib/registration-eligibility';
+import { validateRegistration, normalizeRoll, PROGRAM_BY_KEY, ROSTER_ELIGIBILITY } from '../../../lib/registration-schema';
+import { prefillFor, ROSTER_RESIDENCE } from '../../../lib/registration-eligibility';
 
 // Registrations must hit the database on every request — never cache or prerender.
 export const dynamic = 'force-dynamic';
@@ -22,9 +22,16 @@ function duplicateFieldFrom(error) {
     return null;
 }
 
-// What a roster-gated student actually types. Anything else in the body is
-// ignored for those intakes — the rest of the record comes from the server.
-const GATED_INPUTS = ['cgpa', 'activeBacklogs', 'timeSlot'];
+// On a roster-gated intake these fields are composed from the college's roster
+// and OVERRIDE whatever the browser sent. They are exactly the fields that say
+// WHO this is, plus residence — which is not a question when the roster is the
+// hostel list. Everything else on the form is the student's to answer and is
+// taken from the request as normal.
+//
+// This allowlist is the whole security property: the browser can ask to
+// register, but it cannot choose a name, a roll number it is not entitled to,
+// or a residence that would change what the intake means.
+const ROSTER_OWNED_FIELDS = ['fullName', 'rollNumber', 'residenceType'];
 
 /**
  * A closed intake is refused outright rather than reported as a bad field: a
@@ -59,14 +66,15 @@ export async function POST(request) {
         return NextResponse.json({ success: false, message: 'Invalid request format.' }, { status: 400 });
     }
 
-    // 2. Roster-gated intakes (Moon Coder): the browser sends only the roll number
-    //    the student picked plus the three things only they know (CGPA, backlogs,
-    //    time slot). Name, contact details, branch, gender, residence and laptop
-    //    are read from their SkillUp Coder registration here, so nothing in the
-    //    request can alter them — and the roll must be on the shortlist.
+    // 2. Roster-gated intakes (AI Ready): the roll number the student picked is
+    //    re-checked against the college's roster HERE, and their name, roll and
+    //    residence are composed from it — so a hand-made request cannot register
+    //    under another student's name, and cannot register at all for a roll
+    //    that is not on the list. The rest of the form is the student's own
+    //    answers and is taken from the request.
     const program = PROGRAM_BY_KEY[typeof payload.programKey === 'string' ? payload.programKey : ''] || null;
     if (program && !program.open) return closedIntakeResponse(program);
-    const gated = Boolean(program?.open && program.eligibility === 'skillup-roster');
+    const gated = Boolean(program?.open && program.eligibility === ROSTER_ELIGIBILITY);
     let identity = null;
     let candidate = payload;
 
@@ -74,7 +82,7 @@ export async function POST(request) {
         const rollKey = normalizeRoll(payload.rollNumber);
         if (!rollKey) {
             return NextResponse.json(
-                { success: false, message: 'Please pick yourself from the SkillUp Coder shortlist first.', errors: { rollNumber: 'Pick your roll number from the shortlist' } },
+                { success: false, message: 'Please find yourself in the list first.', errors: { rollNumber: 'Pick your roll number or name from the list' } },
                 { status: 422 }
             );
         }
@@ -91,8 +99,8 @@ export async function POST(request) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: `${program.programName} registrations are open only for the SkillUp Coder shortlist.`,
-                    errors: { rollNumber: 'This roll number is not on the SkillUp Coder shortlist' }
+                    message: `${program.programName} is open only to students on the 2nd year hostel list.`,
+                    errors: { rollNumber: 'This roll number is not on the eligible list' }
                 },
                 { status: 403 }
             );
@@ -103,10 +111,13 @@ export async function POST(request) {
                 { status: 409 }
             );
         }
+        // The student's own answers first, then the roster's fields on top, so
+        // the server's copy of identity always wins over the browser's.
         candidate = {
-            ...identity.student,
+            ...payload,
             programKey: program.key,
-            ...Object.fromEntries(GATED_INPUTS.map((field) => [field, payload[field]]))
+            ...Object.fromEntries(ROSTER_OWNED_FIELDS.map((f) => [f, identity.student[f]])),
+            residenceType: ROSTER_RESIDENCE
         };
     }
 
@@ -120,15 +131,17 @@ export async function POST(request) {
     // `passoutYear` field, which only the validator resolves to a program.
     if (validated && !validated.open) return closedIntakeResponse(validated);
     if (Object.keys(errors).length > 0) {
-        // For a gated intake, an error on a field the student never typed means
-        // their SkillUp record is incomplete — say so instead of pointing at a
-        // field that is not on the screen.
-        const hidden = gated ? Object.keys(errors).filter((k) => !GATED_INPUTS.includes(k)) : [];
+        // On a gated intake the student fills in everything except the fields
+        // the roster owns, so those are the only ones that can fail invisibly.
+        // An error there means the college's list is wrong about them, which is
+        // not something they can fix on the form — say that instead of
+        // highlighting a field they were never shown.
+        const hidden = gated ? Object.keys(errors).filter((k) => ROSTER_OWNED_FIELDS.includes(k)) : [];
         return NextResponse.json(
             {
                 success: false,
                 message: hidden.length
-                    ? `Some details from your SkillUp Coder registration could not be used (${hidden.join(', ')}). Please contact the ToriiMinds team.`
+                    ? `Your details on the college list could not be used (${hidden.join(', ')}). Please contact the ToriiMinds team.`
                     : 'Please correct the highlighted fields.',
                 errors
             },
@@ -201,7 +214,9 @@ export async function POST(request) {
         // Only written by the intakes that ask — on every other program it
         // would be an empty string reading as "answered, blank".
         ...(validated.studyYears ? { studyYear, studyYearKey } : {}),
-        ...(identity ? { batch: identity.student.batch, prefill: { source: 'skillup-roster', rollKey: identity.rollKey, editedFields: [] } } : {}),
+        // Records WHICH roster entry this registration was verified against, so a
+        // later roster correction can be traced to the records it affected.
+        ...(identity ? { prefill: { source: ROSTER_ELIGIBILITY, rollKey: identity.rollKey, editedFields: [] } } : {}),
         programName: validated.programName,
         programCode: validated.code,
         programTrack: validated.badge,

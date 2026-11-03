@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { DEFAULT_PROGRAM_KEY, PROGRAM_BY_KEY, normalizeRoll } from '../../../../lib/registration-schema';
+import { DEFAULT_PROGRAM_KEY, PROGRAM_BY_KEY, normalizeRoll, ROSTER_ELIGIBILITY } from '../../../../lib/registration-schema';
 import { prefillFor, searchEligible } from '../../../../lib/registration-eligibility';
 
 // Type-ahead and pre-fill for roster-gated intakes (Moon Coder).
 //
-//   GET /api/register/lookup?q=<name or roll>      → up to 8 shortlist matches
+//   GET /api/register/lookup?q=<name or roll>      → up to 8 roster matches
 //                                                    (name, roll, branch, batch)
 //   GET /api/register/lookup?roll=<exact roll>     → name, roll, branch, batch and
 //                                                    whether already registered
 //
 // The pre-fill answer carries the student's college email and mobile number, so
 // it is deliberately narrow: only while the intake is open, only for an exact
-// roll number that is on the shortlist, and rate-limited per client. The search
+// roll number that is on the roster, and rate-limited per client. The search
 // answer never includes contact details.
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +52,7 @@ export async function GET(request) {
     const programKey = params.get('program') || DEFAULT_PROGRAM_KEY;
     const program = PROGRAM_BY_KEY[programKey];
 
-    if (!program || program.eligibility !== 'skillup-roster') {
+    if (!program || program.eligibility !== ROSTER_ELIGIBILITY) {
         return reply({ success: false, message: 'Lookup is not available for this program.' }, 404);
     }
     if (!program.open) {
@@ -73,20 +73,32 @@ export async function GET(request) {
             const result = await prefillFor(rollKey, programKey);
             if (!result) {
                 return reply(
-                    { success: false, message: 'This roll number is not on the SkillUp Coder shortlist.' },
+                    { success: false, message: 'This roll number is not on the eligible list for this batch.' },
                     404
                 );
             }
-            // Only what the form shows. The student never sees or edits contact
-            // details here — the registration route reads them server-side — so
-            // they are not sent to the browser.
-            const { fullName, rollNumber, branch, batch } = result.student;
+            // Only what the form pre-fills, and nothing else the roster holds.
+            //
+            // CLAUDE.md §8.10 pins this endpoint to name/roll/branch. `gender`
+            // is a DELIBERATE one-field widening, on this per-roll path only —
+            // the search list below is untouched. The reasoning: the college's
+            // list carries gender, the student is about to see and confirm it
+            // on their own form, and it is not a contact detail.
+            //
+            // Email and mobile stay out because this roster does not hold them
+            // at all. Residence stays out because it is a constant for a
+            // hostel-gated intake — the form fills it locally and the register
+            // route forces it server-side regardless, so sending it would
+            // widen the endpoint for nothing.
+            //
+            // Do not widen this further without writing the reason here.
+            const { fullName, rollNumber, branch, gender } = result.student;
             return reply({
                 success: true,
                 rollKey: result.rollKey,
                 alreadyRegistered: result.alreadyRegistered,
                 registeredAt: result.registeredAt,
-                student: { fullName, rollNumber, branch, batch }
+                student: { fullName, rollNumber, branch, gender }
             });
         }
 
@@ -99,6 +111,6 @@ export async function GET(request) {
         return reply({ success: true, matches });
     } catch (error) {
         console.error('[register/lookup] failed:', error);
-        return reply({ success: false, message: 'We could not reach the shortlist right now. Please try again.' }, 503);
+        return reply({ success: false, message: 'We could not reach the eligible list right now. Please try again.' }, 503);
     }
 }

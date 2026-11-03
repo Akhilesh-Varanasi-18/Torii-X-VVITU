@@ -9739,3 +9739,100 @@
   .vvitu-wwo-tool:hover { transform: none; }
   .vvitu-wwo-tile:hover .vvitu-wwo-tile-media img { transform: none; }
 }
+
+// ===============================================================
+// ROSTER-VERIFIED FIELDS ON THE REGISTRATION FORM
+// ---------------------------------------------------------------
+// AI Ready is gated to the college's 2nd-year hostel list, so once a student
+// has found themselves, three fields stop being questions: their name, their
+// roll number and their residence. They are shown as settled facts.
+//
+// Read-only, NOT disabled. A disabled input is dropped from the tab order and
+// skipped by screen readers, so a student using one would never hear their own
+// name read back to them before submitting it. Read-only keeps it reachable
+// and announced, and simply refuses edits.
+// ===============================================================
+
+.vvitu-reg-form input.is-locked {
+  background: var(--vvitu-bg-section-alt);
+  color: var(--vvitu-body);
+  font-weight: 600;
+  cursor: default;
+  border-style: dashed;
+
+  &:focus {
+    // No coral focus ring: that ring means "type here", and this field will
+    // not accept typing. The field still focuses and still announces itself.
+    border-color: var(--vvitu-border);
+    box-shadow: none;
+  }
+}
+
+// Replaces the required asterisk on a field the student cannot fill, because an
+// asterisk on an uneditable field reads as an instruction that cannot be obeyed.
+.vvitu-reg-fromlist {
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: none;
+  color: var(--vvitu-secondary);
+  background: var(--vvitu-bg-warm-tint);
+  border: 1px solid rgba(237, 114, 54, 0.26); // --vvitu-secondary
+  white-space: nowrap;
+}
+
+// Residence on a hostel-roster intake: an answer, not a choice.
+.vvitu-reg-fixed-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 13px;
+  border-radius: 10px;
+  border: 1.5px dashed var(--vvitu-border);
+  background: var(--vvitu-bg-section-alt);
+  color: var(--vvitu-heading);
+  font-size: 12.5px;
+  font-weight: 700;
+
+  svg { flex-shrink: 0; color: var(--vvitu-secondary); }
+
+  small {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--vvitu-muted);
+    text-align: right;
+  }
+
+  @media (max-width: 420px) {
+    // The provenance note wraps under the value rather than squeezing it.
+    flex-wrap: wrap;
+    padding: 9px 12px;
+    small { margin-left: 0; flex-basis: 100%; text-align: left; }
+  }
+}
+
+// Suggestion rows now lead with the roll number, then an en dash, then the
+// name — the roll is what tells two students with the same name apart.
+.vvitu-reg-suggest-id {
+  display: block;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.vvitu-reg-suggest-dash {
+  margin: 0 6px;
+  color: var(--vvitu-muted);
+  font-weight: 400;
+}
+
+@media (max-width: 575px) {
+  // 14-character roll plus a long name will not fit one phone line, so the
+  // name is allowed to fall to the next line with the dash left behind.
+  .vvitu-reg-suggest-id { font-size: 12.5px; }
+  .vvitu-reg-suggest-dash { margin: 0 4px; }
+}

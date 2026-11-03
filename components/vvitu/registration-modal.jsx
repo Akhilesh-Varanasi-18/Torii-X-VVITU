@@ -8,6 +8,7 @@ import {
     FIELD_LIMITS,
     OTHER_BRANCH,
     ADMISSION_TYPES,
+    ROSTER_ELIGIBILITY,
     validateRegistration
 } from '../../lib/registration-schema';
 import { WHATSAPP_COMMUNITY_URL, isWhatsAppLinkReady } from '../../lib/site-config';
@@ -102,8 +103,17 @@ const ADMISSION_OPTIONS = [
     }
 ];
 
-// What a shortlisted (roster-gated) student actually types; everything else in
-// their record comes from the SkillUp registration on the server.
+// Fields the server composes from the college's roster on a gated intake. The
+// form shows them read-only and never lets the student edit them, and an error
+// on one of them is not something they can fix — it means the college's list is
+// wrong about them. Mirrors ROSTER_OWNED_FIELDS in app/api/register/route.js.
+const ROSTER_OWNED_FIELDS = ['fullName', 'rollNumber', 'residenceType'];
+
+// RETIRED: QUICK_FIELDS. It listed the only three fields a gated student used
+// to fill, back when every other value came from a previous registration. This
+// gate pre-fills from a college NAME LIST, which carries no contact details or
+// marks, so the student fills the ordinary form and every field is visible.
+// (Kept only as the historical note above; nothing reads this any more.)
 const QUICK_FIELDS = ['cgpa', 'activeBacklogs', 'timeSlot'];
 
 const initialsOf = (name) =>
@@ -305,8 +315,8 @@ const YearSelect = ({ years, value, onChange, error, id }) => {
     );
 };
 
-// Step 1 of a roster-gated intake: a type-ahead over the shortlist. Suggestions
-// show name · roll · branch · batch only; picking one fetches the full pre-fill
+// Step 1 of a roster-gated intake: a type-ahead over the college's roster. Suggestions
+// show roll · name · branch only; picking one fetches the full pre-fill
 // record and hands it up through onPick.
 const SEARCH_DEBOUNCE_MS = 220;
 const MIN_QUERY = 2;
@@ -421,12 +431,12 @@ const ShortlistFinder = ({ programKey, onPick }) => {
     };
 
     const hints = {
-        idle: 'Start typing — your name or roll number will appear below. Pick it and every detail from your SkillUp Coder registration fills in automatically.',
+        idle: 'Start typing — your roll number or name will appear below. Pick yourself and your name, roll number and branch fill in automatically.',
         short: 'Keep typing — at least two characters.',
-        loading: 'Searching the shortlist…',
+        loading: 'Searching the list…',
         ready: `${matches.length} match${matches.length === 1 ? '' : 'es'} — pick yourself to auto-fill the form.`,
-        empty: 'No match in the shortlist. Try your full roll number, or check the spelling of your name.',
-        error: 'We could not search the shortlist right now. Please try again in a moment.'
+        empty: 'No match on the eligible list. Try your full roll number, or check the spelling of your name.',
+        error: 'We could not search the list right now. Please try again in a moment.'
     };
 
     return (
@@ -434,7 +444,7 @@ const ShortlistFinder = ({ programKey, onPick }) => {
             <div className="vvitu-reg-step-head">
                 <span className="vvitu-reg-step-no">1</span>
                 <div>
-                    <strong>Find yourself in the SkillUp Coder shortlist</strong>
+                    <strong>Find yourself on the 2nd year hostel list</strong>
                     <p>Registrations are open only for the shortlisted students. Search by roll number or name.</p>
                 </div>
             </div>
@@ -458,7 +468,7 @@ const ShortlistFinder = ({ programKey, onPick }) => {
                         spellCheck={false}
                         maxLength={60}
                         role="combobox"
-                        aria-label="Search the SkillUp Coder shortlist by roll number or name"
+                        aria-label="Search the eligible student list by roll number or name"
                         aria-autocomplete="list"
                         aria-expanded={open}
                         aria-controls="vvitu-reg-suggest"
@@ -490,12 +500,16 @@ const ShortlistFinder = ({ programKey, onPick }) => {
                             >
                                 <span className="vvitu-reg-suggest-avatar" aria-hidden="true">{initialsOf(m.name)}</span>
                                 <span className="vvitu-reg-suggest-main">
-                                    <strong><Highlight text={m.name} query={query} /></strong>
-                                    <small>
+                                    {/* Roll number first, then the name. Among 1,400
+                                        students several share a name but no two share
+                                        a roll, so the roll is what actually tells two
+                                        suggestions apart. */}
+                                    <strong className="vvitu-reg-suggest-id">
                                         <Highlight text={m.rollNo} query={query.replace(/\s+/g, '')} />
-                                        {m.branch ? ` · ${m.branch}` : ''}
-                                        {m.batch ? ` · ${m.batch}` : ''}
-                                    </small>
+                                        <span className="vvitu-reg-suggest-dash" aria-hidden="true">–</span>
+                                        <Highlight text={m.name} query={query} />
+                                    </strong>
+                                    {m.branch && <small>{m.branch}</small>}
                                 </span>
                                 <svg className="vvitu-reg-suggest-go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                     <path d="M5 12h14M13 6l6 6-6 6" />
@@ -557,7 +571,12 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
     if (!isOpen) return null;
 
     const program = PROGRAM_BY_KEY[formData.programKey] || PROGRAM_BY_KEY[DEFAULT_PROGRAM_KEY];
-    const gated = program.eligibility === 'skillup-roster';
+    const gated = program.eligibility === ROSTER_ELIGIBILITY;
+    // The roster has verified who this is, so the fields it owns stop being
+    // questions. Read-only, NOT disabled: a disabled input leaves the tab order
+    // and is skipped by screen readers, so the student would never hear their
+    // own name read back before submitting it.
+    const rosterLocked = gated && Boolean(identity);
     const blocked = Boolean(identity?.alreadyRegistered);
     // A program's own group is only worth showing on the success screen once its
     // invite exists — a "One last step" CTA pointing at a dead link is worse than
@@ -597,22 +616,30 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
         if (submitError) setSubmitError('');
     };
 
-    // Step 1 done: remember who was picked. Only name, roll, branch and batch come
+    // Step 1 done: remember who was picked. Only roll, name, branch and gender come
     // back from the lookup — the rest of the record stays on the server.
     const handlePick = (result) => {
         const student = result.student || {};
         setIdentity({
             rollKey: result.rollKey,
             student,
-            batch: student.batch || '',
             alreadyRegistered: Boolean(result.alreadyRegistered),
             registeredAt: result.registeredAt || null
         });
+        // Everything the college's list knows. Branch and gender are filled in
+        // but stay editable — the college's programme codes do not all map onto
+        // the form's branches, so a student has to be able to correct their own.
+        // Residence is fixed: this IS the hostel list.
         setFormData((prev) => ({
             ...prev,
             fullName: student.fullName || '',
             rollNumber: student.rollNumber || '',
             branch: student.branch || '',
+            gender: student.gender || '',
+            residenceType: student.residenceType || 'Hosteler',
+            collegeEmail: '',
+            mobileNumber: '',
+            hasLaptop: '',
             cgpa: '',
             activeBacklogs: '',
             timeSlot: '',
@@ -633,15 +660,13 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
         e.preventDefault();
         if (isSubmitting || blocked) return;
 
-        // Same rules the API enforces — this is purely for instant feedback. For a
-        // gated intake only the three visible fields can be wrong here; the rest of
-        // the record is composed and checked on the server.
+        // Same rules the API enforces — purely for instant feedback; the server
+        // re-runs them. A gated student fills in the whole form here (the
+        // college's list carries no email, mobile, laptop or marks), so every
+        // error is on a field they can actually see and fix.
         const { values, errors: validationErrors } = validateRegistration(formData);
-        const visibleErrors = gated
-            ? Object.fromEntries(Object.entries(validationErrors).filter(([field]) => QUICK_FIELDS.includes(field)))
-            : validationErrors;
-        if (Object.keys(visibleErrors).length > 0) {
-            setErrors(visibleErrors);
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
             setSubmitError('');
             return;
         }
@@ -650,14 +675,12 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
         setSubmitError('');
         setIsSubmitting(true);
 
+        // The same payload either way. On a gated intake the server overwrites
+        // name, roll and residence from the roster regardless of what is sent,
+        // so there is nothing to strip out here — and sending the roll the
+        // student picked is what lets the server find them again.
         const body = gated
-            ? {
-                  programKey: program.key,
-                  rollNumber: identity.rollKey,
-                  cgpa: formData.cgpa.trim(),
-                  activeBacklogs: formData.activeBacklogs.trim(),
-                  timeSlot: formData.timeSlot
-              }
+            ? { ...values, rollNumber: identity.rollKey }
             : { ...values };
 
         try {
@@ -679,12 +702,12 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                 // the inputs; anything else becomes a single banner message.
                 if (result?.errors && Object.keys(result.errors).length > 0) {
                     // Errors on fields that are not on the screen (a gated intake's
-                    // roll number or SkillUp details) are shown in the banner instead.
+                    // roll number, or the college list being wrong) are shown in the banner instead.
                     const visible = gated
-                        ? Object.fromEntries(Object.entries(result.errors).filter(([field]) => QUICK_FIELDS.includes(field)))
+                        ? Object.fromEntries(Object.entries(result.errors).filter(([field]) => !ROSTER_OWNED_FIELDS.includes(field)))
                         : result.errors;
                     const hiddenMessages = gated
-                        ? Object.entries(result.errors).filter(([field]) => !QUICK_FIELDS.includes(field)).map(([, msg]) => msg)
+                        ? Object.entries(result.errors).filter(([field]) => ROSTER_OWNED_FIELDS.includes(field)).map(([, msg]) => msg)
                         : [];
                     setErrors(visible);
                     setSubmitError([result.message, ...hiddenMessages].filter(Boolean).join(' ') || 'Please correct the highlighted fields.');
@@ -1050,7 +1073,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                             </h2>
                             <p>
                                 {program.open
-                                    ? `${program.audience}${gated ? ' · SkillUp Coder shortlist only' : ''}`
+                                    ? `${program.audience}${gated ? ' · hostel list only' : ''}`
                                     : 'Thank you for the overwhelming response — this intake is no longer accepting entries.'}
                             </p>
                         </div>
@@ -1148,11 +1171,10 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                     <strong>{identity.student.fullName}</strong>
                                     <small>
                                         {identity.student.rollNumber}
-                                        {identity.batch ? ` · ${identity.batch}` : ''}
                                         {' · '}
                                         <span className="vvitu-reg-picked-ok">
                                             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>
-                                            Shortlisted
+                                            On the list
                                         </span>
                                     </small>
                                 </div>
@@ -1166,8 +1188,8 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                             <div className="vvitu-reg-locked" aria-live="polite">
                                 <svg {...ico} width="18" height="18" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
                                 <div>
-                                    <strong>Your form is ready to auto-fill.</strong>
-                                    <span>Pick yourself above — your name, roll number, branch and contact details are already with us from your SkillUp registration. You only add your overall CGPA, active backlogs and class time slot.</span>
+                                    <strong>Find yourself to start.</strong>
+                                    <span>This batch is open to the 2nd year hostel list. Type your roll number or your name above and pick yourself — your name, roll number and branch fill in automatically, and you add your contact details and marks.</span>
                                 </div>
                             </div>
                         )}
@@ -1188,45 +1210,26 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                             </div>
                         )}
 
-                        {/* Step 2 (roster-gated intakes): the three things only the student knows.
-                            Everything else is taken from their SkillUp Coder registration on the
-                            server, so there is no form to re-check or edit. */}
-                        {program.open && gated && identity && !blocked && (
-                        <form onSubmit={handleSubmit} className="vvitu-reg-form vvitu-reg-form--quick" noValidate>
-                            <div className="vvitu-reg-quick-head" role="status">
-                                <span className="vvitu-reg-step-no" aria-hidden="true">2</span>
-                                <div>
-                                    <strong>Three quick details and you’re registered</strong>
-                                    <span>Your name, roll number, branch and contact details are already with us from your SkillUp Coder registration — nothing to re-enter.</span>
-                                </div>
-                            </div>
-
-                            <div className="vvitu-reg-field vvitu-reg-academics">
-                                <label>
-                                    Academic Details <span className="required">*</span>
-                                    <small className="vvitu-reg-hint"> (Both fields are mandatory)</small>
-                                </label>
-                                {renderAcademicInputs()}
-                            </div>
-
-                            {program.timeSlots && renderTimeSlots()}
-
-                            {renderSubmitError()}
-
-                            {renderSubmit(
-                                'Confirm Registration',
-                                `Confirming registers ${identity.student.fullName} for ${program.programName} with the details from your SkillUp Coder registration.`
-                            )}
-                        </form>
-                        )}
-
-                        {/* Open-to-all intakes: the full form. */}
-                        {program.open && !gated && (
+                        {/* RETIRED: the three-field "quick form".
+                            At SRKR a gated student re-entered nothing but CGPA,
+                            backlogs and a time slot, because every other field
+                            came from their earlier SkillUp registration. VVITU's
+                            gate is a college roster of names — it carries no
+                            email, mobile, laptop or marks — so there is nothing
+                            to shortcut and the student fills the ordinary form
+                            below, with the four fields the roster does know
+                            already filled in. Restore from git history if an
+                            intake is ever gated to past registrations again. */}
+                        {/* The form. Open-to-all intakes show it straight away;
+                            a roster-gated intake shows it once the student has
+                            found themselves, with their known fields filled in
+                            and the ones the roster owns locked. */}
+                        {program.open && (!gated || (identity && !blocked)) && (
                         <form onSubmit={handleSubmit} className="vvitu-reg-form" noValidate>
                             {/* Row 1: Full Name & Roll Number */}
                             <div className="vvitu-reg-row-2">
                                 <div className="vvitu-reg-field">
-                                    <label htmlFor="fullName">Student Full Name <span className="required">*</span></label>
+                                    <label htmlFor="fullName">Student Full Name {rosterLocked ? <span className="vvitu-reg-fromlist">from the college list</span> : <span className="required">*</span>}</label>
                                     <div className="vvitu-reg-input-wrap">
                                         <span className="vvitu-reg-input-icon">
                                             <svg {...ico}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
@@ -1235,9 +1238,11 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                             type="text" id="fullName" name="fullName"
                                             placeholder="Enter your full name"
                                             value={formData.fullName} onChange={handleChange}
-                                            className={errors.fullName ? 'has-error' : ''}
+                                            className={`${errors.fullName ? 'has-error' : ''} ${rosterLocked ? 'is-locked' : ''}`.trim()}
                                             maxLength={FIELD_LIMITS.fullName}
                                             autoComplete="name"
+                                            readOnly={rosterLocked}
+                                            aria-readonly={rosterLocked ? 'true' : undefined}
                                             aria-invalid={errors.fullName ? 'true' : 'false'}
                                         />
                                     </div>
@@ -1245,7 +1250,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                 </div>
 
                                 <div className="vvitu-reg-field">
-                                    <label htmlFor="rollNumber">Roll Number / Reg. ID <span className="required">*</span></label>
+                                    <label htmlFor="rollNumber">Roll Number / Reg. ID {rosterLocked ? <span className="vvitu-reg-fromlist">from the college list</span> : <span className="required">*</span>}</label>
                                     <div className="vvitu-reg-input-wrap">
                                         <span className="vvitu-reg-input-icon">
                                             <svg {...ico}><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="M15 9h3M15 13h3M7 16h10" /></svg>
@@ -1254,9 +1259,11 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                             type="text" id="rollNumber" name="rollNumber"
                                             placeholder="Enter roll number"
                                             value={formData.rollNumber} onChange={handleChange}
-                                            className={errors.rollNumber ? 'has-error' : ''}
+                                            className={`${errors.rollNumber ? 'has-error' : ''} ${rosterLocked ? 'is-locked' : ''}`.trim()}
                                             maxLength={FIELD_LIMITS.rollNumber}
                                             autoComplete="off"
+                                            readOnly={rosterLocked}
+                                            aria-readonly={rosterLocked ? 'true' : undefined}
                                             aria-invalid={errors.rollNumber ? 'true' : 'false'}
                                         />
                                     </div>
@@ -1351,8 +1358,19 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                 </div>
 
                                 <div className="vvitu-reg-field">
-                                    <label>Residence <span className="required">*</span></label>
-                                    {renderSegment('residenceType', RESIDENCE_OPTIONS)}
+                                    <label>Residence {rosterLocked ? <span className="vvitu-reg-fromlist">from the college list</span> : <span className="required">*</span>}</label>
+                                    {/* Not a question on a hostel-roster intake: every
+                                        student on that list is a hosteler, and the
+                                        programme is hostelers-only, so asking invites a
+                                        wrong answer that would then be overridden by the
+                                        server anyway. Shown as a settled fact instead. */}
+                                    {rosterLocked
+                                        ? <div className="vvitu-reg-fixed-value" role="note">
+                                              <svg {...ico} width="15" height="15" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13" /><path d="M10 21v-5h4v5" /></svg>
+                                              Hosteler
+                                              <small>from the college hostel list</small>
+                                          </div>
+                                        : renderSegment('residenceType', RESIDENCE_OPTIONS)}
                                     {errors.residenceType && <span className="vvitu-reg-error">{errors.residenceType}</span>}
                                 </div>
                             </div>
@@ -1546,7 +1564,6 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                 ['EAPCET Rank', formData.eapcetRank],
                                 ['JEE Mains Rank', formData.jeeMainsRank],
                                 ['JEE Advanced Rank', formData.jeeAdvancedRank],
-                                ['SkillUp Batch', formData.batch || identity?.batch],
                                 program.timeSlots ? ['Class Time Slot', slotLabel(formData.timeSlot) || formData.timeSlot] : null,
                                 // For a year-spanning intake both of these come from what
                                 // the student picked, not from the program — showing the
