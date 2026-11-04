@@ -8929,19 +8929,23 @@
 // ===============================================================
 // WHAT WE OFFER  —  the roadmap
 // ---------------------------------------------------------------
-// One straight line, left to right, with ten milestones alternating above and
-// below it. Markup in components/vvitu/what-we-offer.jsx.
+// One VERTICAL line down the left with ten stops hanging off it, and the
+// active stop's photography filling the right.
+// Markup in components/vvitu/what-we-offer.jsx.
 //
-// THE RULE THIS SECTION IS BUILT AROUND: the spotlight and the line must be
-// readable together, in one screen, without scrolling to find either. So the
-// stage is sized to the container at runtime and split with flex — the line
-// takes a fixed band, the spotlight takes whatever is left. Nothing here has
-// a hard-coded total height, because a guess is what pushed the roadmap off
-// the bottom of the modal in the first place.
+// WHY THE SPLIT IS NOT DOWN THE MIDDLE: the modal is 1200px wide by at most
+// 90vh, so with the header folded this stage is about 1150x800 — wide and
+// short. Half of that is a ~575x780 box, which is PORTRAIT, and 36 of the 46
+// photographs here are 3:2 or 16:9. Giving the picture half the stage meant
+// either ~400px of dead space under every frame or cropping 60% off it. A
+// narrow rail for the line and the remainder for the picture keeps the frame
+// at the shape the photography already is.
 //
-// WHY A STRAIGHT LINE: a serpentine path costs a row per turn, and the rows
-// plus a spotlight did not fit. A straight line is one row high however many
-// milestones hang off it.
+// THE RULE THIS SECTION IS BUILT AROUND: the picture and the line must be
+// readable together, in one screen, without scrolling to find either. The
+// stage is sized to the container at runtime. Nothing here has a hard-coded
+// total height, because a guess is what pushed the roadmap off the bottom of
+// the modal in the first place.
 //
 // SPECIFICITY: every selector is a `vvitu-wwo-*` name with no competitor in
 // this file, so a flat block appended at the end is safe — unlike the older
@@ -8954,42 +8958,32 @@
   --wwo-tint: var(--vvitu-bg-coral-tint);
   --wwo-ring: rgba(226, 84, 76, 0.26);   // --vvitu-primary
   --wwo-glow: rgba(226, 84, 76, 0.2);    // --vvitu-primary
-  --wwo-band: 236px;                     // height reserved for the line + both sides
+  --wwo-plate: rgba(226, 84, 76, 0.11);  // --vvitu-primary, stop hover
+  --wwo-plate-on: rgba(226, 84, 76, 0.16); // --vvitu-primary, active stop
+  --wwo-rail: 320px;                     // width reserved for the line + labels
+  --wwo-dot-x: 21px;                     // where the rule and every dot sit
 
   display: flex;
   flex-direction: column;
-  width: 100%;
-
-  &[data-track="ai"] {
-    --wwo-a: var(--vvitu-secondary);
-    --wwo-a2: var(--vvitu-tertiary);
-    --wwo-tint: var(--vvitu-bg-warm-tint);
-    --wwo-ring: rgba(237, 114, 54, 0.3);  // --vvitu-secondary
-    --wwo-glow: rgba(242, 166, 59, 0.24); // --vvitu-tertiary
-  }
-
-  @media (max-width: 991px) { --wwo-band: 218px; }
-  @media (max-width: 767px) { --wwo-band: 198px; }
-  @media (max-width: 575px) { --wwo-band: 182px; }
+  gap: 12px;
+  font-family: var(--vvitu-font-primary);
 }
 
 .vvitu-wwo-eyebrow {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.7px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--wwo-a);
-  transition: color 0.45s ease;
 }
 
 .vvitu-wwo-h {
   margin: 2px 0 0;
-  font-size: 19px;
+  font-family: var(--vvitu-font-heading);
+  font-size: clamp(19px, 2.4vw, 25px);
   font-weight: 800;
-  line-height: 1.25;
   color: var(--vvitu-heading);
-  @media (max-width: 767px) { font-size: 17px; }
 }
 
 .vvitu-wwo-head {
@@ -8998,570 +8992,571 @@
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
 }
 
-// ── Track toggle ──
-.vvitu-wwo-toggle {
-  position: relative;
-  display: inline-flex;
-  flex-shrink: 0;
-  padding: 4px;
-  gap: 2px;
-  border-radius: 999px;
-  background: var(--vvitu-bg-body);
-  border: 1px solid var(--vvitu-border);
-  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.05); // --vvitu-heading
-  @media (max-width: 575px) { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
-}
-
-.vvitu-wwo-toggle-btn {
-  position: relative;
-  z-index: 1;
-  appearance: none;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 7px 18px;
-  min-height: 34px;
-  border-radius: 999px;
-  font-family: var(--vvitu-font-primary);
-  font-size: 12.5px;
-  font-weight: 800;
-  color: var(--vvitu-muted);
-  transition: color 0.3s ease;
-
-  &.is-on { color: var(--vvitu-white); }
-  &:focus-visible { outline: 2px solid var(--wwo-a); outline-offset: 2px; }
-
-  @media (max-width: 575px) { padding: 9px 10px; min-height: 40px; text-align: center; }
-}
-
-.vvitu-wwo-toggle-thumb {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: 999px;
-  background: var(--wwo-a);
-  box-shadow: 0 4px 12px var(--wwo-glow);
-  transition: background 0.45s ease, box-shadow 0.45s ease;
-}
-
-.vvitu-wwo-toggle-label { position: relative; }
-.vvitu-wwo-toggle-short { display: none; }
-@media (max-width: 360px) {
-  .vvitu-wwo-toggle-full { display: none; }
-  .vvitu-wwo-toggle-short { display: inline; }
-}
-
-.vvitu-wwo-tracknote {
-  position: relative;
-  min-height: 40px;
-  margin-bottom: 6px;
-  p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--vvitu-body); max-width: 72ch; }
-  @media (max-width: 767px) { min-height: 54px; p { font-size: 12px; } }
-  @media (max-width: 420px) { min-height: 70px; }
-}
-
-// ───────────────────────────── track + stage ─────────────────────────────
-//
-// The track's height is set inline from the measured stage height — it is the
-// scroll distance the section is worth. The stage sticks inside it.
 .vvitu-wwo-road { position: relative; width: 100%; }
 
 .vvitu-wwo-stage {
   position: sticky;
   top: 6px;                 // the section rail is folded away in this tab
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;      // rail | picture
+  gap: 14px;
   height: var(--wwo-stage-h, 520px);
-  padding: 14px 16px 10px;
+  padding: 14px 16px;
   border-radius: 18px;
   background: var(--wwo-tint);
   border: 1px solid var(--wwo-ring);
   overflow: hidden;
   transition: background 0.5s ease, border-color 0.5s ease;
 
-  @media (max-width: 767px) { padding: 11px 11px 8px; border-radius: 15px; gap: 8px; }
-}
-
-// ───────────────────────────── spotlight ─────────────────────────────
-//
-// Takes whatever height the line does not. `min-height: 0` is what lets a
-// flex child actually shrink instead of forcing the stage taller than it
-// claims to be — without it the roadmap gets pushed out of view again.
-.vvitu-wwo-spot {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.vvitu-wwo-spot-inner {
-  position: absolute;
-  inset: 0;
-  // Every panel is mounted; only the active one is shown. Opacity (not
-  // display/visibility) because a hidden element never decodes its image, and
-  // decoding on arrival is what caused the hitch mid-scroll. Browsers skip
-  // painting a fully transparent layer, so the nine idle panels cost nothing
-  // per frame.
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(10px) scale(0.993);
-  transition:
-    opacity 0.34s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.46s cubic-bezier(0.16, 1, 0.3, 1);
-  display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
-  gap: 16px;
-
-  &.is-on {
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-    z-index: 1;
-  }
-
-  @media (max-width: 767px) {
-    grid-template-columns: 1fr;
-    // Explicit shares, not `auto` + a percentage cap. A percentage max-height
-    // on a row sized `auto` has no definite height to resolve against, so the
-    // description came out clipped mid-sentence with empty space below it.
-    // Two fr rows give the picture and the words a fixed split that both can
-    // shrink inside.
-    grid-template-rows: minmax(0, 0.92fr) minmax(0, 1.08fr);
-    gap: 9px;
-  }
-}
-
-.vvitu-wwo-spot-media {
-  position: relative;
-  margin: 0;
-  min-height: 0;
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--vvitu-bg-section-alt);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14); // --vvitu-heading
-
-  img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  // A UI screenshot is not a photograph: cover-cropping one cuts off the part
-  // that carries the meaning, so it is contained whole on a plate instead.
-  //
-  // The plate HUGS the screenshot rather than filling the column. A grid item
-  // stretches by default, which left a wide screenshot floating in a tall dark
-  // slab with more empty plate than picture. Centring it vertically and letting
-  // the height come from the image means the frame is only ever as big as the
-  // thing inside it.
-  &.is-shot {
-    align-self: center;
-    height: auto;
-    max-height: 100%;
-    background: var(--vvitu-heading);
-    padding: 10px;
-
-    img {
-      width: 100%;
-      height: auto;
-      max-height: 100%;
-      object-fit: contain;
-      border-radius: 5px;
-    }
-  }
-
-  @media (max-width: 767px) { &.is-shot { padding: 7px; } }
-}
-
-.vvitu-wwo-spot-body {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  // NOT `overscroll-behavior: contain`. This panel sits under the pointer for
-  // most of the section, and `contain` stops the wheel chaining to the modal
-  // once the text bottoms out — so scrolling over the description simply
-  // stopped working. That dead wheel is the "stuck" feeling. Default chaining
-  // lets the modal keep scrolling once there is nothing left to read here.
-  padding-right: 2px;
-
-  // A long description scrolls inside its own panel rather than pushing the
-  // roadmap off the bottom of the stage. The row above gives it a definite
-  // height, so it does not need a cap of its own.
-}
-
-.vvitu-wwo-spot-step {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-  margin-bottom: 4px;
-  b { font-size: 20px; font-weight: 800; color: var(--wwo-a); transition: color 0.45s ease; }
-  i { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--vvitu-muted); }
-}
-
-.vvitu-wwo-spot-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: var(--wwo-a);
-  transition: color 0.45s ease;
-  svg { color: var(--vvitu-tertiary); flex-shrink: 0; }
-}
-
-.vvitu-wwo-spot-title {
-  margin: 3px 0 7px;
-  font-size: 21px;
-  font-weight: 800;
-  line-height: 1.2;
-  color: var(--vvitu-heading);
-  @media (max-width: 991px) { font-size: 18px; }
-  @media (max-width: 575px) { font-size: 16px; margin: 2px 0 5px; }
-}
-
-.vvitu-wwo-spot-text {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.62;
-  color: var(--vvitu-body);
-  @media (max-width: 575px) { font-size: 12px; line-height: 1.55; }
-}
-
-.vvitu-wwo-spot-track {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  margin-top: 9px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--vvitu-white);
-  background: var(--vvitu-gradient-primary);
-  box-shadow: 0 5px 14px var(--wwo-glow);
-  svg { flex-shrink: 0; }
-}
-
-.vvitu-wwo-logos {
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-
-  li {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
-    background: var(--vvitu-bg-body);
-    border: 1px solid var(--vvitu-border);
-    transition: transform 0.25s ease, border-color 0.25s ease;
-    &:hover { transform: translateY(-2px); border-color: var(--wwo-ring); }
-  }
-  img { width: 20px; height: 20px; object-fit: contain; display: block; }
+  @media (max-width: 767px) { padding: 10px; border-radius: 15px; gap: 8px; }
 }
 
 // ───────────────────────────── the line ─────────────────────────────
-
+//
+// `min-height: 0` is what lets a flex child actually shrink instead of
+// forcing the stage taller than it claims to be — without it the picture gets
+// pushed out of view again.
 .vvitu-wwo-rail {
-  flex: 0 0 var(--wwo-band);
-  height: var(--wwo-band);
-  overflow-x: auto;
-  overflow-y: hidden;
-  // The roadmap drives this, not the reader — a visible scrollbar would
-  // invite a horizontal drag that fights the vertical scroll.
+  position: relative;
+  flex: 0 0 var(--wwo-rail);
+  width: var(--wwo-rail);
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  // NOT `overscroll-behavior: contain`. Chaining to the modal is what lets a
+  // reader keep scrolling once this rail has bottomed out; containing it is
+  // how the section came to feel stuck the first time.
   scrollbar-width: none;
-  -ms-overflow-style: none;
   &::-webkit-scrollbar { display: none; }
 }
 
-// --wwo-col is declared HERE, on the shared parent, because the rule below
-// reads it and the rule is a SIBLING of the milestones — a value set on
-// .vvitu-wwo-ms would never reach it, and the inset would silently fall back
-// to a guess that no longer matches the column width.
 .vvitu-wwo-line {
-  --wwo-col: 94px;
   position: relative;
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
   list-style: none;
   margin: 0;
   padding: 0;
-  height: 100%;
-  min-width: 100%;
-  width: max-content;
+  min-height: 100%;
 }
 
-// The rule, inset so it begins at the FIRST dot and ends at the LAST.
+// The rule, inset so it begins at the FIRST badge and ends at the LAST.
 //
-// The inset is a percentage, not half a column in pixels. Every column —
-// both caps and all the milestones — is the same width W, so with N columns
-// the first dot sits at W/2 of N*W, which is 1/(2N) of the whole row. That
-// holds whether the columns are at their flex basis or stretched to fill, and
-// it is why the fill and the dots agree without a hand-tuned offset. A pixel
-// inset only matched when the columns happened to be exactly --wwo-col wide,
-// which stopped being true the moment the caps were added.
+// The inset is a percentage, not half a row in pixels. Every row — both caps
+// and all the stops — is the same height H, so with N rows the first centre
+// sits at H/2 of N*H, which is 1/(2N) of the whole column. That holds whether
+// the rows are at their flex basis or stretched to fill, and it is why the
+// fill and the dots agree without a hand-tuned offset.
 .vvitu-wwo-line-bg {
   position: absolute;
-  top: 50%;
-  left: calc(100% / (var(--wwo-cols, 11) * 2));
-  right: calc(100% / (var(--wwo-cols, 11) * 2));
-  height: 3px;
-  margin-top: -1.5px;
+  left: var(--wwo-dot-x);
+  top: calc(100% / (var(--wwo-rows, 11) * 2));
+  bottom: calc(100% / (var(--wwo-rows, 11) * 2));
+  width: 3px;
+  margin-left: -1.5px;
   border-radius: 999px;
   background: var(--vvitu-border);
   overflow: hidden;
 }
 
-// Filled by scaleX from the scroll handler. No transition: a transition would
-// lag a frame behind the finger and read as the line sliding around on its own.
 .vvitu-wwo-line-fill {
   position: absolute;
   inset: 0;
-  transform-origin: left center;
-  transform: scaleX(0);
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--wwo-a), var(--wwo-a2));
+  background: linear-gradient(180deg, var(--wwo-a), var(--wwo-a2));
+  // Written from the scroll handler as scaleY(p). transform-origin lives here
+  // so the handler stays a single-property write on the compositor.
+  transform-origin: top center;
+  transform: scaleY(0);
   will-change: transform;
 }
 
-.vvitu-wwo-ms {
+// Every row is the same height, which is what makes the percentage inset
+// above correct. `min-height: 0` lets them compress on a short stage.
+.vvitu-wwo-ms,
+.vvitu-wwo-cap {
   position: relative;
-  flex: 1 0 var(--wwo-col);
-  height: 100%;
-  min-width: var(--wwo-col);
-
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
 }
 
-@media (max-width: 1199px) { .vvitu-wwo-line { --wwo-col: 86px; } }
-@media (max-width: 991px)  { .vvitu-wwo-line { --wwo-col: 82px; } }
-@media (max-width: 575px)  { .vvitu-wwo-line { --wwo-col: 78px; } }
+// The stops carry their inset on the button inside them (.vvitu-wwo-ms-hit),
+// so the clickable area reaches the full width of the rail. The caps are not
+// clickable — they are not stops — so they keep theirs here.
+//
+// The caps need MORE inset than the stops, not the same: a cap's badge is
+// 36px across against a stop's 13px dot, so an inset that clears the dot
+// comfortably leaves the cap label all but touching its badge.
+.vvitu-wwo-cap { padding-left: calc(var(--wwo-dot-x) + 32px); }
 
-// Everything below positions against the centre line, so a milestone can grow
-// without moving the line or its neighbours.
+// ── the stops ──
+// The row itself is the button, so the target is the full width of the rail
+// and not a 13px circle. It is a real <button>, so it is tabbable and
+// announced; the padding that used to live on the <li> moves here or the hit
+// area would stop short of the label.
+// The hover was a flat white bar across the whole rail, which read as a
+// browser default dropped on top of the design rather than part of it. Three
+// changes: the plate is a soft tint of the section accent instead of solid
+// white, it starts AFTER the dot so it never covers the line it hangs off,
+// and it wipes in from the left rather than appearing all at once.
+// NO `position: relative` HERE. The dot is absolutely positioned against the
+// <li> at `left: var(--wwo-dot-x)`, and an absolute child resolves its offsets
+// against the nearest POSITIONED ancestor's PADDING box. Making this button a
+// containing block moved every dot right by exactly this padding-left — 41px
+// off the line and sitting on top of its own number. Measured: dots at x=224
+// against a line at x=183, while the two caps (which are not inside a button)
+// stayed correct. The plate below is drawn on the label instead, so nothing
+// here needs to be a containing block.
+.vvitu-wwo-ms-hit {
+  display: flex;
+  align-items: center;
+  width: 100%;              // the whole row is the hit area
+  height: 100%;
+  margin: 0;
+  padding: 0 6px 0 calc(var(--wwo-dot-x) + 20px);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+
+  // The dot answers the hover too, so the line acknowledges the pointer
+  // rather than only the text beside it.
+  &:hover .vvitu-wwo-ms-dot { border-color: var(--wwo-a); }
+  &:focus-visible { outline: none; }
+}
+
 .vvitu-wwo-ms-dot {
   position: absolute;
+  left: var(--wwo-dot-x);
   top: 50%;
-  left: 50%;
   width: 13px;
   height: 13px;
-  margin: -6.5px 0 0 -6.5px;
+  margin: 0;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--vvitu-bg-body);
-  border: 3px solid var(--vvitu-border);
-  z-index: 2;
-  transition: border-color 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  border: 2.5px solid var(--vvitu-border);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vvitu-wwo-ms.is-done .vvitu-wwo-ms-dot { border-color: var(--wwo-a); }
 .vvitu-wwo-ms.is-active .vvitu-wwo-ms-dot {
   border-color: var(--wwo-a);
   background: var(--wwo-a);
-  transform: scale(1.35);
-  box-shadow: 0 0 0 5px var(--wwo-ring);
+  transform: translate(-50%, -50%) scale(1.3);
+  box-shadow: 0 0 0 5px var(--wwo-glow);
 }
 
-.vvitu-wwo-ms-stalk {
-  position: absolute;
-  left: 50%;
-  width: 2px;
-  height: 22px;
-  margin-left: -1px;
-  background: var(--vvitu-border);
-  transition: background 0.4s ease;
-
-  .vvitu-wwo-ms.is-up & { bottom: 50%; }
-  .vvitu-wwo-ms.is-down & { top: 50%; }
-}
-
-.vvitu-wwo-ms.is-done .vvitu-wwo-ms-stalk,
-.vvitu-wwo-ms.is-active .vvitu-wwo-ms-stalk { background: var(--wwo-a); }
-
+// The plate lives here, not on the full-width button, so it hugs the label.
+// Drawn across the whole row it was a pale bar with a short word at one end
+// and a long empty tail — which is what made the hover read as a browser
+// default dropped on the design rather than part of it.
 .vvitu-wwo-ms-card {
-  position: absolute;
-  left: 50%;
-  width: calc(var(--wwo-col) - 6px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  // The card itself never scales — only the thumbnail inside it does. Scaling
-  // the card moved its label too, so the active milestone's label sat lower
-  // than every other label on its side of the line. Keeping the card fixed
-  // puts all the labels back on one baseline.
-  transform: translateX(-50%);
-  opacity: 0.5;
-  filter: grayscale(1);
-  transition: opacity 0.4s ease, filter 0.45s ease;
-
-  .vvitu-wwo-ms.is-up & { bottom: calc(50% + 22px); transform-origin: center bottom; }
-  .vvitu-wwo-ms.is-down & { top: calc(50% + 22px); transform-origin: center top; }
-}
-
-.vvitu-wwo-ms.is-done .vvitu-wwo-ms-card { opacity: 0.88; filter: none; }
-.vvitu-wwo-ms.is-active .vvitu-wwo-ms-card { opacity: 1; filter: none; }
-
-.vvitu-wwo-ms-thumb {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--vvitu-bg-section-alt);
-  border: 3px solid var(--vvitu-bg-body);
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12); // --vvitu-heading
-  transform: scale(0.9);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 11px;
+  border-radius: 9px;
+  background: transparent;
+  opacity: 0.55;
   transition:
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.4s ease,
-    box-shadow 0.4s ease;
-
-  img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  @media (max-width: 575px) { width: 48px; height: 48px; border-width: 2.5px; }
+    opacity 0.3s ease,
+    background 0.22s ease,
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.vvitu-wwo-ms.is-done .vvitu-wwo-ms-thumb { transform: scale(0.95); }
+.vvitu-wwo-ms.is-done .vvitu-wwo-ms-card { opacity: 0.8; }
 
-.vvitu-wwo-ms.is-active .vvitu-wwo-ms-thumb {
-  transform: scale(1.22);
-  border-color: var(--wwo-a);
-  box-shadow: 0 8px 20px var(--wwo-glow);
+.vvitu-wwo-ms-hit:hover .vvitu-wwo-ms-card,
+.vvitu-wwo-ms-hit:focus-visible .vvitu-wwo-ms-card {
+  background: var(--wwo-plate);
+  transform: translateX(4px);
+  opacity: 1;
 }
 
-// The spotlight halo. On a pseudo-element so it costs nothing on the other
-// nine milestones.
-.vvitu-wwo-ms-card::before {
-  content: "";
-  position: absolute;
-  top: 28px;
-  left: 50%;
-  width: 104px;
-  height: 104px;
-  margin: -52px 0 0 -52px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--wwo-glow) 0%, rgba(255, 255, 255, 0) 70%);
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
+.vvitu-wwo-ms-hit:focus-visible .vvitu-wwo-ms-card { box-shadow: 0 0 0 2px var(--wwo-a); }
+
+// The active stop keeps a permanent, quieter plate, so the thing being looked
+// at stays marked when the pointer is somewhere else.
+.vvitu-wwo-ms.is-active .vvitu-wwo-ms-card {
+  opacity: 1;
+  background: var(--wwo-plate-on);
 }
 
-.vvitu-wwo-ms.is-active .vvitu-wwo-ms-card::before { opacity: 1; transform: scale(1); }
+.vvitu-wwo-ms-no {
+  flex: none;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--vvitu-muted);
+  font-variant-numeric: tabular-nums;
+
+  .vvitu-wwo-ms.is-active & { color: var(--wwo-a); }
+}
 
 .vvitu-wwo-ms-label {
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.3;
-  text-align: center;
-  color: var(--vvitu-muted);
-  transition: color 0.4s ease;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--vvitu-body-alt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.3s ease, font-weight 0.3s ease;
 
   .vvitu-wwo-ms.is-active & { color: var(--vvitu-heading); font-weight: 800; }
-  .vvitu-wwo-ms.is-done & { color: var(--vvitu-body-alt); }
 }
 
-// ── The two bookends ──
-// The line now runs from a Beginner badge to an AI Ready Engineer badge, so it
-// reads as a journey with a destination rather than a row of perks. They are
-// columns in the same flex row as the milestones, which is what keeps the
-// arithmetic honest: with two caps there are `stops + 2` columns, milestone k
-// sits at (k+1)/(stops+1) along the line, and the fill and the dots agree
-// without a single hand-tuned offset.
-//
-// They sit ON the line rather than above or below it — an endpoint is not a
-// milestone, and giving them a stalk would make them look like one.
-.vvitu-wwo-cap {
-  position: relative;
-  // The SAME flex sizing as a milestone. A narrower cap would put the first
-  // and last dots somewhere other than half a column in, and the rule would
-  // no longer start and end on them.
-  flex: 1 0 var(--wwo-col);
-  min-width: var(--wwo-col);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-}
-
+// ── the two bookends ──
 .vvitu-wwo-cap-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 46px;
-  height: 46px;
+  position: absolute;
+  left: var(--wwo-dot-x);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  background: var(--vvitu-bg-body);
+  border: 2px solid var(--vvitu-border);
   color: var(--vvitu-muted);
-  // The ICON is the mark, not the disc it sits on. A filled gradient circle
-  // with a small glyph inside read as a coloured blob — the badge dominated
-  // the thing it was supposed to show. The background now matches the panel,
-  // so it is invisible except for the one job it still does: masking the line
-  // where it runs under the badge.
-  background: var(--wwo-tint);
-  border: none;
-  transition: color 0.45s ease, background 0.45s ease, filter 0.45s ease;
-
-  svg { width: 32px; height: 32px; }
-
-  @media (max-width: 575px) { width: 40px; height: 40px; svg { width: 27px; height: 27px; } }
+  transition: border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
 }
 
-// Lit: the start always is, the finish only once the line reaches it.
 .vvitu-wwo-cap.is-done .vvitu-wwo-cap-badge {
+  border-color: var(--wwo-a);
   color: var(--wwo-a);
-  filter: drop-shadow(0 3px 9px var(--wwo-glow));
+  box-shadow: 0 0 0 4px var(--wwo-glow);
 }
 
 .vvitu-wwo-cap-label {
-  font-size: 9.5px;
+  font-size: 11.5px;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  text-align: center;
-  line-height: 1.25;
   color: var(--vvitu-muted);
-  transition: color 0.45s ease;
+  transition: color 0.35s ease;
 }
 
 .vvitu-wwo-cap.is-done .vvitu-wwo-cap-label { color: var(--vvitu-heading); }
 
-// (The caps have no dot of their own: see the note in what-we-offer.jsx.
-// Their badge sits at the column centre, which is where the rule begins and
-// ends, so the line appears to run out of the icon.)
+// ───────────────────────────── the picture ─────────────────────────────
+.vvitu-wwo-show {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
 
-// On a small phone there is not enough height for a spotlight AND two rows of
-// milestone cards, so below 480px every milestone hangs on ONE side of the
-// line. That halves the band and keeps the whole stage inside one screen,
-// which matters more than the alternating pattern — which was only ever there
-// to stop ten labels colliding on a wide line, and the strip scrolls here.
-@media (max-width: 479px) {
-  .vvitu-wwo { --wwo-band: 134px; }
+// Every panel is mounted; only the active one is shown. Opacity (not
+// display/visibility) because a hidden element never decodes its image, and
+// decoding on arrival is what caused the hitch mid-scroll. Browsers skip
+// painting a fully transparent layer, so the idle panels cost nothing.
+//
+// Explicit fr shares, not `auto` + a percentage cap: a percentage max-height
+// resolves against an `auto` row to nothing, which is how the description
+// came to be clipped mid-sentence once already.
+.vvitu-wwo-panel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  // The caption rarely needs its whole share — most are three lines — so the
+  // photograph takes the lion's share and the counter pins to the bottom of
+  // whatever is left. Giving the two equal weight left a visible hole under
+  // the shorter captions.
+  grid-template-rows: minmax(0, 1.9fr) minmax(0, 1fr);
+  gap: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(9px);
+  transition:
+    opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.44s cubic-bezier(0.16, 1, 0.3, 1);
 
-  .vvitu-wwo-ms.is-down .vvitu-wwo-ms-card {
-    top: auto;
-    bottom: calc(50% + 20px);
-    transform-origin: center bottom;
+  &.is-on { opacity: 1; pointer-events: auto; transform: none; z-index: 2; }
+}
+
+// ── the deck ──
+// The top/right reserve is the room the two peeking frames translate into.
+// A single-frame stop gives it back — see `has-deck` below — so a lone hero
+// is never inset for a deck that is not there.
+//
+// EVERY FRAME IS A FIXED 16:9 BOX, and that is what stops the cropping.
+// The deck area is about 1.9-2.0:1 on a desktop and much narrower on a phone,
+// so a photograph filling it with `cover` lost a different slice of itself at
+// every width — heads off the top on one screen, feet off the bottom on the
+// next. Every photograph is now cropped to 16:9 once, at build time, with a
+// content-aware crop that keeps the faces (see the pipeline note in
+// what-we-offer-data.js), and the frame is pinned to the same ratio. Source
+// and frame agree, so `cover` has nothing left to cut.
+//
+// `position: absolute; inset: 0; margin: auto` plus `aspect-ratio` and both
+// max-* constraints resolves to the LARGEST 16:9 box that fits the deck,
+// centred. The leftover space falls outside the frame, where it reads as
+// padding rather than as letterbox bars inside a picture.
+.vvitu-wwo-deck {
+  position: relative;
+  min-height: 0;
+}
+
+// The ratio box. Frames and arrows both live inside it, so the arrows sit on
+// the picture's real edges however much spare room the deck has around it.
+.vvitu-wwo-fit {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+// The reserve the peeking frames spill into, taken off the ratio box rather
+// than off each frame — the frame has to stay exactly 16:9.
+.vvitu-wwo-deck.has-deck .vvitu-wwo-fit { inset: 14px 34px 0 0; }
+
+.vvitu-wwo-frame {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  border-radius: var(--vvitu-radius);
+  overflow: hidden;
+  background: var(--vvitu-bg-section-alt);
+  border: 1px solid var(--vvitu-border);
+  box-shadow: var(--vvitu-shadow-card);
+  // Opacity leads, transform trails: the incoming frame is readable before it
+  // has finished settling, which is what makes a 220ms swap feel immediate
+  // without feeling abrupt.
+  transition:
+    opacity 0.22s ease,
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
-  .vvitu-wwo-ms.is-down .vvitu-wwo-ms-stalk { top: auto; bottom: 50%; }
 
-  .vvitu-wwo-ms-thumb { width: 44px; height: 44px; }
-  .vvitu-wwo-ms-label { font-size: 9.5px; }
-  .vvitu-wwo-ms-stalk { height: 20px; }
+  // A product screenshot, not a photograph. These run 2.1-2.5:1 (desktop
+  // captures) or 0.48:1 (a phone); cover-cropping either cuts off the very UI
+  // that makes the point, so they letterbox instead.
+  &.is-shot {
+    background: var(--vvitu-bg-section);
+    img { object-fit: contain; }
+  }
+}
+
+// The offsets lean SIDEWAYS rather than upward. An even diagonal put most of
+// each peeking frame directly above the front one, where all that shows is a
+// full-width strip along the top edge — which reads as a rendering seam, not
+// as a stack. Weighted to the right, what shows is the right edge of a card
+// behind a card, which is the thing being suggested.
+.vvitu-wwo-deck.has-deck {
+  .is-front { opacity: 1; transform: none; z-index: 4; }
+  .is-peek1 { opacity: 0.52; transform: translate(17px, -7px) scale(0.972); z-index: 3; }
+  .is-peek2 { opacity: 0.26; transform: translate(33px, -14px) scale(0.944); z-index: 2; }
+  .is-back  { opacity: 0; transform: translate(33px, -14px) scale(0.944); z-index: 1; }
+}
+
+// ── the arrows ──
+// Sat on the frame rather than beside it: the deck is the thing being paged,
+// and putting them outside would cost width the photograph is already using.
+// They sit above the peeking frames (z-index 5 beats the front frame's 4) so
+// a click always lands on the arrow and never on the picture behind it.
+.vvitu-wwo-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  border: 1px solid var(--vvitu-border);
+  background: var(--vvitu-bg-body);
+  color: var(--vvitu-heading);
+  box-shadow: var(--vvitu-shadow-card);
+  cursor: pointer;
+  opacity: 0.82;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+    background: var(--wwo-a);
+    color: var(--vvitu-white);
+    border-color: var(--wwo-a);
+  }
+
+  &:focus-visible { outline: 2px solid var(--wwo-a); outline-offset: 2px; opacity: 1; }
+
+  // Inside the ratio box, so these are the picture's own edges — no need to
+  // compensate for the deck's spare room or the peek reserve.
+  &.is-prev { left: 10px; }
+  &.is-next { right: 10px; }
+}
+
+// ── the caption ──
+.vvitu-wwo-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+  // Deliberately NOT `overscroll-behavior: contain` — see the note on the
+  // rail. This panel sits under the pointer for most of the section.
+  scrollbar-width: thin;
+}
+
+.vvitu-wwo-note-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wwo-a);
+}
+
+.vvitu-wwo-note-title {
+  margin: 0;
+  font-family: var(--vvitu-font-heading);
+  font-size: clamp(17px, 2vw, 22px);
+  font-weight: 800;
+  line-height: 1.18;
+  color: var(--vvitu-heading);
+}
+
+.vvitu-wwo-note-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--vvitu-body-alt);
+}
+
+.vvitu-wwo-note-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-start;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--vvitu-bg-body);
+  border: 1px solid var(--wwo-ring);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--vvitu-body);
+
+  svg { flex: none; color: var(--wwo-a); }
+}
+
+.vvitu-wwo-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--vvitu-bg-body);
+    border: 1px solid var(--vvitu-border);
+  }
+
+  img { width: 18px; height: 18px; object-fit: contain; }
+}
+
+// ── the frame counter ──
+// Present only where there is more than one frame: a single-image stop would
+// otherwise show a one-segment "progress bar", which reads as broken.
+.vvitu-wwo-ticks {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.vvitu-wwo-tick {
+  width: 22px;
+  height: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--vvitu-border);
+  cursor: pointer;
+  transition: background 0.25s ease, width 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.is-on { background: var(--wwo-a); width: 34px; }
+  &:hover { background: var(--wwo-a2); }
+}
+
+// ───────────────────────────── responsive ─────────────────────────────
+@media (max-width: 1199px) { .vvitu-wwo { --wwo-rail: 274px; } }
+@media (max-width: 991px)  { .vvitu-wwo { --wwo-rail: 232px; } .vvitu-wwo-ms-label { font-size: 12.5px; } }
+
+// Below 768 the labels go and the rail keeps only the line, its dots and the
+// two badges. The vertical journey is still legible as a shape, and the stop
+// the reader is on is named in the caption anyway — so the label column was
+// paying ~170px for a word that is already on screen.
+@media (max-width: 767px) {
+  .vvitu-wwo { --wwo-rail: 44px; --wwo-dot-x: 20px; }
+
+  .vvitu-wwo-cap { padding-left: 0; }
+  .vvitu-wwo-ms-hit { padding: 0; justify-content: center; }
+
+  // The card is hidden on a phone, so its plate goes with it. The dot carries
+  // the state on its own here.
+
+  .vvitu-wwo-ms-card,
+  .vvitu-wwo-cap-label { display: none; }
+
+  .vvitu-wwo-cap-badge { width: 30px; height: 30px; }
+  .vvitu-wwo-cap-badge svg { width: 17px; height: 17px; }
+
+  .vvitu-wwo-panel { grid-template-rows: minmax(0, 1.45fr) minmax(0, 1fr); gap: 9px; }
+  .vvitu-wwo-deck.has-deck .vvitu-wwo-fit { inset: 9px 22px 0 0; }
+  .vvitu-wwo-note-text { font-size: 12.5px; line-height: 1.5; }
+
+  // Smaller, and tucked in: on a phone the frame is ~300px wide and a 34px
+  // disc at each edge eats a tenth of the photograph.
+  .vvitu-wwo-arrow {
+    width: 28px;
+    height: 28px;
+    &.is-prev { left: 6px; }
+    &.is-next { right: 6px; }
+    svg { width: 15px; height: 15px; }
+  }
+}
+
+@media (max-width: 479px) {
+  .vvitu-wwo { --wwo-rail: 36px; --wwo-dot-x: 17px; }
+  .vvitu-wwo-ms-dot { width: 11px; height: 11px; border-width: 2px; }
+  .vvitu-wwo-cap-badge { width: 26px; height: 26px; }
+  .vvitu-wwo-cap-badge svg { width: 15px; height: 15px; }
+  .vvitu-wwo-deck.has-deck .vvitu-wwo-fit { inset: 7px 17px 0 0; }
+  .vvitu-wwo-tick { width: 17px; &.is-on { width: 26px; } }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .vvitu-wwo-road * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-  .vvitu-wwo-ms.is-active .vvitu-wwo-ms-card { transform: translateX(-50%) scale(1.06); }
 }
 // ===============================================================
 // ROSTER-VERIFIED FIELDS ON THE REGISTRATION FORM

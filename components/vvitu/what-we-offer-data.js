@@ -24,17 +24,24 @@
 //
 // ── Images ───────────────────────────────────────────────────────────────
 // All referenced files live in /assets/images/vvitu/offer/ and are curated,
-// web-sized webp derivatives (~1MB for the whole section). The raw drop
-// folder they were built from is git-ignored: it is 169MB, 162MB of which is
-// thirteen 6000x4000 certification originals, and git keeps every blob
-// forever. Rebuild the derivatives rather than committing originals.
+// web-sized webp derivatives — 27 frames, 1.6MB for the whole section, built
+// at 1280px wide / quality 74. The raw drop folder they came from
+// (public/assets/images/vvitu/WhatweOffer/) is git-ignored: it is 172MB,
+// 162MB of which is thirteen 6000x4000 certification originals, and git keeps
+// every blob forever. Rebuild the derivatives; never commit an original.
 //
-// TODO(VVITU): three photographs are stand-ins. VVITU has not yet shot the
-// orange-tee AI sessions, so `week-ai`, `space-ai` and `street-ai` currently
-// show technology-track frames (different frames from the tech track, so the
-// toggle visibly changes). Replacing them is a file swap at the same paths —
-// no code change. Same for `golden-day`, which stands in with a certificate
-// ceremony until the Golden Day photographs exist.
+// ── Three frames are cropped, and the crop is load-bearing ───────────────
+// `street-1` carried a TORII + NAGARJUNA COLLEGE lockup across its top edge —
+// another college's name on a VVITU page. `owl-overview` and
+// `owl-contests-clean` are product captures whose nav bar carried a TECHNICAL
+// HUB mark AND a real account holder's name. In all three cases the offending
+// band is a clean horizontal strip at the top, so 13.5–14% off the top
+// removes it whole rather than slicing it. Re-crop from the raw folder if you
+// ever regenerate these — a straight resize puts the branding back.
+//
+// TODO(VVITU): the photography is Torii's from other campuses. It is honest
+// about what the programme looks like, but none of it is VVITU's own yet.
+// Replacing any frame is a file swap at the same path — no code change.
 // =========================================================================
 
 const IMG = '/assets/images/vvitu/offer';
@@ -92,11 +99,20 @@ export const OFFER_PLATFORMS = [
 // the argument, and a roadmap is the only layout that makes the order the
 // first thing a reader sees.
 //
-// `media` is either a single image or, for the three stages that run twice,
-// a { tech, ai } pair that follows the track toggle.
+// ── `gallery`, not `media` (2026-11-04) ──────────────────────────────────
+// Each stop carries an ARRAY of frames, because the photography is uneven by
+// nature: Project Space has a season's worth, Startup Chamber has exactly one.
+// The stage reads the array length and adapts — a lone frame renders as a
+// plain hero with no deck and no counter, so a single-image stop never looks
+// like a carousel that failed to load.
+//
+// `fit: 'contain'` marks a product screenshot rather than a photograph. Those
+// are 2.1–2.5:1 (desktop captures) or 0.48:1 (a phone), and cover-cropping
+// either one cuts off the very UI that makes the point, so they letterbox
+// inside the frame instead. Photographs cover-fill.
 //
 // `kicker` is the one-line promise; `body` is what actually happens. The
-// spotlight shows both, so neither has to carry the whole weight.
+// caption shows both, so neither has to carry the whole weight.
 // =========================================================================
 export const OFFER_ROADMAP = [
     {
@@ -104,8 +120,13 @@ export const OFFER_ROADMAP = [
         label: 'Project Week',
         kicker: 'Ideas, pitched out loud',
         body: 'A full week of class given over to ideas. Every student brings a problem worth solving and makes the case for it in front of the room — what the problem is, who has it, and how they intend to solve it.',
-        media: { tech: `${IMG}/week-tech.webp`, ai: `${IMG}/week-ai.webp` },
-        alt: 'Students mapping out a project idea on chart paper during Project Week',
+        gallery: [
+            { src: `${IMG}/week-1.webp`, alt: 'Students sketching a project idea on chart paper during Project Week' },
+            { src: `${IMG}/week-2.webp`, alt: 'Two students drawing out their problem statement on a poster' },
+            { src: `${IMG}/week-3.webp`, alt: 'A classroom of teams working up their ideas on chart paper' },
+            { src: `${IMG}/week-4.webp`, alt: 'A mentor taking questions from students at their laptops' },
+            { src: `${IMG}/week-5.webp`, alt: 'Two students refining a pitch together on a laptop' }
+        ],
         tracked: true
     },
     {
@@ -113,8 +134,13 @@ export const OFFER_ROADMAP = [
         label: 'Project Space',
         kicker: 'Teams build the thing',
         body: 'The ideas that survived become teams. Each team takes a problem statement and builds a working solution on the technology they have been learning, then presents it to every other team. The strongest work is awarded.',
-        media: { tech: `${IMG}/space-tech.webp`, ai: `${IMG}/space-ai.webp` },
-        alt: 'A mentor reviewing a team’s work in the lab during Project Space',
+        gallery: [
+            { src: `${IMG}/space-1.webp`, alt: 'The full Project Space cohort assembled in the stadium stands' },
+            { src: `${IMG}/space-2.webp`, alt: 'A mentor addressing the Project Space cohort in the stadium' },
+            { src: `${IMG}/space-3.webp`, alt: 'Hundreds of students seated for a Project Space session' },
+            { src: `${IMG}/space-4.webp`, alt: 'Teams building at their laptops in the Project Space lab' },
+            { src: `${IMG}/space-5.webp`, alt: 'An evening Project Space gathering seen from above' }
+        ],
         tracked: true
     },
     {
@@ -122,8 +148,13 @@ export const OFFER_ROADMAP = [
         label: 'Project Street',
         kicker: 'The whole university walks past',
         body: 'Finished projects leave the lab. Every team puts its work on a board along the campus street, the university walks the line like an exhibition, and everyone who stops to listen votes on what they have seen.',
-        media: { tech: `${IMG}/street-tech.webp`, ai: `${IMG}/street-ai.webp` },
-        alt: 'Students presenting their project on a board to visitors at Project Street',
+        gallery: [
+            { src: `${IMG}/street-1.webp`, alt: 'A team standing with their project board at Project Street' },
+            { src: `${IMG}/street-2.webp`, alt: 'Students explaining their project board to a mentor' },
+            { src: `${IMG}/street-3.webp`, alt: 'A team presenting their work from a laptop beside their board' },
+            { src: `${IMG}/street-4.webp`, alt: 'A student presenting to the room during Project Street' },
+            { src: `${IMG}/street-5.webp`, alt: 'The exhibition hall filled with teams and their projects' }
+        ],
         tracked: true
     },
     {
@@ -131,26 +162,19 @@ export const OFFER_ROADMAP = [
         label: 'Coding Contests',
         kicker: 'Every week, every month',
         body: 'A weekly contest keeps the habit, and the monthly contest is ranked and scored. Monthly winners are awarded on the same stage as the Project Space winners — the prizes are electronics and gadgets, not certificates.',
-        media: `${IMG}/coding-room.webp`,
-        alt: 'A hall of students competing in an AI Ready Engineer coding contest'
-    },
-    {
-        key: 'profiles',
-        label: 'Profiles Connected',
-        kicker: 'One number, every platform',
-        body: 'LeetCode, CodeChef, HackerRank, GeeksforGeeks, GitHub and LinkedIn all feed the Owl Coder dashboard, so everything you solve anywhere adds up in one place instead of scattering across six logins.',
-        media: `${IMG}/owl-contests.webp`,
-        alt: 'The Owl Coder contest list showing weekly and monthly coding contests',
-        platforms: true,
-        shot: true
+        gallery: [
+            { src: `${IMG}/contest-1.webp`, alt: 'A hall of students competing under the AI Ready Engineer banner' },
+            { src: `${IMG}/contest-2.webp`, alt: 'Students at their laptops during a timed coding contest' }
+        ]
     },
     {
         key: 'startup',
         label: 'Startup Chamber',
         kicker: 'From idea to venture',
         body: 'Every student is pushed to find a real problem, build a solution that is genuinely their own, and pitch it in the Startup Chamber. Work that turns out to be original gets taken further with our guidance behind it.',
-        media: `${IMG}/startup.webp`,
-        alt: 'Students discussing a startup idea around a laptop'
+        gallery: [
+            { src: `${IMG}/startup-1.webp`, alt: 'Students pitching a startup idea to mentors around a laptop' }
+        ]
     },
     // REMOVED 2026-11-04 at VVITU's request: Global Certifications is no
     // longer a milestone. Its copy is in git history and
@@ -161,26 +185,62 @@ export const OFFER_ROADMAP = [
         label: 'Owl Coder',
         kicker: 'Ten years of interview questions',
         body: 'DSA, SQL and core coding in one graded library built for placement readiness, with your progress tracked across every platform you are on.',
-        media: `${IMG}/owl-dashboard.webp`,
-        alt: 'The Owl Coder dashboard showing solved counts across LeetCode, CodeChef and HackerRank',
-        shot: true
+        // TODO(VVITU): two Owl Coder captures are promised for this stop — the
+        // Learning Path (graded modules with per-module progress) and the
+        // article view. Both say "graded library" far better than the contest
+        // list standing in here does. Drop them in the raw folder and add them
+        // to this array.
+        //
+        // WHEN THEY ARRIVE, CHECK THE CHROME. Every Owl Coder capture so far
+        // has carried a TECHNICAL HUB mark top-left AND a real account
+        // holder's name top-right; the Learning Path one also repeats that
+        // name in the profile card partway down the left column, which a top
+        // crop does NOT reach. That card has to be cropped off or the name
+        // masked — see the crop notes at the top of this file.
+        gallery: [
+            { src: `${IMG}/owl-contests-clean.webp`, fit: 'contain', alt: 'The Owl Coder contest list showing the weekly and monthly contests' }
+        ]
     },
     {
         key: 'myna',
         label: 'Myna',
         kicker: 'The rounds that are not technical',
         body: 'Web and mobile practice for listening, speaking, reading and writing, with mock tests and a leaderboard — built to get you through the first interview before the code ever comes up.',
-        media: `${IMG}/myna-web.webp`,
-        alt: 'The Myna platform shown on laptop and mobile',
-        shot: true
+        // The one stop whose two frames are a matched pair rather than a
+        // sequence: the same product on desktop and on a phone. Both letterbox
+        // (2.16:1 against 0.48:1) — cropping either to a shared box would throw
+        // away the device that makes it read as "web AND mobile".
+        gallery: [
+            { src: `${IMG}/myna-web.webp`, fit: 'contain', alt: 'The Myna web platform on a laptop' },
+            { src: `${IMG}/myna-app.webp`, fit: 'contain', alt: 'The Myna mobile app showing listening, speaking, reading and writing practice' }
+        ]
+    },
+    // MOVED 2026-11-04, from fifth to here. "One number, every platform" is a
+    // claim about Owl Coder and Myna, so it only reads as a payoff once both
+    // have been introduced; sitting above them it was describing an
+    // aggregation of two things the reader had not met yet.
+    {
+        key: 'profiles',
+        label: 'Profiles Connected',
+        kicker: 'One number, every platform',
+        body: 'LeetCode, CodeChef, HackerRank, GeeksforGeeks, GitHub and LinkedIn all feed the Owl Coder dashboard, so everything you solve anywhere adds up in one place instead of scattering across six logins.',
+        gallery: [
+            { src: `${IMG}/owl-overview.webp`, fit: 'contain', alt: 'The Owl Coder coding overview totalling solved counts across LeetCode, CodeChef and HackerRank' }
+        ],
+        platforms: true
     },
     {
         key: 'goldenday',
         label: 'Golden Day',
         kicker: 'How the programme ends',
         body: 'The programme closes with a ceremony. Everyone who got to the top of something — a track, the contests, the Startup Chamber — is recognised in front of the room, with certifications and awards.',
-        media: `${IMG}/golden-day.webp`,
-        alt: 'Students raising their certificates at the closing ceremony',
+        gallery: [
+            { src: `${IMG}/golden-1.webp`, alt: 'A full hall of students holding up their certificates' },
+            { src: `${IMG}/golden-2.webp`, alt: 'Students holding their certificates up to the camera' },
+            { src: `${IMG}/golden-3.webp`, alt: 'Two students with their certificates of completion' },
+            { src: `${IMG}/golden-4.webp`, alt: 'A group of students with their certificates after the ceremony' },
+            { src: `${IMG}/golden-5.webp`, alt: 'Students celebrating with their certificates' }
+        ],
         finale: true
     }
 ];
