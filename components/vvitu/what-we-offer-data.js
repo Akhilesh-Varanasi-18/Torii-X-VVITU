@@ -232,12 +232,25 @@ export const OFFER_ROADMAP = [
         label: 'Golden Day',
         kicker: 'How the programme ends',
         body: 'The programme closes with a ceremony. Everyone who got to the top of something — a track, the contests, the Startup Chamber — is recognised in front of the room, with certifications and awards.',
+        // THE ONLY STOP WITH ITS OWN FRAME RATIO, and it earns it. These three
+        // are not photographs — they are composed Golden Day cards, each with
+        // a gold headline, a subtitle and either one image or a 2x2 award
+        // grid, on the programme's own navy. Cropping one to the section's
+        // 16:9 would take the headline off the top, so the frame matches the
+        // card (8:7) instead and the whole thing is shown.
+        //
+        // A fourth card exists in the raw folder and is deliberately NOT here:
+        // goldenday3 (the AI Show one) has a Maya AI panel with a phone number
+        // and support@technicalhub.io legible inside it. Unlike the other
+        // crops in this file, the offending region is one quadrant of a 2x2
+        // grid rather than a strip along an edge, so there is no crop that
+        // removes it and leaves a card. Replace it with a version that does
+        // not show that panel and it can go straight back in this array.
+        ratio: '8 / 7',
         gallery: [
-            { src: `${IMG}/golden-1.webp`, alt: 'A full hall of students holding up their certificates' },
-            { src: `${IMG}/golden-2.webp`, alt: 'Students holding their certificates up to the camera' },
-            { src: `${IMG}/golden-3.webp`, alt: 'Two students with their certificates of completion' },
-            { src: `${IMG}/golden-4.webp`, alt: 'A group of students with their certificates after the ceremony' },
-            { src: `${IMG}/golden-5.webp`, alt: 'Students celebrating with their certificates' }
+            { src: `${IMG}/golden-1.webp`, alt: 'The Golden Day ceremony, with the whole cohort filling the stadium' },
+            { src: `${IMG}/golden-2.webp`, alt: 'Golden Day award winners: Emerging Tech, Best Developer and Star of the Year' },
+            { src: `${IMG}/golden-3.webp`, alt: 'Golden Day award winners: Trainee of the Year, Coder of the Year and Best Intern' }
         ],
         finale: true
     }

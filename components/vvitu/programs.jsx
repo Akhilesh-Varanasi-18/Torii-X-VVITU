@@ -4,6 +4,8 @@ import Slider from 'react-slick';
 import programsData from './programs-data';
 import { withOrdinalSup } from './ordinal';
 import ProgramDetailModal from './program-detail-modal';
+import WhatWeOfferModal from './what-we-offer-modal';
+import OfferGift from './offer-gift';
 
 // Custom Prev Arrow for Slick Carousel
 function PrevArrow(props) {
@@ -52,6 +54,24 @@ const getSlidesToShow = (width) => {
 const Programs = ({ onOpenRegister }) => {
     const [selectedProgram, setSelectedProgram] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // What We Offer owns its own window now, opened by the gift from either a
+    // programme card or the syllabus footer. The state lives HERE rather than
+    // inside the syllabus modal because it is reachable from both — and
+    // because rendering it as a sibling of the syllabus modal is what lets it
+    // stack cleanly on top instead of inside a scroller it would have to
+    // fight for height.
+    const [offerProgram, setOfferProgram] = useState(null);
+    const [reduceMotion, setReduceMotion] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+        const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const apply = () => setReduceMotion(mq.matches);
+        apply();
+        mq.addEventListener('change', apply);
+        return () => mq.removeEventListener('change', apply);
+    }, []);
     // Drive slidesToShow from the real viewport width ourselves.
     // react-slick's built-in `responsive` only reacts to matchMedia *change*
     // events and never checks the initial match on mount, so on a direct
@@ -205,6 +225,17 @@ const Programs = ({ onOpenRegister }) => {
                                                 </span>
                                             </div>
                                         )}
+
+                                        {/* The gift lives on the BANNER, bottom-right.
+                                            Not the card's top-right, where it landed
+                                            squarely on the year pill; not the footer,
+                                            which already carries two CTAs on an open
+                                            intake. Bottom-left of the banner is the
+                                            eligibility chip, so this corner is the one
+                                            genuinely free spot on the card. */}
+                                        {program.whatWeOffer && (
+                                            <OfferGift tone="card" onOpen={() => setOfferProgram(program)} />
+                                        )}
                                     </div>
 
                                     {/* Card Content Body */}
@@ -264,6 +295,18 @@ const Programs = ({ onOpenRegister }) => {
                 program={selectedProgram}
                 isOpen={isModalOpen}
                 onClose={handleCloseProgram}
+                onOpenOffer={() => setOfferProgram(selectedProgram)}
+                offerOpen={!!offerProgram}
+            />
+
+            {/* A SIBLING of the syllabus modal, not a child: it layers above it
+                on its own overlay, so opening it from the syllabus footer leaves
+                the syllabus exactly where it was underneath. */}
+            <WhatWeOfferModal
+                isOpen={!!offerProgram}
+                onClose={() => setOfferProgram(null)}
+                programName={offerProgram?.name}
+                reduceMotion={reduceMotion}
             />
         </section>
     );

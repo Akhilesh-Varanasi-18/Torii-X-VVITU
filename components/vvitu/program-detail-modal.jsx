@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { withOrdinalSup } from './ordinal';
-import WhatWeOffer from './what-we-offer';
+import OfferGift from './offer-gift';
 
 // ── Line-icon set (replaces the old emoji) ──────────────────────────────
 const ic = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' };
@@ -20,7 +20,7 @@ const IconSpark = () => (<svg viewBox="0 0 24 24" width="16" height="16" {...ic}
 const IconChevron = () => (<svg viewBox="0 0 24 24" width="15" height="15" {...ic} strokeWidth="2.4"><polyline points="9 18 15 12 9 6" /></svg>);
 const IconTrophy = () => (<svg viewBox="0 0 24 24" width="16" height="16" {...ic}><path d="M8 21h8M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" /><path d="M17 6h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4" /><path d="M7 6H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4" /></svg>);
 const IconLoop = () => (<svg viewBox="0 0 24 24" width="16" height="16" {...ic}><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>);
-const IconGift = () => (<svg viewBox="0 0 24 24" width="16" height="16" {...ic}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /><path d="M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5" /></svg>);
+// (IconGift moved to offer-gift.jsx with the section it belonged to.)
 
 // Coding-themed header icon per program (replaces the old emoji), tinted in our
 // palette. Falls back to a generic </> for any unmapped program.
@@ -49,6 +49,12 @@ const ProgramDetailModal = ({
     program,
     isOpen,
     onClose,
+    // Opens the What We Offer window. Owned by the parent, because the same
+    // window is reachable from a programme card without this modal being open
+    // at all.
+    onOpenOffer,
+    // True while that window is open, so this modal can stand down its Esc.
+    offerOpen = false,
     // The "Courses We Offer" section opens a specific course straight into its
     // syllabus (initialView='syllabus'); the "Programs We Offer" section omits
     // these and lands on the course-selection grid (the default two-step flow).
@@ -59,9 +65,6 @@ const ProgramDetailModal = ({
     const [view, setView] = useState(initialView);
     const [selectedCourseIndex, setSelectedCourseIndex] = useState(initialCourseIndex);
     const [activeSection, setActiveSection] = useState('overview');
-    // Inside "What We Offer" the modal gives its chrome back to the content.
-    // See the effect below for why this is NOT driven off `activeSection`.
-    const [immersive, setImmersive] = useState(false);
 
     const bodyRef = useRef(null);
     const sectionRefs = useRef({});
@@ -79,12 +82,17 @@ const ProgramDetailModal = ({
         }
     }, [program, isOpen, initialView, initialCourseIndex]);
 
-    // Esc to close.
+    // Esc to close — but NOT while the What We Offer window is open on top.
+    // Both listen on `window`, and listeners on one target fire in
+    // registration order, so this one would otherwise close the syllabus out
+    // from under a window the reader was actually looking at. stopPropagation
+    // cannot help here: it does not stop siblings on the same target.
     useEffect(() => {
+        if (offerOpen) return undefined;
         const onKey = (e) => { if (e.key === 'Escape' && isOpen) onClose(); };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [isOpen, onClose]);
+    }, [isOpen, onClose, offerOpen]);
 
     const currentCourse = program?.courses?.[selectedCourseIndex] || program?.courses?.[0];
 
@@ -101,15 +109,17 @@ const ProgramDetailModal = ({
             // so its tab is highlighted and sits ahead of the module list.
             currentCourse.contest ? { id: 'contest', label: 'Contest Upsolving', icon: <IconTrophy />, highlight: true } : null,
             currentCourse.modules?.length ? { id: 'roadmap', label: 'Modules', icon: <IconLayers /> } : null,
-            // Everything the PROGRAMME gives that is not a module. Keyed off the
-            // program, not the course, so it reads the same whichever track the
-            // student is looking at — and it sits last because the curriculum
-            // should answer "what will I learn" before this answers "and what
-            // else do I get". Highlighted: it is the differentiator, and a rail
-            // tab is the only hint it exists.
-            program?.whatWeOffer ? { id: 'offer', label: 'What We Offer', icon: <IconGift />, highlight: true } : null,
+            // NO 'offer' TAB (2026-11-04). What We Offer describes the PROGRAMME,
+            // not a course, so a per-course tab filed the same content under
+            // every course in the catalogue. It also had to fold this modal's
+            // header and rail away to fit, which changed the scroll container's
+            // height underneath a section that measures itself against exactly
+            // that height — the snag on the way into the tab. It now opens in
+            // its own window from the gift in the footer; see offer-gift.jsx.
         ].filter(Boolean);
-    }, [currentCourse, program]);
+        // `program` dropped from the deps with the offer tab — the rail is
+        // built entirely from the course now.
+    }, [currentCourse]);
 
     // Scroll-spy: highlight the section currently under the sticky rail.
     useEffect(() => {
@@ -132,37 +142,19 @@ const ProgramDetailModal = ({
         return () => observer.disconnect();
     }, [view, sections, selectedCourseIndex]);
 
-    // Collapse the programme header and the section rail once the reader is
-    // inside What We Offer, and bring them back on the way out.
+    // IMMERSIVE MODE IS GONE (2026-11-04), with the What We Offer tab it
+    // existed for. It collapsed this modal's header and section rail to give
+    // that one section the full height, which changed the scroll container's
+    // height underneath a section that measures itself against exactly that
+    // height — the snag on the way into the tab, and the reason the roadmap
+    // needed a guard against a stage taller than its own scroller.
     //
-    // Driven from the section's own position, NOT from `activeSection`. The
-    // scroll-spy's rootMargin is measured against the rail — collapsing the
-    // rail moves the very boundary that decides whether the section is active,
-    // which would hide it, un-hide it, and hide it again every frame.
-    //
-    // The two thresholds are a dead band for the same reason: 110px of travel
-    // has to pass between hiding and showing, so the chrome cannot flap while
-    // a reader rests at the boundary.
-    useEffect(() => {
-        if (view !== 'syllabus' || !program?.whatWeOffer) { setImmersive(false); return undefined; }
-        const body = bodyRef.current;
-        if (!body) return undefined;
-        let frame = 0;
-        const read = () => {
-            frame = 0;
-            const sec = sectionRefs.current.offer;
-            if (!sec) return;
-            const top = sec.getBoundingClientRect().top - body.getBoundingClientRect().top;
-            setImmersive((on) => (on ? top < 120 : top < 10));
-        };
-        const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
-        read();
-        body.addEventListener('scroll', onScroll, { passive: true });
-        return () => {
-            body.removeEventListener('scroll', onScroll);
-            if (frame) cancelAnimationFrame(frame);
-        };
-    }, [view, program, selectedCourseIndex]);
+    // To restore it: `const [immersive, setImmersive] = useState(false)`, a
+    // rAF scroll listener comparing the section's top against the body's with
+    // a dead band (110px of travel between hiding and showing, or the chrome
+    // flaps while a reader rests on the boundary), and `is-immersive` on the
+    // modal. The CSS for it is still in _vvitu-sections.scss. Git history has
+    // the effect in full.
 
     if (!isOpen || !program || !currentCourse) return null;
 
@@ -204,7 +196,7 @@ const ProgramDetailModal = ({
     return (
         <div className="vvitu-program-modal-overlay">
             <div
-                className={`vvitu-program-modal-content ${immersive ? 'is-immersive' : ''}`}
+                className="vvitu-program-modal-content"
                 role="dialog"
                 aria-modal="true"
                 onClick={(e) => e.stopPropagation()}
@@ -459,25 +451,22 @@ const ProgramDetailModal = ({
                                 </section>
                             )}
 
-                            {/* ── WHAT WE OFFER — everything beyond the syllabus ── */}
-                            {program.whatWeOffer && (
-                                <section className="vvitu-syll-section" data-section="offer" ref={setRef('offer')}>
-                                    <SectionHead
-                                        eyebrow="Beyond the syllabus"
-                                        title="What We Offer"
-                                        sub="The projects, contests, platforms and recognition that come with the programme — not as extras, but as how it runs"
-                                        icon={<IconGift />}
-                                    />
-                                    <WhatWeOffer reveal={reveal} reduceMotion={reduceMotion} scrollRef={bodyRef} />
-                                </section>
-                            )}
+                            {/* What We Offer used to render here as the last
+                                section. It is its own window now — see the gift
+                                in the footer below. */}
                         </div>
                     )}
                 </div>
 
                 {/* Footer */}
                 <div className="vvitu-pmodal-footer">
-                    <div></div>
+                    {/* The footer is sticky, so the gift is in view for the whole
+                        syllabus rather than only once the reader reaches the
+                        bottom of it — which is where the old tab's content sat.
+                        The left slot was an empty spacer. */}
+                    {program.whatWeOffer && onOpenOffer ? (
+                        <OfferGift tone="bar" onOpen={onOpenOffer} />
+                    ) : <div />}
                     <div className="vvitu-pmodal-footer-btns">
                         <button type="button" className="vvitu-btn-outline" onClick={onClose}>Close</button>
                         <a

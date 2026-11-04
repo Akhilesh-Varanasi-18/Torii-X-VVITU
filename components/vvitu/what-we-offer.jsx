@@ -387,10 +387,17 @@ const OfferRoadmap = ({ stops, scrollRef, reduceMotion }) => {
                                 aria-hidden={!on}
                             >
                                 <div className={`vvitu-wwo-deck ${n > 1 ? 'has-deck' : ''}`}>
-                                  {/* The 16:9 ratio box. Frames and arrows both
-                                      sit inside it so the arrows land on the
-                                      picture's own edges, not the deck's. */}
-                                  <div className="vvitu-wwo-fit">
+                                  {/* The ratio box. Frames and arrows both sit
+                                      inside it so the arrows land on the
+                                      picture's own edges, not the deck's.
+                                      16:9 unless the stop asks otherwise —
+                                      Golden Day's frames are composed cards,
+                                      not photographs, and a 16:9 crop would
+                                      take their headline off. */}
+                                  <div
+                                    className="vvitu-wwo-fit"
+                                    style={s.ratio ? { '--wwo-ratio': s.ratio } : undefined}
+                                  >
                                     {g.map((f, j) => {
                                         // Distance forward from the visible frame, so
                                         // the deck always reads front -> back in the

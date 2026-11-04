@@ -9312,7 +9312,10 @@
   position: absolute;
   inset: 0;
   margin: auto;
-  aspect-ratio: 16 / 9;
+  // 16:9 for photography. A stop can override it with --wwo-ratio when its
+  // frames are a different shape by nature rather than by accident — see
+  // Golden Day, whose frames are composed cards at 8:7.
+  aspect-ratio: var(--wwo-ratio, 16 / 9);
   max-width: 100%;
   max-height: 100%;
 }
@@ -9719,4 +9722,435 @@
 @media (prefers-reduced-motion: reduce) {
   .vvitu-program-modal-content .vvitu-pmodal-header,
   .vvitu-program-modal-content .vvitu-syll-rail { transition-duration: 0.01ms; }
+}
+// ===============================================================
+// ===============================================================
+// WHAT WE OFFER  —  the gift, and the window it opens
+// ---------------------------------------------------------------
+// What We Offer stopped being a tab inside the syllabus (see the note in
+// program-detail-modal.jsx) and became its own window, reached from a parcel
+// that will not sit still. Two placements:
+//
+//   .vvitu-gift--card  pinned to a programme card in the carousel. The louder
+//                      of the two: it has to catch an eye scanning past.
+//   .vvitu-gift--bar   in the syllabus footer, where the reader has already
+//                      committed and only needs to know the thing exists.
+//
+// ALL MOTION IS transform AND opacity, on pseudo-elements and children. The
+// card placement is absolutely positioned inside a carousel slide, and
+// react-slick measures those slides — anything here that changed layout would
+// be measured, and the carousel would fight it.
+//
+// SPECIFICITY: flat `vvitu-gift-*` / `vvitu-offer-*` names with no competitor
+// in this file, so a flat block appended at the end is safe (§8.4b).
+// ===============================================================
+
+.vvitu-gift {
+  --gift-a: var(--vvitu-primary);
+  --gift-ring: rgba(226, 84, 76, 0.34);   // --vvitu-primary
+  --gift-wash: rgba(226, 84, 76, 0.12);   // --vvitu-primary
+
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+  // The halo rings scale past the button's own box; without this the card's
+  // overflow would clip them into squares.
+  overflow: visible;
+}
+
+// ── the parcel ──
+.vvitu-gift-box {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--vvitu-bg-body);
+  border: 1.5px solid var(--gift-ring);
+  color: var(--gift-a);
+  box-shadow: var(--vvitu-shadow-card);
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+
+  svg { width: 23px; height: 23px; }
+
+  // Two motions on one element, composed in a single keyframe track: a slow
+  // settle-and-shake that reads as a parcel being jostled. Separating them
+  // into two animations on one element would mean the second simply replaced
+  // the first.
+  animation: vvitu-gift-jostle 2.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+}
+
+// ── the halo ──
+// Behind the parcel, not around it: a ring that leaves and fades reads as
+// something radiating out, where a pulsing border just reads as a border.
+.vvitu-gift-halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gift-ring);
+  opacity: 0;
+  pointer-events: none;
+  animation: vvitu-gift-radiate 2.9s ease-out infinite;
+
+  // Half a cycle behind, so the halo is a steady pulse rather than one ring
+  // and a long wait.
+  &.is-late { animation-delay: 1.45s; }
+}
+
+// ── the message ──
+// Always mounted, only opacity and transform animate: building the bubble on
+// hover would cost a layout pass at exactly the moment the pointer is asking
+// for a response.
+.vvitu-gift-say {
+  position: absolute;
+  bottom: calc(100% + 11px);
+  left: 50%;
+  z-index: 3;
+  display: block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--gift-a);
+  color: var(--vvitu-white);
+  font-family: var(--vvitu-font-primary);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: var(--vvitu-shadow-card);
+  opacity: 0;
+  transform: translate(-50%, 7px) scale(0.94);
+  transform-origin: center bottom;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+
+  // The tail. Drawn as a rotated square rather than a border triangle so it
+  // inherits the bubble's own background and never drifts out of tint with it.
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 1px;
+    background: inherit;
+    transform: rotate(45deg);
+  }
+}
+
+.vvitu-gift:hover,
+.vvitu-gift:focus-visible {
+  outline: none;
+
+  .vvitu-gift-say { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+  // The parcel stops fidgeting once it has been noticed — continuing to shake
+  // under the pointer reads as a glitch rather than as an invitation.
+  .vvitu-gift-box {
+    animation-play-state: paused;
+    transform: scale(1.08);
+    background: var(--gift-a);
+    border-color: var(--gift-a);
+    color: var(--vvitu-white);
+  }
+}
+
+.vvitu-gift:focus-visible .vvitu-gift-box { box-shadow: 0 0 0 3px var(--gift-wash); }
+.vvitu-gift:active .vvitu-gift-box { transform: scale(0.97); }
+
+// ── placement: on a programme card ──
+// Pinned to the card's top-right. The card already carries a title, a year
+// pill and up to two CTAs; this had to go somewhere that is not the reading
+// column, and the top-right corner is the one place a card of this shape
+// leaves genuinely empty.
+// BOTTOM-RIGHT OF THE BANNER, and each part of that is deliberate.
+//
+// The card's top-right already holds the year pill — the parcel sat squarely
+// on "2ⁿᵈ Year" there. The banner's bottom-LEFT holds the eligibility chip.
+// That leaves this corner as the one genuinely free spot on the card.
+//
+// The banner clips (`overflow: hidden`, 16/9), so the rest follows from that:
+//
+//   * inset far enough that the halo's widest ring (1.62x of 46px, so ~37px
+//     from centre) clears the banner's bottom and right edges;
+//   * the bubble opens UPWARD into the banner, which is empty through its
+//     middle — downward is straight off the banner;
+//   * the bubble is anchored to the parcel's RIGHT edge, not centred on it —
+//     centred, a ~110px bubble on a parcel 41px from the edge would hang 14px
+//     into the clip.
+.vvitu-gift--card {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  z-index: 4;
+
+  .vvitu-gift-say {
+    left: auto;
+    right: 0;
+    transform: translateY(7px) scale(0.94);
+    transform-origin: bottom right;
+
+    &::after { left: auto; right: 15px; margin: -4px 0 0 0; }
+  }
+
+  &:hover .vvitu-gift-say,
+  &:focus-visible .vvitu-gift-say { transform: translateY(0) scale(1); }
+}
+
+// ── placement: in the syllabus footer ──
+// Horizontal here, because the footer has the width for a word and a footer
+// icon with no label reads as a mystery button.
+.vvitu-gift--bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 13px 5px 5px;
+  border-radius: 999px;
+  background: var(--vvitu-bg-coral-tint);
+  border: 1px solid var(--gift-ring);
+  transition: background 0.25s ease, border-color 0.25s ease;
+
+  // The footer switches to `align-items: stretch` on a phone, which blew this
+  // pill out to the full width and left the parcel marooned at one end.
+  // `align-self` opts it out so it keeps hugging its own content.
+  align-self: center;
+  flex: none;
+
+  .vvitu-gift-box {
+    width: 34px;
+    height: 34px;
+    box-shadow: none;
+    svg { width: 18px; height: 18px; }
+  }
+
+  // Anchored to the PARCEL, not to the button's centre. The button is a wide
+  // pill here, so the inherited `left: 50%` put the ring out in the middle of
+  // the label — a stray circle with nothing inside it. 5px of padding plus
+  // half of a 34px parcel is 22px.
+  .vvitu-gift-halo {
+    width: 34px;
+    height: 34px;
+    left: 22px;
+    margin: -17px 0 0 -17px;
+  }
+
+  // In the bar the label is permanent — so it is NOT the hover bubble. The
+  // bubble is suppressed and the text rides inline instead.
+  .vvitu-gift-say {
+    position: static;
+    opacity: 1;
+    transform: none;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--vvitu-heading);
+    box-shadow: none;
+    font-size: 12.5px;
+    font-weight: 700;
+    &::after { display: none; }
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: var(--gift-wash);
+    border-color: var(--gift-a);
+    .vvitu-gift-say { color: var(--gift-a); }
+  }
+}
+
+@keyframes vvitu-gift-jostle {
+  0%, 62%   { transform: rotate(0deg) scale(1); }
+  66%       { transform: rotate(-11deg) scale(1.05); }
+  70%       { transform: rotate(9deg) scale(1.05); }
+  74%       { transform: rotate(-8deg) scale(1.04); }
+  78%       { transform: rotate(6deg) scale(1.03); }
+  82%       { transform: rotate(-4deg) scale(1.02); }
+  86%, 100% { transform: rotate(0deg) scale(1); }
+}
+
+// Peaks at 1.62, not 2-ish. The card clips, so the widest ring has to stay
+// inside it: at 1.95 the ring reached ~45px from a centre sitting 39px from
+// the card's right edge and was sliced into a flat edge, which reads as a
+// rendering fault rather than as a halo. Keep this in step with the inset on
+// .vvitu-gift--card.
+@keyframes vvitu-gift-radiate {
+  0%   { opacity: 0.6; transform: scale(1); }
+  70%  { opacity: 0; transform: scale(1.62); }
+  100% { opacity: 0; transform: scale(1.62); }
+}
+
+// ===============================================================
+// THE WINDOW
+// ---------------------------------------------------------------
+// Same footprint as the syllabus modal so the two read as the same kind of
+// surface, but on its own overlay ABOVE it (z-index 2000 -> 2100): opening
+// this from the syllabus footer leaves the syllabus exactly where it was.
+//
+// Its body is the scroll container the roadmap measures itself against. There
+// is deliberately no collapsing chrome here — that is the whole reason this
+// window exists, see what-we-offer-modal.jsx.
+// ===============================================================
+
+.vvitu-offer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(15, 17, 23, 0.78);
+  backdrop-filter: blur(7px);
+  animation: vvitu-offer-in 0.26s ease both;
+
+  @media (max-width: 767px) { padding: 10px; }
+}
+
+.vvitu-offer-window {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--vvitu-bg-body);
+  border: 1px solid var(--vvitu-border);
+  box-shadow: var(--vvitu-shadow-hover);
+  font-family: var(--vvitu-font-primary);
+  animation: vvitu-offer-rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vvitu-offer-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--vvitu-border);
+  background: var(--vvitu-bg-section);
+}
+
+.vvitu-offer-bar-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--vvitu-bg-coral-tint);
+  border: 1px solid rgba(226, 84, 76, 0.26);   // --vvitu-primary
+  color: var(--vvitu-primary);
+}
+
+.vvitu-offer-bar-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+
+.vvitu-offer-bar-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--vvitu-primary);
+}
+
+.vvitu-offer-bar-title {
+  margin: 0;
+  font-family: var(--vvitu-font-heading);
+  font-size: clamp(16px, 2vw, 19px);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--vvitu-heading);
+}
+
+// Which programme the reader came from. Pushed to the right and dropped on a
+// phone, where the title and the close button are the whole budget.
+.vvitu-offer-bar-prog {
+  margin-left: auto;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--vvitu-bg-body);
+  border: 1px solid var(--vvitu-border);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--vvitu-body-alt);
+  white-space: nowrap;
+
+  @media (max-width: 767px) { display: none; }
+}
+
+.vvitu-offer-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin-left: 6px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--vvitu-border);
+  background: var(--vvitu-bg-body);
+  color: var(--vvitu-body-alt);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+  // No `margin-left: auto` here — the programme pill already claims the gap,
+  // and when that pill is hidden on a phone the bar's own layout handles it.
+  &:hover { background: var(--vvitu-primary); border-color: var(--vvitu-primary); color: var(--vvitu-white); }
+  &:focus-visible { outline: 2px solid var(--vvitu-primary); outline-offset: 2px; }
+}
+
+@media (max-width: 767px) {
+  .vvitu-offer-bar { padding: 11px 13px; gap: 9px; }
+  .vvitu-offer-bar-mark { width: 32px; height: 32px; border-radius: 9px; }
+  .vvitu-offer-close { width: 32px; height: 32px; margin-left: auto; }
+}
+
+.vvitu-offer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+
+  @media (max-width: 767px) { padding: 11px 11px 14px; }
+}
+
+@keyframes vvitu-offer-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes vvitu-offer-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  // The parcel and its halo are the only things on this page that move with
+  // nothing asking them to, so they are the first things to stop.
+  .vvitu-gift-box,
+  .vvitu-gift-halo { animation: none !important; }
+  .vvitu-gift-halo { opacity: 0; }
+
+  .vvitu-offer-overlay,
+  .vvitu-offer-window { animation-duration: 0.01ms !important; }
 }
