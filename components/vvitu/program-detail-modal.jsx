@@ -59,6 +59,9 @@ const ProgramDetailModal = ({
     const [view, setView] = useState(initialView);
     const [selectedCourseIndex, setSelectedCourseIndex] = useState(initialCourseIndex);
     const [activeSection, setActiveSection] = useState('overview');
+    // Inside "What We Offer" the modal gives its chrome back to the content.
+    // See the effect below for why this is NOT driven off `activeSection`.
+    const [immersive, setImmersive] = useState(false);
 
     const bodyRef = useRef(null);
     const sectionRefs = useRef({});
@@ -129,6 +132,38 @@ const ProgramDetailModal = ({
         return () => observer.disconnect();
     }, [view, sections, selectedCourseIndex]);
 
+    // Collapse the programme header and the section rail once the reader is
+    // inside What We Offer, and bring them back on the way out.
+    //
+    // Driven from the section's own position, NOT from `activeSection`. The
+    // scroll-spy's rootMargin is measured against the rail — collapsing the
+    // rail moves the very boundary that decides whether the section is active,
+    // which would hide it, un-hide it, and hide it again every frame.
+    //
+    // The two thresholds are a dead band for the same reason: 110px of travel
+    // has to pass between hiding and showing, so the chrome cannot flap while
+    // a reader rests at the boundary.
+    useEffect(() => {
+        if (view !== 'syllabus' || !program?.whatWeOffer) { setImmersive(false); return undefined; }
+        const body = bodyRef.current;
+        if (!body) return undefined;
+        let frame = 0;
+        const read = () => {
+            frame = 0;
+            const sec = sectionRefs.current.offer;
+            if (!sec) return;
+            const top = sec.getBoundingClientRect().top - body.getBoundingClientRect().top;
+            setImmersive((on) => (on ? top < 120 : top < 10));
+        };
+        const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
+        read();
+        body.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+            body.removeEventListener('scroll', onScroll);
+            if (frame) cancelAnimationFrame(frame);
+        };
+    }, [view, program, selectedCourseIndex]);
+
     if (!isOpen || !program || !currentCourse) return null;
 
     const handleSelectCourse = (index) => {
@@ -169,7 +204,7 @@ const ProgramDetailModal = ({
     return (
         <div className="vvitu-program-modal-overlay">
             <div
-                className="vvitu-program-modal-content"
+                className={`vvitu-program-modal-content ${immersive ? 'is-immersive' : ''}`}
                 role="dialog"
                 aria-modal="true"
                 onClick={(e) => e.stopPropagation()}
