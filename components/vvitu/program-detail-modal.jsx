@@ -433,7 +433,7 @@ const ProgramDetailModal = ({
                                         sub="The projects, contests, platforms and recognition that come with the programme — not as extras, but as how it runs"
                                         icon={<IconGift />}
                                     />
-                                    <WhatWeOffer reveal={reveal} reduceMotion={reduceMotion} />
+                                    <WhatWeOffer reveal={reveal} reduceMotion={reduceMotion} scrollRef={bodyRef} />
                                 </section>
                             )}
                         </div>

@@ -209,3 +209,115 @@ export const OFFER_FINALE = {
         { key: 'overall', label: 'Overall', note: 'Top of the programme' }
     ]
 };
+
+// =========================================================================
+// THE ROADMAP
+// -------------------------------------------------------------------------
+// Every stop the programme takes a student through, in order, as one
+// continuous Z-shaped path: rows run left→right, turn down at the end, then
+// run right→left, and so on. The path fills as the section is scrolled and
+// each stop lights up as the line reaches it.
+//
+// ── Why one path instead of four separate acts ──────────────────────────
+// Read as cards, these ten things are a list of perks. Read as a path, they
+// are a year: you pitch an idea, you build it, you exhibit it, you compete,
+// you are certified, and it ends with your name being read out. The order is
+// the argument, and a roadmap is the only layout that makes the order the
+// first thing a reader sees.
+//
+// `media` is either a single image or, for the three stages that run twice,
+// a { tech, ai } pair that follows the track toggle.
+//
+// `kicker` is the one-line promise; `body` is what actually happens. The
+// spotlight shows both, so neither has to carry the whole weight.
+// =========================================================================
+export const OFFER_ROADMAP = [
+    {
+        key: 'week',
+        label: 'Project Week',
+        kicker: 'Ideas, pitched out loud',
+        body: 'A full week of class given over to ideas. Every student brings a problem worth solving and makes the case for it in front of the room — what the problem is, who has it, and how they intend to solve it.',
+        media: { tech: `${IMG}/week-tech.webp`, ai: `${IMG}/week-ai.webp` },
+        alt: 'Students mapping out a project idea on chart paper during Project Week',
+        tracked: true
+    },
+    {
+        key: 'space',
+        label: 'Project Space',
+        kicker: 'Teams build the thing',
+        body: 'The ideas that survived become teams. Each team takes a problem statement and builds a working solution on the technology they have been learning, then presents it to every other team. The strongest work is awarded.',
+        media: { tech: `${IMG}/space-tech.webp`, ai: `${IMG}/space-ai.webp` },
+        alt: 'A mentor reviewing a team’s work in the lab during Project Space',
+        tracked: true
+    },
+    {
+        key: 'street',
+        label: 'Project Street',
+        kicker: 'The whole university walks past',
+        body: 'Finished projects leave the lab. Every team puts its work on a board along the campus street, the university walks the line like an exhibition, and everyone who stops to listen votes on what they have seen.',
+        media: { tech: `${IMG}/street-tech.webp`, ai: `${IMG}/street-ai.webp` },
+        alt: 'Students presenting their project on a board to visitors at Project Street',
+        tracked: true
+    },
+    {
+        key: 'contests',
+        label: 'Coding Contests',
+        kicker: 'Every week, every month',
+        body: 'A weekly contest keeps the habit, and the monthly contest is ranked and scored. Monthly winners are awarded on the same stage as the Project Space winners — the prizes are electronics and gadgets, not certificates.',
+        media: `${IMG}/coding-room.webp`,
+        alt: 'A hall of students competing in an AI Ready Engineer coding contest'
+    },
+    {
+        key: 'profiles',
+        label: 'Profiles Connected',
+        kicker: 'One number, every platform',
+        body: 'LeetCode, CodeChef, HackerRank, GeeksforGeeks, GitHub and LinkedIn all feed the Owl Coder dashboard, so everything you solve anywhere adds up in one place instead of scattering across six logins.',
+        media: `${IMG}/owl-contests.webp`,
+        alt: 'The Owl Coder contest list showing weekly and monthly coding contests',
+        platforms: true,
+        shot: true
+    },
+    {
+        key: 'startup',
+        label: 'Startup Chamber',
+        kicker: 'From idea to venture',
+        body: 'Every student is pushed to find a real problem, build a solution that is genuinely their own, and pitch it in the Startup Chamber. Work that turns out to be original gets taken further with our guidance behind it.',
+        media: `${IMG}/startup.webp`,
+        alt: 'Students discussing a startup idea around a laptop'
+    },
+    {
+        key: 'certifications',
+        label: 'Global Certifications',
+        kicker: 'Recognised outside campus',
+        body: 'Globally recognised certifications across the technologies on your track — the kind a recruiter already knows the name of, earned while you are still on the programme.',
+        media: `${IMG}/certifications.webp`,
+        alt: 'Students holding up their certifications'
+    },
+    {
+        key: 'owlcoder',
+        label: 'Owl Coder',
+        kicker: 'Ten years of interview questions',
+        body: 'DSA, SQL and core coding in one graded library built for placement readiness, with your progress tracked across every platform you are on.',
+        media: `${IMG}/owl-dashboard.webp`,
+        alt: 'The Owl Coder dashboard showing solved counts across LeetCode, CodeChef and HackerRank',
+        shot: true
+    },
+    {
+        key: 'myna',
+        label: 'Myna',
+        kicker: 'The rounds that are not technical',
+        body: 'Web and mobile practice for listening, speaking, reading and writing, with mock tests and a leaderboard — built to get you through the first interview before the code ever comes up.',
+        media: `${IMG}/myna-web.webp`,
+        alt: 'The Myna platform shown on laptop and mobile',
+        shot: true
+    },
+    {
+        key: 'goldenday',
+        label: 'Golden Day',
+        kicker: 'How the programme ends',
+        body: 'The programme closes with a ceremony. Everyone who got to the top of something — a track, the contests, the Startup Chamber — is recognised in front of the room, with certifications and awards.',
+        media: `${IMG}/golden-day.webp`,
+        alt: 'Students raising their certificates at the closing ceremony',
+        finale: true
+    }
+];

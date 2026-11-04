@@ -1,230 +1,293 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-    OFFER_TRACKS,
-    OFFER_JOURNEY,
-    OFFER_PLATFORMS,
-    OFFER_BEYOND,
-    OFFER_TOOLKIT,
-    OFFER_FINALE
-} from './what-we-offer-data';
+import { OFFER_TRACKS, OFFER_PLATFORMS, OFFER_ROADMAP } from './what-we-offer-data';
 
 // ── Icons ────────────────────────────────────────────────────────────────
 const ic = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' };
-const IconTrophy = () => (<svg viewBox="0 0 24 24" width="18" height="18" {...ic}><path d="M8 21h8M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" /><path d="M17 6h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4" /><path d="M7 6H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4" /></svg>);
-const IconLink = () => (<svg viewBox="0 0 24 24" width="18" height="18" {...ic}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>);
-const IconRocket = () => (<svg viewBox="0 0 24 24" width="18" height="18" {...ic}><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91 0Z" /><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" /></svg>);
-const IconBadge = () => (<svg viewBox="0 0 24 24" width="18" height="18" {...ic}><circle cx="12" cy="8" r="6" /><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></svg>);
-const IconCheck = () => (<svg viewBox="0 0 24 24" width="13" height="13" {...ic} strokeWidth="2.8"><polyline points="20 6 9 17 4 12" /></svg>);
 const IconSpark = () => (<svg viewBox="0 0 24 24" width="13" height="13" {...ic} strokeWidth="2.1"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" /></svg>);
-const IconStar = () => (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2.6l2.7 5.9 6.3.7-4.7 4.3 1.3 6.4L12 16.6 6.4 19.9l1.3-6.4L3 9.2l6.3-.7z" /></svg>);
-const ICONS = { trophy: <IconTrophy />, link: <IconLink />, rocket: <IconRocket />, badge: <IconBadge /> };
+const IconStar = () => (<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 2.6l2.7 5.9 6.3.7-4.7 4.3 1.3 6.4L12 16.6 6.4 19.9l1.3-6.4L3 9.2l6.3-.7z" /></svg>);
+const IconCheck = () => (<svg viewBox="0 0 24 24" width="11" height="11" {...ic} strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>);
 
-// A thin browser chrome around a product screenshot. Without it a UI
-// screenshot dropped straight onto a page reads as part of the page rather
-// than as a picture of another product.
-const BrowserFrame = ({ src, alt, children }) => (
-    <div className="vvitu-wwo-browser">
-        <div className="vvitu-wwo-browser-bar" aria-hidden="true">
-            <span /><span /><span />
-        </div>
-        <img className="vvitu-wwo-browser-shot" src={src} alt={alt} loading="lazy" decoding="async" />
-        {children}
-    </div>
-);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const mediaFor = (stop, track) => (typeof stop.media === 'string' ? stop.media : stop.media[track]);
+
+// ── Layout rules ─────────────────────────────────────────────────────────
+// How many stops sit on one row of the Z. Below `RAIL_AT` the Z cannot exist
+// honestly — ten nodes across a phone would be 30px apart — so the path
+// straightens into a horizontal filmstrip that scrolls itself to keep the
+// active stop centred. Same mechanic, same fill, a shape that fits.
+const RAIL_AT = 560;
+const perRowFor = (w) => (w >= 1040 ? 5 : w >= 780 ? 4 : w >= RAIL_AT ? 3 : 0);
 
 /**
- * "What We Offer" — the closing section of the AI Ready syllabus view.
- *
- * Four acts; see what-we-offer-data.js for why they are ordered as they are.
- *
- * The only interactive piece is the journey's track toggle. It is built so
- * that NOTHING IN THE LAYOUT MOVES when it flips: the three cards keep their
- * position and size, and only the photographs crossfade and the accent colour
- * transitions. A toggle that reflowed the grid would read as a page change
- * rather than as two views of one thing, which is the whole point of it.
+ * Serpentine placement. Even rows run left→right, odd rows right→left, which
+ * is what makes the path a Z — and it also means the last node of one row and
+ * the first of the next share a column, so every turn is a clean vertical drop
+ * rather than a diagonal.
  */
-const WhatWeOffer = ({ reveal, reduceMotion }) => {
-    const [track, setTrack] = useState(OFFER_TRACKS[0].key);
-    const activeTrack = OFFER_TRACKS.find((t) => t.key === track) || OFFER_TRACKS[0];
+const cellFor = (i, perRow) => {
+    const row = Math.floor(i / perRow);
+    const within = i % perRow;
+    return { row, col: row % 2 === 0 ? within : perRow - 1 - within };
+};
 
-    // One easing for everything in the section, so the toggle, the reveals and
-    // the hovers all feel like the same object.
-    // The photograph crossfade is done in CSS (see .vvitu-wwo-step-img), not
-    // here — it has to be a property transition on already-mounted elements,
-    // not a mount/unmount, or the incoming image has nothing painted yet.
+/**
+ * An SVG path through the given points with rounded corners.
+ *
+ * Built from MEASURED node centres rather than from a hand-written path, so
+ * the line lands exactly on the nodes at any width, with any number of stops,
+ * without a magic number anywhere.
+ */
+function roundedPath(points, radius) {
+    if (points.length < 2) return '';
+    const n = (v) => Math.round(v * 10) / 10;
+    const parts = [`M ${n(points[0].x)} ${n(points[0].y)}`];
+    for (let i = 1; i < points.length - 1; i++) {
+        const prev = points[i - 1];
+        const cur = points[i];
+        const next = points[i + 1];
+        const inLen = Math.hypot(cur.x - prev.x, cur.y - prev.y);
+        const outLen = Math.hypot(next.x - cur.x, next.y - cur.y);
+        // Never round more than half a segment, or two corners on a short run
+        // would overlap and the line would visibly kink.
+        const r = Math.min(radius, inLen / 2, outLen / 2);
+        if (r < 1) { parts.push(`L ${n(cur.x)} ${n(cur.y)}`); continue; }
+        const a = { x: cur.x + ((prev.x - cur.x) / inLen) * r, y: cur.y + ((prev.y - cur.y) / inLen) * r };
+        const b = { x: cur.x + ((next.x - cur.x) / outLen) * r, y: cur.y + ((next.y - cur.y) / outLen) * r };
+        parts.push(`L ${n(a.x)} ${n(a.y)}`, `Q ${n(cur.x)} ${n(cur.y)} ${n(b.x)} ${n(b.y)}`);
+    }
+    const last = points[points.length - 1];
+    parts.push(`L ${n(last.x)} ${n(last.y)}`);
+    return parts.join(' ');
+}
+
+/**
+ * The What We Offer roadmap.
+ *
+ * Ten stops on one Z-shaped path. Scrolling fills the line; when the line
+ * reaches a stop that stop lights up, its thumbnail rises out of the row, and
+ * the spotlight above swaps to its photograph and description. Scroll on and
+ * it settles back to a lit thumbnail while the next one takes the light.
+ *
+ * ── Why the scroll handler does not call setState ────────────────────────
+ * The fill is written straight onto the path's `strokeDashoffset` inside a
+ * rAF. Routing a per-frame value through React would re-render ten nodes and
+ * a spotlight sixty times a second, which is exactly the lag and tracking
+ * drift this has to avoid. React state changes only when the ACTIVE STOP
+ * changes — ten times over the whole section.
+ */
+const OfferRoadmap = ({ stops, track, scrollRef, reduceMotion }) => {
+    const trackRef = useRef(null);
+    const stageRef = useRef(null);
+    const fieldRef = useRef(null);
+    const lineRef = useRef(null);
+    const railRef = useRef(null);
+    const wrapRef = useRef(null);
+    const nodeRefs = useRef([]);
+    const activeRef = useRef(0);
+    const rafRef = useRef(0);
+
+    const [perRow, setPerRow] = useState(5);
+    const [geom, setGeom] = useState({ d: '', w: 0, h: 0, marks: [] });
+    const [active, setActive] = useState(0);
+    const isRail = perRow === 0;
+
+    // ── Measure: node centres → path ────────────────────────────────────
+    const measure = useCallback(() => {
+        const field = fieldRef.current;
+        if (!field) return;
+        const fr = field.getBoundingClientRect();
+        const pts = nodeRefs.current.slice(0, stops.length).map((el) => {
+            if (!el) return null;
+            const r = el.getBoundingClientRect();
+            return { x: r.left - fr.left + r.width / 2, y: r.top - fr.top + r.height / 2 };
+        });
+        if (pts.some((p) => !p)) return;
+
+        // Cumulative straight-line distance to each node, as a fraction of the
+        // whole run. The corner rounding shortens the path by a hair; scaling
+        // these fractions to the rendered length keeps each node's arrival
+        // aligned with the line actually touching it.
+        const segs = [0];
+        for (let i = 1; i < pts.length; i++) {
+            segs.push(segs[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+        }
+        const total = segs[segs.length - 1] || 1;
+        const d = roundedPath(pts, isRail ? 0 : 26);
+        const w = Math.round(fr.width * 10) / 10;
+        const h = Math.round(fr.height * 10) / 10;
+        const marks = segs.map((v) => v / total);
+
+        // Bail out when nothing actually moved.
+        //
+        // This runs from a ResizeObserver, and handing back a fresh object every
+        // time made it a feedback loop: setGeom → re-render → the observer fires
+        // on a sub-pixel difference → setGeom again. Wide layouts settled on an
+        // exact number and survived it; the phone filmstrip, whose width is
+        // content-derived, never settled and blew the render-depth limit — the
+        // whole modal failed to open. Returning the previous object makes React
+        // skip the render, which ends the loop whatever retriggered it. The
+        // rounding above stops sub-pixel jitter counting as a change.
+        setGeom((prev) =>
+            prev.d === d && prev.w === w && prev.h === h ? prev : { d, w, h, marks }
+        );
+    }, [stops.length, isRail]);
+
+    // The breakpoint is measured from the WRAPPER, never from the field.
+    //
+    // The field's width is an OUTPUT of the breakpoint: the grid makes it the
+    // width of its container, the phone filmstrip makes it `max-content`, which
+    // is far wider. Measuring the breakpoint from it therefore oscillated —
+    // narrow → rail → field becomes wide → wide enough for the grid → narrow
+    // again — flipping every frame until React gave up and the modal failed to
+    // open at all. The wrapper is sized by the stage and does not move, so it
+    // is the only honest ruler here. (The window is not: this is inside a modal.)
+    useLayoutEffect(() => {
+        const wrap = wrapRef.current;
+        if (!wrap || typeof ResizeObserver === 'undefined') return undefined;
+        const apply = () => {
+            setPerRow(perRowFor(wrap.getBoundingClientRect().width));
+            measure();
+        };
+        const ro = new ResizeObserver(apply);
+        ro.observe(wrap);
+        apply();
+        return () => ro.disconnect();
+    }, [measure]);
+
+    useLayoutEffect(() => { measure(); }, [perRow, measure]);
+
+    // ── Scroll → fill + active stop ─────────────────────────────────────
+    useEffect(() => {
+        const container = scrollRef?.current;
+        const trackEl = trackRef.current;
+        const stageEl = stageRef.current;
+        if (!container || !trackEl || !stageEl) return undefined;
+
+        const read = () => {
+            rafRef.current = 0;
+            const tr = trackEl.getBoundingClientRect();
+            const cr = container.getBoundingClientRect();
+            // Distance the sticky stage has travelled through its track.
+            //
+            // Measured against the CONTAINER's height, not the stage's. The
+            // roadmap is the last thing in the modal, so the scroll container
+            // bottoms out while the track still has (container - stage) of
+            // height left below the stage. Subtracting the stage height asks
+            // for travel the container can never deliver, and the final stop
+            // is simply never reached — the line stopped a hair short and the
+            // tenth stop never lit. Subtracting the container height makes the
+            // last reachable scroll position exactly progress 1.
+            const runway = trackEl.offsetHeight - container.clientHeight;
+            const travelled = cr.top - tr.top;
+            const p = runway > 0 ? clamp(travelled / runway, 0, 1) : 0;
+
+            const line = lineRef.current;
+            if (line) {
+                const L = line.getTotalLength();
+                line.style.strokeDasharray = `${L}`;
+                line.style.strokeDashoffset = `${L * (1 - p)}`;
+            }
+
+            // The stop is reached when the line arrives at it, not on an even
+            // split of the scroll — so the highlight and the line agree.
+            const marks = geom.marks;
+            let next = 0;
+            for (let i = 0; i < marks.length; i++) if (p >= marks[i] - 0.001) next = i;
+            if (next !== activeRef.current) {
+                activeRef.current = next;
+                setActive(next);
+            }
+        };
+
+        const onScroll = () => {
+            if (rafRef.current) return;              // coalesce to one read per frame
+            rafRef.current = requestAnimationFrame(read);
+        };
+
+        read();
+        container.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+            container.removeEventListener('scroll', onScroll);
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        };
+    }, [scrollRef, geom.marks]);
+
+    // On the phone filmstrip, keep the active thumbnail in view. Scrolling the
+    // rail horizontally never moves the page, so this cannot fight the user's
+    // vertical scroll.
+    useEffect(() => {
+        if (!isRail) return;
+        const rail = railRef.current;
+        const el = nodeRefs.current[active];
+        if (!rail || !el) return;
+        rail.scrollTo({
+            left: el.offsetLeft - rail.clientWidth / 2 + el.offsetWidth / 2,
+            behavior: reduceMotion ? 'auto' : 'smooth'
+        });
+    }, [active, isRail, reduceMotion]);
+
+    const stop = stops[active] || stops[0];
+    const cols = isRail ? stops.length : perRow;
+
     const EASE = [0.16, 1, 0.3, 1];
+    const swap = reduceMotion
+        ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.15 } }
+        : {
+            initial: { opacity: 0, y: 12, scale: 0.99 },
+            animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.34, ease: EASE } },
+            // Leaves faster than it arrives, so two panels are never both
+            // half-visible for long enough to read as a double exposure.
+            exit: { opacity: 0, transition: { duration: 0.18, ease: 'linear' } }
+        };
 
     return (
-        <div className="vvitu-wwo" data-track={track}>
+        <div
+            ref={trackRef}
+            className={`vvitu-wwo-road ${isRail ? 'is-rail' : ''}`}
+            // One screenful of scrolling per stop, plus a screen of run-out so
+            // the last stop can be read before the section releases.
+            style={{ '--stops': stops.length }}
+        >
+            <div ref={stageRef} className="vvitu-wwo-stage">
 
-            {/* ─────────── ACT 1 — the project journey ─────────── */}
-            <motion.div className="vvitu-wwo-journey" {...reveal(0)}>
-                <div className="vvitu-wwo-journey-head">
-                    <div className="vvitu-wwo-journey-intro">
-                        <span className="vvitu-wwo-eyebrow">Three stages, run twice</span>
-                        <h4 className="vvitu-wwo-h">The Project Journey</h4>
-                    </div>
+                {/* ── The spotlight ── */}
+                <div className="vvitu-wwo-spot">
+                    {/* NOT mode="wait". That waits for each exit to finish
+                        before the next enters, so scrolling quickly through ten
+                        stops queues ten 0.42s animations and the spotlight ends
+                        up several stops behind the line — the exact tracking lag
+                        this has to avoid. The panels are absolutely positioned
+                        on top of each other, so they can simply crossfade: the
+                        incoming one is correct immediately and the outgoing one
+                        fades out underneath it. */}
+                    <AnimatePresence initial={false}>
+                        <motion.div key={stop.key} className="vvitu-wwo-spot-inner" {...swap}>
+                            <figure className={`vvitu-wwo-spot-media ${stop.shot ? 'is-shot' : ''}`}>
+                                <img src={mediaFor(stop, track)} alt={stop.alt} loading="lazy" decoding="async" />
+                                <figcaption className="vvitu-wwo-spot-index">
+                                    <span>{String(active + 1).padStart(2, '0')}</span>
+                                    <small>/ {String(stops.length).padStart(2, '0')}</small>
+                                </figcaption>
+                            </figure>
 
-                    {/* The toggle. A real radiogroup, not two buttons that look
-                        like one — the two tracks are mutually exclusive views
-                        of the same three stages, and arrow keys should work. */}
-                    <div className="vvitu-wwo-toggle" role="radiogroup" aria-label="Choose a track">
-                        {OFFER_TRACKS.map((t) => {
-                            const on = t.key === track;
-                            return (
-                                <button
-                                    key={t.key}
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={on}
-                                    // The label exists twice in the DOM — full
-                                    // text, and a short form CSS swaps in below
-                                    // 360px. Both are read out otherwise, so
-                                    // the button names itself ("AI", not
-                                    // "AIAI") and the visual spans are hidden
-                                    // from the accessibility tree.
-                                    aria-label={t.label}
-                                    className={`vvitu-wwo-toggle-btn ${on ? 'is-on' : ''}`}
-                                    onClick={() => setTrack(t.key)}
-                                >
-                                    {/* The thumb is a single shared element that
-                                        slides between the two options, rather
-                                        than a background that fades in on each.
-                                        layoutId does the travel. */}
-                                    {on && (
-                                        <motion.span
-                                            layoutId="vvitu-wwo-thumb"
-                                            className="vvitu-wwo-toggle-thumb"
-                                            transition={reduceMotion
-                                                ? { duration: 0 }
-                                                : { type: 'spring', stiffness: 420, damping: 36 }}
-                                        />
-                                    )}
-                                    <span className="vvitu-wwo-toggle-label" aria-hidden="true">
-                                        <span className="vvitu-wwo-toggle-full">{t.label}</span>
-                                        <span className="vvitu-wwo-toggle-short">{t.short}</span>
+                            <div className="vvitu-wwo-spot-body">
+                                <span className="vvitu-wwo-spot-kicker">
+                                    {stop.finale ? <IconStar /> : null}
+                                    {stop.kicker}
+                                </span>
+                                <h4 className="vvitu-wwo-spot-title">{stop.label}</h4>
+                                <p className="vvitu-wwo-spot-text">{stop.body}</p>
+
+                                {stop.tracked && (
+                                    <span className="vvitu-wwo-spot-track">
+                                        <IconSpark />
+                                        {track === 'ai' ? 'Run again on AI, with Anthropic and OpenAI access' : 'Run on the stack you are learning'}
                                     </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+                                )}
 
-                {/* The note is the only copy that differs between tracks, so it
-                    carries the "what changes" message and crossfades on its own.
-                    Its box is min-height'd in CSS so the swap cannot nudge the
-                    cards below it. */}
-                <div className="vvitu-wwo-tracknote">
-                    <AnimatePresence mode="wait" initial={false}>
-                        <motion.p
-                            key={track}
-                            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-                            transition={{ duration: reduceMotion ? 0.15 : 0.32, ease: EASE }}
-                        >
-                            {activeTrack.note}
-                        </motion.p>
-                    </AnimatePresence>
-                </div>
-
-                <ol className="vvitu-wwo-steps">
-                    {OFFER_JOURNEY.map((step, i) => (
-                        <li key={step.key} className="vvitu-wwo-step">
-                            <div className="vvitu-wwo-step-media">
-                                {/* BOTH tracks' photographs are mounted, stacked
-                                    in the same box, and crossfaded by opacity.
-                                    Swapping the src on toggle looked right in
-                                    the DOM but flashed an empty box on screen:
-                                    the second track's images only begin loading
-                                    at the moment of the flip, and a freshly
-                                    requested image has not decoded by the time
-                                    the frame paints. Mounting both lets the
-                                    browser fetch them together when the section
-                                    scrolls into view, so the toggle is a pure
-                                    opacity transition with nothing to wait for.
-                                    Opacity, never `display: none` — a hidden
-                                    image is not in the viewport and lazy
-                                    loading would never fire for it. */}
-                                {OFFER_TRACKS.map((t) => {
-                                    const on = t.key === track;
-                                    return (
-                                        <img
-                                            key={t.key}
-                                            className={`vvitu-wwo-step-img ${on ? 'is-on' : ''}`}
-                                            src={step.media[t.key]}
-                                            alt={on ? step.alt : ''}
-                                            aria-hidden={on ? undefined : 'true'}
-                                            loading="lazy"
-                                            decoding="async"
-                                        />
-                                    );
-                                })}
-                                <span className="vvitu-wwo-step-no" aria-hidden="true">{step.no}</span>
-                                {/* Only the AI track carries this, and it is the
-                                    one substantive difference between the two
-                                    runs — so it is a badge, not a footnote. */}
-                                <AnimatePresence>
-                                    {track === 'ai' && (
-                                        <motion.span
-                                            className="vvitu-wwo-step-ai"
-                                            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.92 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.95 }}
-                                            transition={{ duration: reduceMotion ? 0.15 : 0.38, ease: EASE }}
-                                        >
-                                            <IconSpark /> AI-assisted
-                                        </motion.span>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-
-                            <div className="vvitu-wwo-step-body">
-                                <span className="vvitu-wwo-step-lead">{step.lead}</span>
-                                <h5 className="vvitu-wwo-step-name">{step.name}</h5>
-                                <p className="vvitu-wwo-step-text">{step.body}</p>
-                                <ul className="vvitu-wwo-step-points">
-                                    {step.points.map((p) => (
-                                        <li key={p}><span className="vvitu-wwo-tick"><IconCheck /></span>{p}</li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            {/* Connector to the next stage. Decorative, and the
-                                last card does not get one. */}
-                            {i < OFFER_JOURNEY.length - 1 && (
-                                <span className="vvitu-wwo-step-link" aria-hidden="true" />
-                            )}
-                        </li>
-                    ))}
-                </ol>
-            </motion.div>
-
-            {/* ─────────── ACT 2 — beyond the classroom ─────────── */}
-            <motion.div className="vvitu-wwo-block" {...reveal(0.05)}>
-                <div className="vvitu-wwo-block-head">
-                    <span className="vvitu-wwo-eyebrow">Alongside the syllabus</span>
-                    <h4 className="vvitu-wwo-h">Beyond the Classroom</h4>
-                </div>
-
-                <div className="vvitu-wwo-grid">
-                    {OFFER_BEYOND.map((item) => (
-                        <article
-                            key={item.key}
-                            className={`vvitu-wwo-tile ${item.span === 'wide' ? 'is-wide' : ''}`}
-                        >
-                            <div className={`vvitu-wwo-tile-media ${item.shot ? 'is-shot' : ''}`}>
-                                <img src={item.media} alt={item.alt} loading="lazy" decoding="async" />
-                            </div>
-                            <div className="vvitu-wwo-tile-body">
-                                <span className="vvitu-wwo-tile-ic">{ICONS[item.icon]}</span>
-                                <span className="vvitu-wwo-eyebrow">{item.eyebrow}</span>
-                                <h5 className="vvitu-wwo-tile-title">{item.title}</h5>
-                                <p className="vvitu-wwo-tile-text">{item.body}</p>
-
-                                {item.platforms && (
+                                {stop.platforms && (
                                     <ul className="vvitu-wwo-logos">
                                         {OFFER_PLATFORMS.map((p) => (
                                             <li key={p.key} title={p.name}>
@@ -233,70 +296,134 @@ const WhatWeOffer = ({ reveal, reduceMotion }) => {
                                         ))}
                                     </ul>
                                 )}
+                            </div>
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
 
-                                {item.tags && (
-                                    <ul className="vvitu-wwo-tags">
-                                        {item.tags.map((t) => <li key={t}>{t}</li>)}
-                                    </ul>
+                {/* ── The path ── */}
+                <div
+                    className={`vvitu-wwo-pathwrap ${isRail ? 'is-rail' : ''}`}
+                    ref={(el) => { wrapRef.current = el; railRef.current = el; }}
+                >
+                    <div
+                        className="vvitu-wwo-field"
+                        ref={fieldRef}
+                        style={{ '--cols': cols }}
+                    >
+                        {/* Drawn behind the nodes, sized to the measured field,
+                            so it can never drift out of register with them. */}
+                        <svg
+                            className="vvitu-wwo-svg"
+                            viewBox={`0 0 ${geom.w || 1} ${geom.h || 1}`}
+                            width={geom.w || 1}
+                            height={geom.h || 1}
+                            aria-hidden="true"
+                            preserveAspectRatio="none"
+                        >
+                            <path className="vvitu-wwo-line-bg" d={geom.d} />
+                            <path className="vvitu-wwo-line" ref={lineRef} d={geom.d} />
+                        </svg>
+
+                        <ol className="vvitu-wwo-nodes">
+                            {stops.map((s, i) => {
+                                const { row, col } = cellFor(i, perRow || 1);
+                                const state = i === active ? 'is-active' : i < active ? 'is-done' : 'is-next';
+                                return (
+                                    <li
+                                        key={s.key}
+                                        ref={(el) => { nodeRefs.current[i] = el; }}
+                                        className={`vvitu-wwo-node ${state}`}
+                                        style={isRail ? undefined : { gridRow: row + 1, gridColumn: col + 1 }}
+                                        aria-current={i === active ? 'step' : undefined}
+                                    >
+                                        <span className="vvitu-wwo-node-thumb">
+                                            <img src={mediaFor(s, track)} alt="" loading="lazy" decoding="async" />
+                                            <span className="vvitu-wwo-node-tick" aria-hidden="true"><IconCheck /></span>
+                                        </span>
+                                        <span className="vvitu-wwo-node-label">{s.label}</span>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+/**
+ * "What We Offer" — the closing section of the AI Ready syllabus view.
+ *
+ * One roadmap, ten stops, plus the track toggle that governs the three stages
+ * which run twice. See what-we-offer-data.js for why the order is the point.
+ */
+const WhatWeOffer = ({ reveal, reduceMotion, scrollRef }) => {
+    const [track, setTrack] = useState(OFFER_TRACKS[0].key);
+    const activeTrack = OFFER_TRACKS.find((t) => t.key === track) || OFFER_TRACKS[0];
+    const EASE = [0.16, 1, 0.3, 1];
+
+    return (
+        <div className="vvitu-wwo" data-track={track}>
+            <motion.div className="vvitu-wwo-head" {...reveal(0)}>
+                <div className="vvitu-wwo-head-intro">
+                    <span className="vvitu-wwo-eyebrow">Ten stops, one year</span>
+                    <h4 className="vvitu-wwo-h">The Roadmap</h4>
+                </div>
+
+                <div className="vvitu-wwo-toggle" role="radiogroup" aria-label="Choose a track">
+                    {OFFER_TRACKS.map((t) => {
+                        const on = t.key === track;
+                        return (
+                            <button
+                                key={t.key}
+                                type="button"
+                                role="radio"
+                                aria-checked={on}
+                                aria-label={t.label}
+                                className={`vvitu-wwo-toggle-btn ${on ? 'is-on' : ''}`}
+                                onClick={() => setTrack(t.key)}
+                            >
+                                {on && (
+                                    <motion.span
+                                        layoutId="vvitu-wwo-thumb"
+                                        className="vvitu-wwo-toggle-thumb"
+                                        transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 36 }}
+                                    />
                                 )}
-                            </div>
-                        </article>
-                    ))}
+                                <span className="vvitu-wwo-toggle-label" aria-hidden="true">
+                                    <span className="vvitu-wwo-toggle-full">{t.label}</span>
+                                    <span className="vvitu-wwo-toggle-short">{t.short}</span>
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
             </motion.div>
 
-            {/* ─────────── ACT 3 — the toolkit ─────────── */}
-            <motion.div className="vvitu-wwo-block" {...reveal(0.05)}>
-                <div className="vvitu-wwo-block-head">
-                    <span className="vvitu-wwo-eyebrow">Logins you get on day one</span>
-                    <h4 className="vvitu-wwo-h">Your Toolkit</h4>
-                </div>
+            {/* Min-height reserved so swapping this line cannot nudge the
+                roadmap below it. */}
+            <div className="vvitu-wwo-tracknote">
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.p
+                        key={track}
+                        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                        transition={{ duration: reduceMotion ? 0.15 : 0.32, ease: EASE }}
+                    >
+                        {activeTrack.note}
+                    </motion.p>
+                </AnimatePresence>
+            </div>
 
-                <div className="vvitu-wwo-tools">
-                    {OFFER_TOOLKIT.map((tool) => (
-                        <article key={tool.key} className="vvitu-wwo-tool">
-                            <div className="vvitu-wwo-tool-shot">
-                                {/* No phone overlay. One was tried here for Myna
-                                    and removed: its own marketing shot already
-                                    pictures the product on a laptop AND two
-                                    phones, so a second phone was redundant, and
-                                    at this size it landed on top of the
-                                    headline. The "Web + mobile app" tag says it
-                                    without covering anything. */}
-                                <BrowserFrame src={tool.shot} alt={tool.alt} />
-                            </div>
-                            <div className="vvitu-wwo-tool-body">
-                                <span className="vvitu-wwo-tool-kind">{tool.kind}</span>
-                                <h5 className="vvitu-wwo-tool-name">{tool.name}</h5>
-                                <p className="vvitu-wwo-tool-text">{tool.body}</p>
-                                <ul className="vvitu-wwo-tags">
-                                    {tool.tags.map((t) => <li key={t}>{t}</li>)}
-                                </ul>
-                            </div>
-                        </article>
-                    ))}
-                </div>
-            </motion.div>
-
-            {/* ─────────── ACT 4 — Golden Day ─────────── */}
-            <motion.div className="vvitu-wwo-finale" {...reveal(0.05)}>
-                <div className="vvitu-wwo-finale-media">
-                    <img src={OFFER_FINALE.media} alt={OFFER_FINALE.alt} loading="lazy" decoding="async" />
-                </div>
-                <div className="vvitu-wwo-finale-body">
-                    <span className="vvitu-wwo-eyebrow">{OFFER_FINALE.eyebrow}</span>
-                    <h4 className="vvitu-wwo-finale-title"><IconStar /> {OFFER_FINALE.title}</h4>
-                    <p className="vvitu-wwo-finale-text">{OFFER_FINALE.body}</p>
-                    <ul className="vvitu-wwo-awards">
-                        {OFFER_FINALE.awards.map((a) => (
-                            <li key={a.key}>
-                                <strong>{a.label}</strong>
-                                <span>{a.note}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </motion.div>
+            <OfferRoadmap
+                stops={OFFER_ROADMAP}
+                track={track}
+                scrollRef={scrollRef}
+                reduceMotion={reduceMotion}
+            />
         </div>
     );
 };

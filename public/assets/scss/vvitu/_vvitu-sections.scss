@@ -8925,26 +8925,27 @@
 }
 
 // ===============================================================
-// WHAT WE OFFER  —  closing section of the AI Ready syllabus view
+// ===============================================================
+// WHAT WE OFFER  —  the Z-pattern roadmap
 // ---------------------------------------------------------------
-// Four acts: the project journey (with a track toggle), a grid of parallel
-// offerings, the two platforms, and the Golden Day finale. Markup in
-// components/vvitu/what-we-offer.jsx, copy in what-we-offer-data.js.
+// Ten stops on one serpentine path at the foot of the AI Ready syllabus.
+// Markup in components/vvitu/what-we-offer.jsx, copy in
+// what-we-offer-data.js.
 //
-// SPECIFICITY: every selector here is a new `vvitu-wwo-*` name with no
-// competing rule anywhere in this file, so a flat (0,1,0) block appended at
-// the end is safe. That is NOT true of the older sections — see §8.4b.
+// SPECIFICITY: every selector is a `vvitu-wwo-*` name with no competitor
+// anywhere in this file, so a flat block appended at the end is safe. That is
+// not true of the older sections — see §8.4b.
 //
-// COLOUR: the two tracks are told apart by accent alone, and both accents are
-// existing house tokens — coral for Technology, orange/amber for AI, which is
-// the dress code VVITU already uses for the two cohorts. The accents are
-// custom properties so one `[data-track]` swap re-tints the whole act; the
-// properties that READ them carry the transition, which is what makes the
-// recolour glide instead of snap.
+// HOW IT MOVES: the section is a tall track; the stage inside it is sticky, so
+// it holds still while the track scrolls past. That travel is the progress the
+// line is drawn with. Nothing here animates `height`, `top` or `width` — the
+// line fills by stroke-dashoffset and everything else moves on transform and
+// opacity, which is what keeps it smooth on a phone.
 //
-// RESPONSIVE: built mobile-first, because that is where most of these students
-// read the site. One column until 820px, two to 1040px, three above it. The
-// journey never goes wider than three because it IS three stages.
+// COLOUR: both accents are existing house tokens — coral for Technology,
+// orange/amber for AI, the dress code VVITU already uses for the two cohorts.
+// The accents are custom properties, and the properties that READ them carry
+// the transition, which is what makes the re-tint glide rather than snap.
 // ===============================================================
 
 .vvitu-wwo {
@@ -8952,11 +8953,10 @@
   --wwo-a2: var(--vvitu-secondary);
   --wwo-tint: var(--vvitu-bg-coral-tint);
   --wwo-ring: rgba(226, 84, 76, 0.26);   // --vvitu-primary
-  --wwo-glow: rgba(226, 84, 76, 0.18);   // --vvitu-primary
+  --wwo-glow: rgba(226, 84, 76, 0.2);    // --vvitu-primary
 
   display: flex;
   flex-direction: column;
-  gap: 30px;
   width: 100%;
 
   &[data-track="ai"] {
@@ -8964,13 +8964,10 @@
     --wwo-a2: var(--vvitu-tertiary);
     --wwo-tint: var(--vvitu-bg-warm-tint);
     --wwo-ring: rgba(237, 114, 54, 0.3);  // --vvitu-secondary
-    --wwo-glow: rgba(242, 166, 59, 0.22); // --vvitu-tertiary
+    --wwo-glow: rgba(242, 166, 59, 0.24); // --vvitu-tertiary
   }
-
-  @media (max-width: 767px) { gap: 24px; }
 }
 
-// Shared small type
 .vvitu-wwo-eyebrow {
   display: block;
   font-size: 10.5px;
@@ -8983,7 +8980,6 @@
 
 .vvitu-wwo-h {
   margin: 2px 0 0;
-  font-family: var(--vvitu-font-secondary, var(--vvitu-font-primary));
   font-size: 19px;
   font-weight: 800;
   line-height: 1.25;
@@ -8992,23 +8988,7 @@
   @media (max-width: 767px) { font-size: 17px; }
 }
 
-// ───────────────────────────── ACT 1 — journey ─────────────────────────────
-
-.vvitu-wwo-journey {
-  position: relative;
-  padding: 18px 18px 22px;
-  border-radius: 18px;
-  background: var(--wwo-tint);
-  border: 1px solid var(--wwo-ring);
-  // The panel itself re-tints with the track. This is the largest surface that
-  // changes, so it carries the slowest transition — the eye reads it as the
-  // section settling rather than as a flash.
-  transition: background 0.5s ease, border-color 0.5s ease;
-
-  @media (max-width: 767px) { padding: 14px 13px 18px; border-radius: 15px; }
-}
-
-.vvitu-wwo-journey-head {
+.vvitu-wwo-head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -9017,12 +8997,7 @@
   margin-bottom: 10px;
 }
 
-.vvitu-wwo-journey-intro { min-width: 0; }
-
 // ── The track toggle ──
-// A pill track with a single sliding thumb (framer `layoutId`). Two separate
-// backgrounds that cross-fade would read as two buttons; one thumb that
-// travels reads as one control with two positions, which is what it is.
 .vvitu-wwo-toggle {
   position: relative;
   display: inline-flex;
@@ -9034,11 +9009,7 @@
   border: 1px solid var(--vvitu-border);
   box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.05); // --vvitu-heading
 
-  @media (max-width: 575px) {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
+  @media (max-width: 575px) { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
 }
 
 .vvitu-wwo-toggle-btn {
@@ -9049,30 +9020,18 @@
   background: transparent;
   cursor: pointer;
   padding: 7px 18px;
+  min-height: 34px;
   border-radius: 999px;
   font-family: var(--vvitu-font-primary);
   font-size: 12.5px;
   font-weight: 800;
-  letter-spacing: 0.2px;
   color: var(--vvitu-muted);
   transition: color 0.3s ease;
-  // The tap target is the full pill height on a phone; 7px of padding is a
-  // 32px target, which is under the 44px touch minimum, so the grid cell above
-  // stretches it rather than leaving a thin strip to hit.
-  min-height: 34px;
 
   &.is-on { color: var(--vvitu-white); }
+  &:focus-visible { outline: 2px solid var(--wwo-a); outline-offset: 2px; }
 
-  &:focus-visible {
-    outline: 2px solid var(--wwo-a);
-    outline-offset: 2px;
-  }
-
-  @media (max-width: 575px) {
-    padding: 9px 10px;
-    min-height: 40px;
-    text-align: center;
-  }
+  @media (max-width: 575px) { padding: 9px 10px; min-height: 40px; text-align: center; }
 }
 
 .vvitu-wwo-toggle-thumb {
@@ -9087,659 +9046,428 @@
 
 .vvitu-wwo-toggle-label { position: relative; }
 .vvitu-wwo-toggle-short { display: none; }
-
 @media (max-width: 360px) {
   .vvitu-wwo-toggle-full { display: none; }
   .vvitu-wwo-toggle-short { display: inline; }
 }
 
-// The one line of copy that differs per track. Min-height reserves the taller
-// of the two strings so swapping it cannot nudge the cards underneath — a
-// toggle that shifts the page is the opposite of smooth.
 .vvitu-wwo-tracknote {
   position: relative;
   min-height: 42px;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 
-  p {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--vvitu-body);
-    max-width: 68ch;
-  }
+  p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--vvitu-body); max-width: 68ch; }
 
-  @media (max-width: 767px) {
-    min-height: 58px;
-    margin-bottom: 12px;
-    p { font-size: 12.5px; }
-  }
+  @media (max-width: 767px) { min-height: 58px; p { font-size: 12.5px; } }
   @media (max-width: 420px) { min-height: 74px; }
 }
 
-.vvitu-wwo-steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 14px;
-  grid-template-columns: 1fr;
-
-  @media (min-width: 820px) {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-  }
-}
-
-.vvitu-wwo-step {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  background: var(--vvitu-bg-body);
-  border: 1px solid var(--vvitu-border);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: var(--vvitu-shadow-neutral);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.45s ease;
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--vvitu-shadow-card);
-    border-color: var(--wwo-ring);
-  }
-}
-
-// The connector between stages. Horizontal on a 3-up row, vertical when the
-// cards stack — the sequence has to stay legible in both.
-.vvitu-wwo-step-link {
-  position: absolute;
-  background: var(--wwo-ring);
-  transition: background 0.45s ease;
-
-  // stacked: a short rule hanging off the bottom edge
-  left: 50%;
-  bottom: -14px;
-  width: 2px;
-  height: 14px;
-  transform: translateX(-50%);
-
-  @media (min-width: 820px) {
-    left: auto;
-    bottom: auto;
-    top: 76px;
-    right: -16px;
-    width: 16px;
-    height: 2px;
-    transform: none;
-  }
-}
-
-.vvitu-wwo-step-media {
+// ───────────────────────────── the track ─────────────────────────────
+//
+// Height is what buys scroll distance: one stage-height of travel per stop,
+// plus one for the last stop to be read before the section lets go. Fewer and
+// the stops would flick past; more and the reader is scrolling through nothing.
+.vvitu-wwo-road {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: var(--vvitu-bg-section-alt);
-  flex-shrink: 0;
-
-  // Both tracks' photographs are stacked here, one per track, and the active
-  // one is faded up. Absolute so they occupy the same box rather than stacking
-  // the card to double height.
-  .vvitu-wwo-step-img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    opacity: 0;
-    // A touch of scale under the fade so the swap has some life to it. The
-    // scale runs slower than the opacity, which keeps the incoming frame
-    // settling for a beat after it is fully visible.
-    transform: scale(1.035);
-    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: opacity;
-
-    &.is-on {
-      opacity: 1;
-      transform: none;
-    }
-  }
+  height: calc((var(--stops) + 1) * var(--wwo-stage-h, 560px));
 }
 
-.vvitu-wwo-step-no {
-  position: absolute;
-  top: 9px;
-  left: 10px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  color: var(--vvitu-white);
-  background: var(--wwo-a);
-  box-shadow: 0 4px 12px var(--wwo-glow);
-  transition: background 0.45s ease, box-shadow 0.45s ease;
-}
-
-.vvitu-wwo-step-ai {
-  position: absolute;
-  right: 9px;
-  bottom: 9px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--vvitu-white);
-  background: var(--vvitu-gradient-primary);
-  border: 1px solid rgba(255, 255, 255, 0.34); // --vvitu-white
-  box-shadow: 0 5px 14px var(--wwo-glow);
-
-  svg { flex-shrink: 0; }
-}
-
-.vvitu-wwo-step-body {
+.vvitu-wwo-stage {
+  position: sticky;
+  // Clears the syllabus's own sticky section rail, which owns top: 0.
+  top: 54px;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
-  padding: 13px 14px 15px;
-}
-
-.vvitu-wwo-step-lead {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--wwo-a);
-  transition: color 0.45s ease;
-}
-
-.vvitu-wwo-step-name {
-  margin: 3px 0 6px;
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--vvitu-heading);
-}
-
-.vvitu-wwo-step-text {
-  margin: 0 0 10px;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--vvitu-body);
-}
-
-.vvitu-wwo-step-points {
-  list-style: none;
-  margin: auto 0 0;
-  padding: 10px 0 0;
-  border-top: 1px dashed var(--vvitu-border);
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-
-  li {
-    display: flex;
-    align-items: flex-start;
-    gap: 7px;
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--vvitu-body-alt);
-  }
-}
-
-.vvitu-wwo-tick {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  margin-top: 1px;
-  border-radius: 50%;
-  color: var(--vvitu-white);
-  background: var(--wwo-a);
-  transition: background 0.45s ease;
-}
-
-// ───────────────────── ACT 2 — beyond the classroom ─────────────────────
-
-.vvitu-wwo-block-head { margin-bottom: 12px; }
-
-.vvitu-wwo-grid {
-  display: grid;
   gap: 14px;
-  grid-template-columns: 1fr;
-
-  @media (min-width: 820px) {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-}
-
-.vvitu-wwo-tile {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--vvitu-bg-body);
-  border: 1px solid var(--vvitu-border);
-  border-radius: 16px;
-  box-shadow: var(--vvitu-shadow-neutral);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--vvitu-shadow-card);
-    border-color: var(--wwo-ring);
-
-    .vvitu-wwo-tile-media img { transform: scale(1.045); }
-  }
-
-  // The two feature tiles take the full row and go side-by-side, so their
-  // photographs get real size instead of being squeezed into a quarter.
-  &.is-wide {
-    @media (min-width: 820px) {
-      grid-column: 1 / -1;
-      flex-direction: row;
-
-      .vvitu-wwo-tile-media {
-        width: 44%;
-        flex-shrink: 0;
-        aspect-ratio: auto;
-      }
-      .vvitu-wwo-tile-body { flex: 1 1 auto; }
-    }
-  }
-}
-
-.vvitu-wwo-tile-media {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: var(--vvitu-bg-section-alt);
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  // A UI screenshot is not a photograph. Cover-cropping one cuts off the part
-  // that carries the meaning — here, the contest rows — so a screenshot is
-  // contained whole on a plate, with padding, and never zooms on hover.
-  &.is-shot {
-    background: var(--vvitu-bg-section);
-    padding: 12px;
-    border-right: 1px solid var(--vvitu-border);
-
-    img {
-      object-fit: contain;
-      border-radius: 6px;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12); // --vvitu-heading
-    }
-
-    @media (max-width: 819px) { border-right: none; border-bottom: 1px solid var(--vvitu-border); }
-  }
-}
-
-// The zoom-on-hover belongs to photographs only.
-.vvitu-wwo-tile:hover .vvitu-wwo-tile-media.is-shot img { transform: none; }
-
-.vvitu-wwo-tile-body {
-  display: flex;
-  flex-direction: column;
-  padding: 14px 15px 16px;
-}
-
-.vvitu-wwo-tile-ic {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  margin-bottom: 9px;
-  border-radius: 10px;
-  color: var(--wwo-a);
+  height: var(--wwo-stage-h, 560px);
+  padding: 16px 16px 14px;
+  border-radius: 18px;
   background: var(--wwo-tint);
   border: 1px solid var(--wwo-ring);
-  transition: color 0.45s ease, background 0.45s ease, border-color 0.45s ease;
+  overflow: hidden;
+  transition: background 0.5s ease, border-color 0.5s ease;
+
+  @media (max-width: 767px) { padding: 12px 11px 10px; border-radius: 15px; gap: 10px; }
 }
 
-.vvitu-wwo-tile-title {
-  margin: 3px 0 7px;
-  font-size: 15.5px;
-  font-weight: 800;
-  color: var(--vvitu-heading);
+// Stage height per breakpoint. A fixed height is what lets the track compute
+// its own length in pure CSS, with no measurement round-trip.
+.vvitu-wwo-road { --wwo-stage-h: 560px; }
+@media (max-width: 1199px) { .vvitu-wwo-road { --wwo-stage-h: 540px; } }
+@media (max-width: 767px)  { .vvitu-wwo-road { --wwo-stage-h: 500px; } }
+@media (max-width: 575px)  { .vvitu-wwo-road { --wwo-stage-h: 470px; } }
+@media (max-width: 380px)  { .vvitu-wwo-road { --wwo-stage-h: 440px; } }
+
+// ───────────────────────────── the spotlight ─────────────────────────────
+
+.vvitu-wwo-spot {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-.vvitu-wwo-tile-text {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.62;
-  color: var(--vvitu-body);
-}
+.vvitu-wwo-spot-inner {
+  position: absolute;
+  inset: 0;
+  // Panels overlap during the crossfade; the later one in the DOM is the
+  // incoming one and must sit on top.
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
 
-// The platform logo row. Square tiles so six different logo shapes line up
-// optically instead of jittering by aspect ratio.
-.vvitu-wwo-logos {
-  list-style: none;
-  margin: 13px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  li {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 11px;
-    background: var(--vvitu-bg-section);
-    border: 1px solid var(--vvitu-border);
-    transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
-
-    &:hover {
-      transform: translateY(-2px);
-      border-color: var(--wwo-ring);
-      background: var(--vvitu-bg-body);
-    }
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 10px;
   }
+}
+
+.vvitu-wwo-spot-media {
+  position: relative;
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--vvitu-bg-section-alt);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.14); // --vvitu-heading
 
   img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
   }
 
-  @media (max-width: 420px) {
-    gap: 7px;
-    li { width: 38px; height: 38px; }
-    img { width: 21px; height: 21px; }
+  // A UI screenshot is not a photograph: cover-cropping one cuts off the part
+  // that carries the meaning, so it is contained whole on a plate instead.
+  &.is-shot {
+    background: var(--vvitu-heading);
+    padding: 12px;
+    img { object-fit: contain; border-radius: 6px; }
+  }
+
+  @media (max-width: 767px) {
+    aspect-ratio: 16 / 9;
+    img { height: 100%; }
+    &.is-shot { padding: 8px; }
   }
 }
 
-.vvitu-wwo-tags {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+// The stop counter, sitting on the image so the reader always knows how far
+// along the path they are without looking down at it.
+.vvitu-wwo-spot-index {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: var(--vvitu-white);
+  background: var(--wwo-a);
+  box-shadow: 0 5px 14px var(--wwo-glow);
+  transition: background 0.45s ease;
 
-  li {
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--vvitu-body-alt);
-    background: var(--vvitu-bg-section);
-    border: 1px solid var(--vvitu-border);
-  }
+  span { font-size: 14px; font-weight: 800; letter-spacing: 0.4px; }
+  small { font-size: 9.5px; font-weight: 700; opacity: 0.8; }
 }
 
-// ──────────────────────────── ACT 3 — toolkit ────────────────────────────
-
-.vvitu-wwo-tools {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: 1fr;
-
-  @media (min-width: 900px) {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-}
-
-.vvitu-wwo-tool {
+.vvitu-wwo-spot-body {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  border-radius: 16px;
-  background: var(--vvitu-bg-body);
-  border: 1px solid var(--vvitu-border);
-  box-shadow: var(--vvitu-shadow-neutral);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  min-width: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--vvitu-shadow-card);
-    border-color: var(--wwo-ring);
-  }
+  // The description can run long on a small stage; let it scroll inside the
+  // panel rather than pushing the roadmap off the bottom.
+  overscroll-behavior: contain;
 }
 
-// A dark plate behind the screenshot so the browser frame reads as a device
-// rather than as more page. The screenshots are light UI; on a white card they
-// would bleed into it.
-.vvitu-wwo-tool-shot {
-  padding: 16px 16px 0;
-  background: linear-gradient(160deg, var(--vvitu-heading), var(--vvitu-dark-gray));
-}
-
-.vvitu-wwo-browser {
-  position: relative;
-  border-radius: 9px 9px 0 0;
-  overflow: hidden;
-  background: var(--vvitu-bg-body);
-  box-shadow: 0 -2px 24px rgba(0, 0, 0, 0.28); // --vvitu-black
-
-  // Targeted by CLASS, not as `> img`. The phone overlay below is also a direct
-  // child <img> of this element, and `.vvitu-wwo-browser > img` (0,1,1) beat
-  // `.vvitu-wwo-tool-phone` (0,1,0) — which silently stretched the phone to
-  // full width and hid the web screenshot behind it. §8.4b, in brand new code.
-  .vvitu-wwo-browser-shot {
-    width: 100%;
-    display: block;
-  }
-}
-
-.vvitu-wwo-browser-bar {
-  display: flex;
+.vvitu-wwo-spot-kicker {
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 7px 10px;
-  background: var(--vvitu-bg-section-alt);
-  border-bottom: 1px solid var(--vvitu-border);
-
-  span {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--vvitu-border-bootstrap);
-  }
-}
-
-// RETIRED: `.vvitu-wwo-tool-phone` — a phone screenshot overlaid on the web
-// shot. Myna's own marketing image already pictures the product on a laptop
-// and two phones, so the overlay was redundant, and at the size it needed to
-// be it covered the headline underneath it. The "Web + mobile app" tag carries
-// the point instead. Restore the rule and the <img> in what-we-offer.jsx if a
-// future screenshot does not show its own devices.
-
-.vvitu-wwo-tool-body { padding: 15px 16px 17px; }
-
-.vvitu-wwo-tool-kind {
-  display: block;
+  gap: 6px;
   font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--wwo-a);
   transition: color 0.45s ease;
-}
-
-.vvitu-wwo-tool-name {
-  margin: 3px 0 7px;
-  font-size: 17px;
-  font-weight: 800;
-  color: var(--vvitu-heading);
-}
-
-.vvitu-wwo-tool-text {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.62;
-  color: var(--vvitu-body);
-}
-
-// ─────────────────────────── ACT 4 — Golden Day ───────────────────────────
-
-.vvitu-wwo-finale {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-radius: 18px;
-  background: linear-gradient(145deg, var(--vvitu-heading), var(--vvitu-bg-footer));
-  box-shadow: var(--vvitu-shadow-card);
-
-  @media (min-width: 900px) {
-    flex-direction: row;
-    align-items: stretch;
-  }
-}
-
-.vvitu-wwo-finale-media {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  flex-shrink: 0;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  // Fades the photograph into the dark panel instead of butting it against a
-  // hard edge. Vertical when stacked, horizontal when side by side.
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, rgba(15, 23, 42, 0) 45%, rgba(15, 23, 42, 0.92) 100%); // --vvitu-heading
-  }
-
-  @media (min-width: 900px) {
-    width: 46%;
-    aspect-ratio: auto;
-
-    &::after {
-      background: linear-gradient(to right, rgba(15, 23, 42, 0) 40%, rgba(15, 23, 42, 0.92) 100%); // --vvitu-heading
-    }
-  }
-}
-
-.vvitu-wwo-finale-body {
-  position: relative;
-  z-index: 1;
-  padding: 18px 18px 20px;
-  color: var(--vvitu-white);
-
-  .vvitu-wwo-eyebrow { color: var(--vvitu-tertiary); }
-
-  @media (min-width: 900px) {
-    flex: 1 1 auto;
-    padding: 26px 26px 28px;
-    align-self: center;
-  }
-}
-
-.vvitu-wwo-finale-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 4px 0 8px;
-  font-size: 21px;
-  font-weight: 800;
-  color: var(--vvitu-white);
 
   svg { color: var(--vvitu-tertiary); flex-shrink: 0; }
-
-  @media (max-width: 767px) { font-size: 18px; }
 }
 
-.vvitu-wwo-finale-text {
+.vvitu-wwo-spot-title {
+  margin: 4px 0 8px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--vvitu-heading);
+
+  @media (max-width: 991px) { font-size: 19px; }
+  @media (max-width: 575px) { font-size: 17px; margin: 3px 0 6px; }
+}
+
+.vvitu-wwo-spot-text {
   margin: 0;
   font-size: 13px;
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.82); // --vvitu-white
-  max-width: 62ch;
+  color: var(--vvitu-body);
+
+  @media (max-width: 575px) { font-size: 12.5px; line-height: 1.6; }
 }
 
-.vvitu-wwo-awards {
+.vvitu-wwo-spot-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--vvitu-white);
+  background: var(--vvitu-gradient-primary);
+  box-shadow: 0 5px 14px var(--wwo-glow);
+
+  svg { flex-shrink: 0; }
+}
+
+.vvitu-wwo-logos {
   list-style: none;
-  margin: 15px 0 0;
+  margin: 12px 0 0;
   padding: 0;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
 
   li {
-    padding: 9px 11px;
-    border-radius: 11px;
-    background: rgba(255, 255, 255, 0.07);        // --vvitu-white
-    border: 1px solid rgba(255, 255, 255, 0.13);  // --vvitu-white
-    transition: background 0.25s ease, border-color 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--vvitu-bg-body);
+    border: 1px solid var(--vvitu-border);
+    transition: transform 0.25s ease, border-color 0.25s ease;
 
-    &:hover {
-      background: rgba(255, 255, 255, 0.11);      // --vvitu-white
-      border-color: rgba(242, 166, 59, 0.5);      // --vvitu-tertiary
-    }
+    &:hover { transform: translateY(-2px); border-color: var(--wwo-ring); }
   }
 
-  strong {
-    display: block;
-    font-size: 12.5px;
-    font-weight: 800;
-    color: var(--vvitu-white);
-  }
+  img { width: 22px; height: 22px; object-fit: contain; display: block; }
 
-  span {
-    display: block;
-    margin-top: 1px;
-    font-size: 10.5px;
-    line-height: 1.35;
-    color: rgba(255, 255, 255, 0.62); // --vvitu-white
-  }
-
-  @media (min-width: 1040px) { grid-template-columns: repeat(4, 1fr); }
-  @media (max-width: 360px) { grid-template-columns: 1fr; }
+  @media (max-width: 420px) { gap: 6px; li { width: 34px; height: 34px; } img { width: 19px; height: 19px; } }
 }
 
-// Respect the OS setting: kill the decorative movement, keep every state
-// change instant and legible. The toggle still works, it just does not travel.
+// ───────────────────────────── the path ─────────────────────────────
+
+.vvitu-wwo-pathwrap {
+  flex: 0 0 auto;
+
+  // Phone: the Z straightens into a filmstrip that scrolls itself to keep the
+  // active stop centred. Hidden scrollbar — the roadmap drives it, not the
+  // reader.
+  &.is-rail {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+}
+
+.vvitu-wwo-field {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  justify-items: center;
+  align-items: start;
+  gap: 26px 8px;
+  padding: 6px 4px 2px;
+
+  .vvitu-wwo-pathwrap.is-rail & {
+    // Filmstrip: one row, intrinsic widths, free to overflow sideways.
+    display: flex;
+    gap: 0 14px;
+    padding: 6px 50% 2px;   // half-width gutters so the first and last can centre
+    width: max-content;
+  }
+}
+
+.vvitu-wwo-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.vvitu-wwo-line-bg,
+.vvitu-wwo-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.vvitu-wwo-line-bg {
+  stroke: var(--vvitu-border);
+  stroke-width: 3;
+}
+
+// The filled length. `strokeDashoffset` is written directly by the scroll
+// handler, so there is deliberately NO transition on it — a transition would
+// lag a frame behind the finger and read as the line sliding around.
+.vvitu-wwo-line {
+  stroke: var(--wwo-a);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 2px 7px var(--wwo-glow));
+  transition: stroke 0.45s ease;
+}
+
+.vvitu-wwo-nodes {
+  display: contents;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  .vvitu-wwo-pathwrap.is-rail & { display: contents; }
+}
+
+.vvitu-wwo-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  max-width: 128px;
+  text-align: center;
+
+  .vvitu-wwo-pathwrap.is-rail & { width: 74px; max-width: none; flex: 0 0 auto; }
+}
+
+.vvitu-wwo-node-thumb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--vvitu-bg-section-alt);
+  border: 3px solid var(--vvitu-bg-body);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12); // --vvitu-heading
+  // Transform and filter only — nothing here changes layout, so a stop
+  // growing cannot shift the path it sits on.
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.45s ease,
+    filter 0.45s ease,
+    border-color 0.45s ease;
+
+  img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  @media (max-width: 991px) { width: 56px; height: 56px; }
+  @media (max-width: 575px) { width: 52px; height: 52px; border-width: 2.5px; }
+}
+
+// A stop still ahead: present but asleep, so the eye is not pulled off the
+// one being read.
+.vvitu-wwo-node.is-next .vvitu-wwo-node-thumb {
+  filter: grayscale(1) opacity(0.45);
+  transform: scale(0.88);
+}
+
+// A stop already visited: full colour, small, ticked. This is the "minimised
+// back to its preview" state.
+.vvitu-wwo-node.is-done .vvitu-wwo-node-thumb {
+  filter: none;
+  transform: scale(0.92);
+  border-color: var(--vvitu-bg-body);
+}
+
+// The stop under the light.
+.vvitu-wwo-node.is-active .vvitu-wwo-node-thumb {
+  filter: none;
+  transform: scale(1.3);
+  border-color: var(--wwo-a);
+  box-shadow: 0 8px 22px var(--wwo-glow), 0 0 0 5px var(--wwo-ring);
+}
+
+// The spotlight itself: a soft halo behind the active thumbnail. Drawn on a
+// pseudo-element so it costs nothing on the other nine stops.
+.vvitu-wwo-node::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 118px;
+  height: 118px;
+  margin: -59px 0 0 -59px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--wwo-glow) 0%, rgba(255, 255, 255, 0) 70%);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.vvitu-wwo-node.is-active::before { opacity: 1; transform: scale(1); }
+
+.vvitu-wwo-node-tick {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--vvitu-white);
+  background: var(--wwo-a);
+  border: 2px solid var(--vvitu-bg-body);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.45s ease;
+}
+
+.vvitu-wwo-node.is-done .vvitu-wwo-node-tick { opacity: 1; transform: scale(1); }
+
+.vvitu-wwo-node-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--vvitu-muted);
+  transition: color 0.4s ease, font-weight 0.4s ease;
+
+  .vvitu-wwo-node.is-active & { color: var(--vvitu-heading); font-weight: 800; }
+  .vvitu-wwo-node.is-done & { color: var(--vvitu-body-alt); }
+
+  @media (max-width: 991px) { font-size: 9.5px; }
+  // The label would be unreadable at filmstrip size and the spotlight already
+  // names the stop, so it is dropped rather than shrunk into noise.
+  .vvitu-wwo-pathwrap.is-rail & { display: none; }
+}
+
+// The active thumbnail scales up, and on the filmstrip there is no row gap to
+// absorb it — so the strip reserves the headroom.
+.vvitu-wwo-pathwrap.is-rail .vvitu-wwo-field { padding-top: 14px; padding-bottom: 8px; }
+
+// Respect the OS setting: no travel, no halo growth, but every state change
+// still happens instantly and legibly.
 @media (prefers-reduced-motion: reduce) {
-  .vvitu-wwo,
-  .vvitu-wwo * {
+  .vvitu-wwo-road *,
+  .vvitu-wwo-stage * {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
-  .vvitu-wwo-step:hover,
-  .vvitu-wwo-tile:hover,
-  .vvitu-wwo-tool:hover { transform: none; }
-  .vvitu-wwo-tile:hover .vvitu-wwo-tile-media img { transform: none; }
+  .vvitu-wwo-node.is-active .vvitu-wwo-node-thumb { transform: scale(1.18); }
 }
-
 // ===============================================================
 // ROSTER-VERIFIED FIELDS ON THE REGISTRATION FORM
 // ---------------------------------------------------------------
