@@ -9100,10 +9100,27 @@
 .vvitu-wwo-spot-inner {
   position: absolute;
   inset: 0;
-  z-index: 1;               // the incoming panel paints over the leaving one
+  // Every panel is mounted; only the active one is shown. Opacity (not
+  // display/visibility) because a hidden element never decodes its image, and
+  // decoding on arrival is what caused the hitch mid-scroll. Browsers skip
+  // painting a fully transparent layer, so the nine idle panels cost nothing
+  // per frame.
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.993);
+  transition:
+    opacity 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.46s cubic-bezier(0.16, 1, 0.3, 1);
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
   gap: 16px;
+
+  &.is-on {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    z-index: 1;
+  }
 
   @media (max-width: 767px) {
     grid-template-columns: 1fr;
@@ -9161,7 +9178,11 @@
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  // NOT `overscroll-behavior: contain`. This panel sits under the pointer for
+  // most of the section, and `contain` stops the wheel chaining to the modal
+  // once the text bottoms out — so scrolling over the description simply
+  // stopped working. That dead wheel is the "stuck" feeling. Default chaining
+  // lets the modal keep scrolling once there is nothing left to read here.
   padding-right: 2px;
 
   // A long description scrolls inside its own panel rather than pushing the
@@ -9267,7 +9288,7 @@
 // .vvitu-wwo-ms would never reach it, and the inset would silently fall back
 // to a guess that no longer matches the column width.
 .vvitu-wwo-line {
-  --wwo-col: 112px;
+  --wwo-col: 94px;
   position: relative;
   display: flex;
   align-items: stretch;
@@ -9279,13 +9300,20 @@
   width: max-content;
 }
 
-// The rule. Inset by half a milestone each side so it begins at the first dot
-// and ends at the last, rather than running off into the gutters.
+// The rule, inset so it begins at the FIRST dot and ends at the LAST.
+//
+// The inset is a percentage, not half a column in pixels. Every column —
+// both caps and all the milestones — is the same width W, so with N columns
+// the first dot sits at W/2 of N*W, which is 1/(2N) of the whole row. That
+// holds whether the columns are at their flex basis or stretched to fill, and
+// it is why the fill and the dots agree without a hand-tuned offset. A pixel
+// inset only matched when the columns happened to be exactly --wwo-col wide,
+// which stopped being true the moment the caps were added.
 .vvitu-wwo-line-bg {
   position: absolute;
   top: 50%;
-  left: calc(var(--wwo-col) / 2);
-  right: calc(var(--wwo-col) / 2);
+  left: calc(100% / (var(--wwo-cols, 11) * 2));
+  right: calc(100% / (var(--wwo-cols, 11) * 2));
   height: 3px;
   margin-top: -1.5px;
   border-radius: 999px;
@@ -9313,8 +9341,9 @@
 
 }
 
-@media (max-width: 991px) { .vvitu-wwo-line { --wwo-col: 104px; } }
-@media (max-width: 575px) { .vvitu-wwo-line { --wwo-col: 96px; } }
+@media (max-width: 1199px) { .vvitu-wwo-line { --wwo-col: 86px; } }
+@media (max-width: 991px)  { .vvitu-wwo-line { --wwo-col: 82px; } }
+@media (max-width: 575px)  { .vvitu-wwo-line { --wwo-col: 78px; } }
 
 // Everything below positions against the centre line, so a milestone can grow
 // without moving the line or its neighbours.
@@ -9364,23 +9393,21 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  // Translate only — scaling from a transform keeps the line and the
-  // neighbouring milestones exactly where they were.
-  transform: translateX(-50%) scale(0.88);
-  transform-origin: center bottom;
+  // The card itself never scales — only the thumbnail inside it does. Scaling
+  // the card moved its label too, so the active milestone's label sat lower
+  // than every other label on its side of the line. Keeping the card fixed
+  // puts all the labels back on one baseline.
+  transform: translateX(-50%);
   opacity: 0.5;
   filter: grayscale(1);
-  transition:
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.4s ease,
-    filter 0.45s ease;
+  transition: opacity 0.4s ease, filter 0.45s ease;
 
   .vvitu-wwo-ms.is-up & { bottom: calc(50% + 22px); transform-origin: center bottom; }
   .vvitu-wwo-ms.is-down & { top: calc(50% + 22px); transform-origin: center top; }
 }
 
-.vvitu-wwo-ms.is-done .vvitu-wwo-ms-card { opacity: 0.85; filter: none; transform: translateX(-50%) scale(0.92); }
-.vvitu-wwo-ms.is-active .vvitu-wwo-ms-card { opacity: 1; filter: none; transform: translateX(-50%) scale(1.14); }
+.vvitu-wwo-ms.is-done .vvitu-wwo-ms-card { opacity: 0.88; filter: none; }
+.vvitu-wwo-ms.is-active .vvitu-wwo-ms-card { opacity: 1; filter: none; }
 
 .vvitu-wwo-ms-thumb {
   position: relative;
@@ -9391,14 +9418,21 @@
   background: var(--vvitu-bg-section-alt);
   border: 3px solid var(--vvitu-bg-body);
   box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12); // --vvitu-heading
-  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  transform: scale(0.9);
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
 
   img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   @media (max-width: 575px) { width: 48px; height: 48px; border-width: 2.5px; }
 }
 
+.vvitu-wwo-ms.is-done .vvitu-wwo-ms-thumb { transform: scale(0.95); }
+
 .vvitu-wwo-ms.is-active .vvitu-wwo-ms-thumb {
+  transform: scale(1.22);
   border-color: var(--wwo-a);
   box-shadow: 0 8px 20px var(--wwo-glow);
 }
@@ -9434,6 +9468,76 @@
   .vvitu-wwo-ms.is-active & { color: var(--vvitu-heading); font-weight: 800; }
   .vvitu-wwo-ms.is-done & { color: var(--vvitu-body-alt); }
 }
+
+// ── The two bookends ──
+// The line now runs from a Beginner badge to an AI Ready Engineer badge, so it
+// reads as a journey with a destination rather than a row of perks. They are
+// columns in the same flex row as the milestones, which is what keeps the
+// arithmetic honest: with two caps there are `stops + 2` columns, milestone k
+// sits at (k+1)/(stops+1) along the line, and the fill and the dots agree
+// without a single hand-tuned offset.
+//
+// They sit ON the line rather than above or below it — an endpoint is not a
+// milestone, and giving them a stalk would make them look like one.
+.vvitu-wwo-cap {
+  position: relative;
+  // The SAME flex sizing as a milestone. A narrower cap would put the first
+  // and last dots somewhere other than half a column in, and the rule would
+  // no longer start and end on them.
+  flex: 1 0 var(--wwo-col);
+  min-width: var(--wwo-col);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.vvitu-wwo-cap-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  color: var(--vvitu-muted);
+  // The ICON is the mark, not the disc it sits on. A filled gradient circle
+  // with a small glyph inside read as a coloured blob — the badge dominated
+  // the thing it was supposed to show. The background now matches the panel,
+  // so it is invisible except for the one job it still does: masking the line
+  // where it runs under the badge.
+  background: var(--wwo-tint);
+  border: none;
+  transition: color 0.45s ease, background 0.45s ease, filter 0.45s ease;
+
+  svg { width: 32px; height: 32px; }
+
+  @media (max-width: 575px) { width: 40px; height: 40px; svg { width: 27px; height: 27px; } }
+}
+
+// Lit: the start always is, the finish only once the line reaches it.
+.vvitu-wwo-cap.is-done .vvitu-wwo-cap-badge {
+  color: var(--wwo-a);
+  filter: drop-shadow(0 3px 9px var(--wwo-glow));
+}
+
+.vvitu-wwo-cap-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.25;
+  color: var(--vvitu-muted);
+  transition: color 0.45s ease;
+}
+
+.vvitu-wwo-cap.is-done .vvitu-wwo-cap-label { color: var(--vvitu-heading); }
+
+// (The caps have no dot of their own: see the note in what-we-offer.jsx.
+// Their badge sits at the column centre, which is where the rule begins and
+// ends, so the line appears to run out of the icon.)
 
 // On a small phone there is not enough height for a spotlight AND two rows of
 // milestone cards, so below 480px every milestone hangs on ONE side of the
