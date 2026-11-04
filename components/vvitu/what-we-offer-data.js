@@ -185,20 +185,19 @@ export const OFFER_ROADMAP = [
         label: 'Owl Coder',
         kicker: 'Ten years of interview questions',
         body: 'DSA, SQL and core coding in one graded library built for placement readiness, with your progress tracked across every platform you are on.',
-        // TODO(VVITU): two Owl Coder captures are promised for this stop — the
-        // Learning Path (graded modules with per-module progress) and the
-        // article view. Both say "graded library" far better than the contest
-        // list standing in here does. Drop them in the raw folder and add them
-        // to this array.
+        // The Learning Path capture: graded modules, each with its own
+        // progress. It carries the "graded library" claim far better than the
+        // contest list that stood in here before.
         //
-        // WHEN THEY ARRIVE, CHECK THE CHROME. Every Owl Coder capture so far
-        // has carried a TECHNICAL HUB mark top-left AND a real account
-        // holder's name top-right; the Learning Path one also repeats that
-        // name in the profile card partway down the left column, which a top
-        // crop does NOT reach. That card has to be cropped off or the name
-        // masked — see the crop notes at the top of this file.
+        // CROPPED ON TWO EDGES, and both are load-bearing. The top 232px held
+        // a TECHNICAL HUB mark and an account button; the left 575px held the
+        // profile card, which repeats that account holder's name two thirds of
+        // the way down where no top crop reaches it. The crop also takes the
+        // "NAGPUR FDP 2026" cohort label — another campus's programme name on
+        // a VVITU page. Re-crop from the raw file if this is ever regenerated;
+        // a straight resize puts all three back.
         gallery: [
-            { src: `${IMG}/owl-contests-clean.webp`, fit: 'contain', alt: 'The Owl Coder contest list showing the weekly and monthly contests' }
+            { src: `${IMG}/owl-learning.webp`, fit: 'contain', alt: 'The Owl Coder learning path, with graded modules and per-module progress' }
         ]
     },
     {
@@ -206,13 +205,12 @@ export const OFFER_ROADMAP = [
         label: 'Myna',
         kicker: 'The rounds that are not technical',
         body: 'Web and mobile practice for listening, speaking, reading and writing, with mock tests and a leaderboard — built to get you through the first interview before the code ever comes up.',
-        // The one stop whose two frames are a matched pair rather than a
-        // sequence: the same product on desktop and on a phone. Both letterbox
-        // (2.16:1 against 0.48:1) — cropping either to a shared box would throw
-        // away the device that makes it read as "web AND mobile".
+        // The web capture already shows the product on a laptop AND a phone in
+        // one frame, so the separate 0.48:1 phone screenshot that used to sit
+        // beside it was saying the same thing twice — and at that ratio it
+        // letterboxed into a sliver with most of the frame empty either side.
         gallery: [
-            { src: `${IMG}/myna-web.webp`, fit: 'contain', alt: 'The Myna web platform on a laptop' },
-            { src: `${IMG}/myna-app.webp`, fit: 'contain', alt: 'The Myna mobile app showing listening, speaking, reading and writing practice' }
+            { src: `${IMG}/myna-web.webp`, fit: 'contain', alt: 'The Myna platform shown on laptop and mobile' }
         ]
     },
     // MOVED 2026-11-04, from fifth to here. "One number, every platform" is a
