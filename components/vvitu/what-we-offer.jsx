@@ -78,8 +78,9 @@ const PRELOAD_RADIUS = 1;
  * React state changes only when the reached count changes — ten times across
  * the whole section rather than sixty times a second.
  */
-const OfferRoadmap = ({ stops, scrollRef, reduceMotion }) => {
+const OfferRoadmap = ({ stops, scrollRef, reduceMotion, onFit }) => {
     const trackRef = useRef(null);
+    const stageRef = useRef(null);
     const railRef = useRef(null);
     const fillRef = useRef(null);
     const nodeRefs = useRef([]);
@@ -144,20 +145,117 @@ const OfferRoadmap = ({ stops, scrollRef, reduceMotion }) => {
         [active, armed]
     );
 
+    // ── How tall the stage should be ────────────────────────────────────
+    //
+    // It used to be "however tall the container is", and on a tall screen that
+    // is badly wrong. The picture is WIDTH-constrained — it is a fixed-ratio
+    // box in a column whose width is already decided — so handing the stage
+    // more height does not make the picture any bigger. It just spreads the
+    // same content over more space. Measured before this: 380px of nothing
+    // under a 416x234 picture on an 820x1180 tablet, 317px at 768, 241px on a
+    // phone, and rail dots pushed 88px apart. Desktop escaped it only because
+    // a 900px-tall window leaves no slack to waste.
+    //
+    // So the stage now asks for what its content needs — the picture at this
+    // width, plus the tallest caption — and takes the container only as a
+    // CEILING. Nothing here reads a height, so there is no loop: the picture's
+    // need comes from the column width, and the caption's from its own
+    // children.
     useLayoutEffect(() => {
         const container = scrollRef?.current;
         if (!container || typeof ResizeObserver === 'undefined') return undefined;
+
+        const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+
+        // The caption's TRUE content height. `scrollHeight` is useless here:
+        // the caption is a grid item, so when its row is too tall scrollHeight
+        // reports the row back, which is how it measured 0px of dead space
+        // while sitting in 380px of it. Summing the children sidesteps that,
+        // and ignoring the ticks' `margin-top: auto` is the point — that
+        // margin is slack, not content.
+        const captionNeed = (note) => {
+            const cs = getComputedStyle(note);
+            const gap = num(cs.rowGap);
+            const kids = [...note.children];
+            return kids.reduce((h, k, i) => h + k.getBoundingClientRect().height + (i ? gap : 0), 0)
+                + num(cs.paddingTop) + num(cs.paddingBottom);
+        };
+
         const fit = () => {
+            // The CONTENT box, not clientHeight. clientHeight includes the
+            // scroller's own padding, but the stage sits inside that padding —
+            // so using it handed the stage the padding twice and left a 50px
+            // strip of empty tint under the stage at every width instead of
+            // the 14px of scroll affordance intended.
+            //
             // The floor must stay BELOW any realistic container height, or the
             // stage ends up taller than the box it is measuring itself into.
-            const h = Math.max(240, container.clientHeight - 14);
+            const ccs = getComputedStyle(container);
+            const ceiling = Math.max(
+                240,
+                container.clientHeight - num(ccs.paddingTop) - num(ccs.paddingBottom) - 14
+            );
+            const stage = stageRef.current;
+            let want = ceiling;
+
+            if (stage) {
+                const scs = getComputedStyle(stage);
+                const innerW = stage.clientWidth - num(scs.paddingLeft) - num(scs.paddingRight);
+                const railW = railRef.current ? railRef.current.offsetWidth : 0;
+                const showW = Math.max(140, innerW - railW - num(scs.columnGap));
+
+                // The peek reserve is a plain CSS length on the ratio box, not
+                // a laid-out size, so reading it back cannot feed on itself.
+                const anyFit = stage.querySelector('.has-deck .vvitu-wwo-fit');
+                const peekX = anyFit ? num(getComputedStyle(anyFit).right) : 0;
+                const peekY = anyFit ? num(getComputedStyle(anyFit).top) : 0;
+
+                // Sized for 16:9, the ratio all but one stop uses. Golden Day's
+                // 8:7 cards are taller per unit width, so they come out
+                // narrower in the same row — which is right: a squarer card
+                // SHOULD take less width, not force every other stop to carry
+                // the dead space it would need.
+                const deckNeed = (showW - peekX) * 9 / 16 + peekY;
+
+                // Every panel is mounted, so the tallest caption is knowable
+                // now and stays put — sizing to the active one would make the
+                // whole stage jump each time the reader passed a stop.
+                let noteNeed = 0;
+                stage.querySelectorAll('.vvitu-wwo-note').forEach((n) => {
+                    noteNeed = Math.max(noteNeed, captionNeed(n));
+                });
+
+                const panel = stage.querySelector('.vvitu-wwo-panel');
+                const rowGap = panel ? num(getComputedStyle(panel).rowGap) : 12;
+                const padY = num(scs.paddingTop) + num(scs.paddingBottom);
+
+                want = deckNeed + rowGap + noteNeed + padY;
+            }
+
+            // Report the UNCAPPED need upward. The host window is otherwise a
+            // flat 90vh, and on a tall screen that left ~500px of blank below
+            // a stage that had already shrunk to fit its content — the stage
+            // cannot spend that height, because the picture is constrained by
+            // width, so the window has to stop asking for it.
+            //
+            // `want` is a function of WIDTH only, so feeding it to something
+            // that decides height cannot oscillate: the host resizes once, the
+            // observer fires once more, and `want` comes back the same.
+            if (onFit) onFit(Math.max(260, want));
+
+            const h = Math.round(Math.min(ceiling, Math.max(260, want)));
             setStageH((prev) => (Math.abs(prev - h) < 2 ? prev : h));
         };
+
         const ro = new ResizeObserver(fit);
         ro.observe(container);
+        if (stageRef.current) ro.observe(stageRef.current);
         fit();
-        return () => ro.disconnect();
-    }, [scrollRef]);
+        // A second pass after the fonts and the first images have settled: the
+        // caption's height depends on where its text wraps.
+        const t = setTimeout(fit, 350);
+        return () => { ro.disconnect(); clearTimeout(t); };
+    }, [scrollRef, stops.length, onFit]);
 
     // ── The one piece of geometry everything here agrees on ─────────────
     //
@@ -315,7 +413,7 @@ const OfferRoadmap = ({ stops, scrollRef, reduceMotion }) => {
                 '--wwo-stage-h': `${stageH}px`
             }}
         >
-            <div className="vvitu-wwo-stage">
+            <div className="vvitu-wwo-stage" ref={stageRef}>
 
                 {/* ── LEFT: the line ── */}
                 <div className="vvitu-wwo-rail" ref={railRef}>
@@ -508,7 +606,7 @@ const OfferRoadmap = ({ stops, scrollRef, reduceMotion }) => {
 /**
  * "What We Offer" — the closing section of the AI Ready syllabus view.
  */
-const WhatWeOffer = ({ reveal, reduceMotion, scrollRef }) => {
+const WhatWeOffer = ({ reveal, reduceMotion, scrollRef, onFit }) => {
     // AI ONLY (2026-11-04). VVITU dropped the Technology run, so there is no
     // longer a choice to offer: the roadmap is the AI journey, beginning to
     // end. The track is PINNED rather than deleted — OFFER_TRACKS is untouched,
@@ -529,6 +627,7 @@ const WhatWeOffer = ({ reveal, reduceMotion, scrollRef }) => {
                 stops={OFFER_ROADMAP}
                 scrollRef={scrollRef}
                 reduceMotion={reduceMotion}
+                onFit={onFit}
             />
         </div>
     );

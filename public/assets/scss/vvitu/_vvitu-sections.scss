@@ -9267,11 +9267,18 @@
   position: absolute;
   inset: 0;
   display: grid;
-  // The caption rarely needs its whole share — most are three lines — so the
-  // photograph takes the lion's share and the counter pins to the bottom of
-  // whatever is left. Giving the two equal weight left a visible hole under
-  // the shorter captions.
-  grid-template-rows: minmax(0, 1.9fr) minmax(0, 1fr);
+  // The caption takes EXACTLY its content height and the picture takes the
+  // rest. A fixed share (it was 1.9fr / 1fr) cannot do that: it hands the
+  // caption a fraction of whatever height the stage happens to have, which on
+  // a tall tablet was hundreds of pixels more than three lines of text need —
+  // and the picture could not use the surplus either, being width-constrained.
+  // The stage is now sized to this sum in what-we-offer.jsx; `auto` is what
+  // makes the two agree.
+  //
+  // The minmax floor is the guard the fr split used to provide: a long caption
+  // on a short stage can squeeze the picture, but never below 110px — past
+  // that the caption scrolls itself instead.
+  grid-template-rows: minmax(110px, 1fr) auto;
   gap: 12px;
   opacity: 0;
   pointer-events: none;
@@ -9534,7 +9541,7 @@
   .vvitu-wwo-cap-badge { width: 30px; height: 30px; }
   .vvitu-wwo-cap-badge svg { width: 17px; height: 17px; }
 
-  .vvitu-wwo-panel { grid-template-rows: minmax(0, 1.45fr) minmax(0, 1fr); gap: 9px; }
+  .vvitu-wwo-panel { grid-template-rows: minmax(96px, 1fr) auto; gap: 9px; }
   .vvitu-wwo-deck.has-deck .vvitu-wwo-fit { inset: 9px 22px 0 0; }
   .vvitu-wwo-note-text { font-size: 12.5px; line-height: 1.5; }
 
@@ -9973,7 +9980,20 @@
   &:focus-visible {
     background: var(--gift-wash);
     border-color: var(--gift-a);
-    .vvitu-gift-say { color: var(--gift-a); }
+
+    // THE TRANSFORM HAS TO BE RE-STATED HERE, and §8.4b is exactly why.
+    //
+    // `.vvitu-gift:hover .vvitu-gift-say` is (0,3,0); the plain
+    // `.vvitu-gift--bar .vvitu-gift-say` above is only (0,2,0), so the hover
+    // rule won on specificity however far below it was written. That rule
+    // exists to slide the CARD's floating bubble into place and centres it
+    // with translate(-50%), which on this inline label simply dragged it
+    // 46.6px to the left — straight under the parcel, which then covered 38px
+    // of it. That is the "What" disappearing from "What We Offer", and it was
+    // happening at every width, desktop included.
+    //
+    // Nested inside `&:hover` this is (0,3,0) too, and later, so it wins.
+    .vvitu-gift-say { color: var(--gift-a); transform: none; }
   }
 }
 

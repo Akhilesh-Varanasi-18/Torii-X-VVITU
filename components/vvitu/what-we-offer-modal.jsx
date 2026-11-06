@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import WhatWeOffer from './what-we-offer';
 
 const IconGift = () => (
@@ -34,6 +34,29 @@ const IconGift = () => (
 const WhatWeOfferModal = ({ isOpen, onClose, programName, reduceMotion = false }) => {
     const bodyRef = useRef(null);
 
+    // How tall this window actually wants to be.
+    //
+    // 90vh on its own is wrong on a tall screen. The roadmap inside is a
+    // sticky stage whose height is decided by WIDTH — the picture is a
+    // fixed-ratio box in a column of known width — so once the stage has taken
+    // what it needs, any remaining height is simply blank. Measured on an
+    // 820x1180 tablet: a 463px stage sitting in a 993px viewport, with ~500px
+    // of white under it. The roadmap reports what it needs and the window
+    // stops at that; 90vh stays as the ceiling for short screens.
+    const [fitH, setFitH] = useState(null);
+
+    const handleFit = useCallback((stageNeed) => {
+        const body = bodyRef.current;
+        if (!body) return;
+        const cs = getComputedStyle(body);
+        const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+        // +14 is the slack the roadmap leaves itself when it reads the
+        // container back (container.clientHeight - 14). Without it the stage
+        // would be measured one notch short of what it just asked for.
+        const next = Math.round(stageNeed + pad + 14);
+        setFitH((prev) => (prev !== null && Math.abs(prev - next) < 2 ? prev : next));
+    }, []);
+
     // Esc closes. Registered only while open so it cannot shadow the Esc of
     // whatever is underneath once this has gone.
     useEffect(() => {
@@ -48,6 +71,7 @@ const WhatWeOfferModal = ({ isOpen, onClose, programName, reduceMotion = false }
     // a run it has already partly used.
     useEffect(() => {
         if (isOpen && bodyRef.current) bodyRef.current.scrollTop = 0;
+        if (!isOpen) setFitH(null);
     }, [isOpen]);
 
     if (!isOpen) return null;
@@ -87,8 +111,17 @@ const WhatWeOfferModal = ({ isOpen, onClose, programName, reduceMotion = false }
                     </button>
                 </div>
 
-                <div className="vvitu-offer-body" ref={bodyRef}>
-                    <WhatWeOffer reveal={reveal} reduceMotion={reduceMotion} scrollRef={bodyRef} />
+                <div
+                    className="vvitu-offer-body"
+                    ref={bodyRef}
+                    style={fitH ? { maxHeight: `${fitH}px` } : undefined}
+                >
+                    <WhatWeOffer
+                        reveal={reveal}
+                        reduceMotion={reduceMotion}
+                        scrollRef={bodyRef}
+                        onFit={handleFit}
+                    />
                 </div>
             </div>
         </div>
