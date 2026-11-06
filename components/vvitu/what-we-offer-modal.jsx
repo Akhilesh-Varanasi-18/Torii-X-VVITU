@@ -1,6 +1,6 @@
 'use client'
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import WhatWeOffer from './what-we-offer';
+import React, { useEffect, useRef, useCallback } from 'react';
+import OfferDeck from './what-we-offer';
 
 const IconGift = () => (
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -11,54 +11,43 @@ const IconGift = () => (
 );
 
 /**
- * "What We Offer" in a window of its own.
+ * "What We Offer" in its own window.
  *
- * ── Why this is not a tab any more ──────────────────────────────────────
- * It describes the PROGRAMME, not a course, so as a rail tab it was repeated
- * identically inside every syllabus — the same content filed under five
- * different courses. Worse, opening it folded the modal's header and section
- * rail away to make room, which changed the scroll container's height while
- * the roadmap was measuring itself against that very height. That is what the
- * tab change snagged on, and it is also what made the roadmap's travel need a
- * `Math.min` guard (see what-we-offer.jsx): the stage grew past what the
- * scroller could ever give it.
+ * ── Why a window and not the whole screen ───────────────────────────────
+ * The previous build was a full-screen takeover built around giving the
+ * photography the entire viewport. The photography could not carry it: the
+ * sources are 1280x720 documentary frames, and edge to edge on a desktop
+ * panel that is an upscale large enough to show the compression. See the long
+ * note in what-we-offer.jsx.
  *
- * In its own window there is no chrome to fold, so the container height is
- * fixed for the whole life of the view and the measurement is honest.
+ * A window also costs nothing here. The deck inside fills whatever it is
+ * given, the picture is capped either way, and keeping a visible edge means
+ * the reader can always see they are in a layer over the site they came from.
  *
- * ── Why it carries its own scroller ─────────────────────────────────────
- * The roadmap is scroll-driven and takes `scrollRef`. Here that is this
- * window's own body, which means the roadmap can no longer be affected by —
- * or affect — whatever else happens to be open behind it.
+ * It stays a LAYER rather than a route: the reader opened it from a programme
+ * card or a syllabus, and closing it should put them back exactly where they
+ * were rather than make them find their place again.
+ *
+ * ── Why the page behind is locked ───────────────────────────────────────
+ * Without it a wheel gesture that the deck does not consume scrolls the
+ * landing page underneath, and closing lands the reader somewhere they never
+ * went. The scrollbar that lock removes is replaced with padding so the
+ * layout underneath does not jump sideways as this opens.
  */
 const WhatWeOfferModal = ({ isOpen, onClose, programName, reduceMotion = false }) => {
-    const bodyRef = useRef(null);
+    // Where the pointer went DOWN, not where it came up. A reader who starts a
+    // drag inside the window — selecting a line of copy, nudging the rail —
+    // and releases over the scrim has not asked to close anything.
+    const downOnScrim = useRef(false);
 
-    // How tall this window actually wants to be.
-    //
-    // 90vh on its own is wrong on a tall screen. The roadmap inside is a
-    // sticky stage whose height is decided by WIDTH — the picture is a
-    // fixed-ratio box in a column of known width — so once the stage has taken
-    // what it needs, any remaining height is simply blank. Measured on an
-    // 820x1180 tablet: a 463px stage sitting in a 993px viewport, with ~500px
-    // of white under it. The roadmap reports what it needs and the window
-    // stops at that; 90vh stays as the ceiling for short screens.
-    const [fitH, setFitH] = useState(null);
-
-    const handleFit = useCallback((stageNeed) => {
-        const body = bodyRef.current;
-        if (!body) return;
-        const cs = getComputedStyle(body);
-        const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
-        // +14 is the slack the roadmap leaves itself when it reads the
-        // container back (container.clientHeight - 14). Without it the stage
-        // would be measured one notch short of what it just asked for.
-        const next = Math.round(stageNeed + pad + 14);
-        setFitH((prev) => (prev !== null && Math.abs(prev - next) < 2 ? prev : next));
+    const onScrimDown = useCallback((e) => {
+        downOnScrim.current = e.target === e.currentTarget;
     }, []);
+    const onScrimUp = useCallback((e) => {
+        if (downOnScrim.current && e.target === e.currentTarget) onClose();
+        downOnScrim.current = false;
+    }, [onClose]);
 
-    // Esc closes. Registered only while open so it cannot shadow the Esc of
-    // whatever is underneath once this has gone.
     useEffect(() => {
         if (!isOpen) return undefined;
         const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -66,63 +55,47 @@ const WhatWeOfferModal = ({ isOpen, onClose, programName, reduceMotion = false }
         return () => window.removeEventListener('keydown', onKey);
     }, [isOpen, onClose]);
 
-    // The roadmap measures itself against this body on mount, so it has to
-    // start from the top — reopening at a stale offset would have it compute
-    // a run it has already partly used.
     useEffect(() => {
-        if (isOpen && bodyRef.current) bodyRef.current.scrollTop = 0;
-        if (!isOpen) setFitH(null);
+        if (!isOpen || typeof document === 'undefined') return undefined;
+        const { body } = document;
+        const prevOverflow = body.style.overflow;
+        const prevPad = body.style.paddingRight;
+        const bar = window.innerWidth - document.documentElement.clientWidth;
+        body.style.overflow = 'hidden';
+        if (bar > 0) body.style.paddingRight = `${bar}px`;
+        return () => { body.style.overflow = prevOverflow; body.style.paddingRight = prevPad; };
     }, [isOpen]);
 
     if (!isOpen) return null;
 
-    const reveal = (delay = 0, y = 14) => ({
-        initial: reduceMotion ? { opacity: 0 } : { opacity: 0, y },
-        whileInView: { opacity: 1, y: 0 },
-        viewport: { root: bodyRef, once: true, margin: '0px 0px -8% 0px' },
-        transition: { duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] },
-    });
-
     return (
-        <div className="vvitu-offer-overlay" onClick={onClose}>
-            <div
-                className="vvitu-offer-window"
-                role="dialog"
-                aria-modal="true"
-                aria-label="What We Offer"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="vvitu-offer-bar">
-                    <span className="vvitu-offer-bar-mark" aria-hidden="true"><IconGift /></span>
-                    <div className="vvitu-offer-bar-text">
-                        <span className="vvitu-offer-bar-eyebrow">Beyond the syllabus</span>
-                        <h3 className="vvitu-offer-bar-title">What We Offer</h3>
-                    </div>
-                    {programName && <span className="vvitu-offer-bar-prog">{programName}</span>}
+        <div
+            className="vvitu-deck-scrim"
+            role="presentation"
+            onMouseDown={onScrimDown}
+            onMouseUp={onScrimUp}
+        >
+            <div className="vvitu-deck-win" role="dialog" aria-modal="true" aria-label="What We Offer">
+                <header className="vvitu-deck-top">
+                    <span className="vvitu-deck-top-mark" aria-hidden="true"><IconGift /></span>
+                    <span className="vvitu-deck-top-text">
+                        <span className="vvitu-deck-top-eyebrow">Beyond the syllabus</span>
+                        <span className="vvitu-deck-top-title">What We Offer</span>
+                    </span>
+                    {programName && <span className="vvitu-deck-top-prog">{programName}</span>}
                     <button
                         type="button"
-                        className="vvitu-offer-close"
+                        className="vvitu-deck-top-close"
                         onClick={onClose}
                         aria-label="Close What We Offer"
                     >
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
                             <path d="M6 6l12 12M18 6L6 18" />
                         </svg>
                     </button>
-                </div>
+                </header>
 
-                <div
-                    className="vvitu-offer-body"
-                    ref={bodyRef}
-                    style={fitH ? { maxHeight: `${fitH}px` } : undefined}
-                >
-                    <WhatWeOffer
-                        reveal={reveal}
-                        reduceMotion={reduceMotion}
-                        scrollRef={bodyRef}
-                        onFit={handleFit}
-                    />
-                </div>
+                <OfferDeck reduceMotion={reduceMotion} />
             </div>
         </div>
     );

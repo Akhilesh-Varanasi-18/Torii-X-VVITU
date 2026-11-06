@@ -1,636 +1,412 @@
 'use client'
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { OFFER_PLATFORMS, OFFER_ROADMAP } from './what-we-offer-data';
 
 // ── Icons ────────────────────────────────────────────────────────────────
 const ic = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' };
 const IconSpark = () => (<svg viewBox="0 0 24 24" width="13" height="13" {...ic} strokeWidth="2.1"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" /></svg>);
 const IconStar = () => (<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 2.6l2.7 5.9 6.3.7-4.7 4.3 1.3 6.4L12 16.6 6.4 19.9l1.3-6.4L3 9.2l6.3-.7z" /></svg>);
+const IconLeft = ({ s = 18 }) => (<svg viewBox="0 0 24 24" width={s} height={s} {...ic} strokeWidth="2.2"><path d="M15 5l-7 7 7 7" /></svg>);
+const IconRight = ({ s = 18 }) => (<svg viewBox="0 0 24 24" width={s} height={s} {...ic} strokeWidth="2.2"><path d="M9 5l7 7-7 7" /></svg>);
 
-// The two bookends. Drawn rather than photographed: they are symbols, not
-// moments, and a line icon stays crisp at any size and takes the theme colour.
-//
-// START — a student at a desk over an open book.
-const IconBeginner = () => (
-    <svg viewBox="0 0 24 24" width="22" height="22" {...ic} strokeWidth="1.7">
-        <circle cx="12" cy="6.4" r="3" />
-        <path d="M6.6 13.4a5.6 5.6 0 0 1 10.8 0" />
-        <path d="M3.5 16.5h17M4.6 16.5v3.2a.8.8 0 0 0 .8.8h13.2a.8.8 0 0 0 .8-.8v-3.2" />
-    </svg>
-);
-// FINISH — the AI Ready programme's own chip mark, so the journey ends on the
-// badge the student has been working toward.
-const IconEngineer = () => (
-    <svg viewBox="0 0 24 24" width="22" height="22" {...ic} strokeWidth="1.7">
-        <rect x="5" y="5" width="14" height="14" rx="2.4" />
-        <rect x="9.4" y="9.4" width="5.2" height="5.2" rx="1" />
-        <path d="M9.5 2.2v2.6M14.5 2.2v2.6M9.5 19.2v2.6M14.5 19.2v2.6M19.2 9.5h2.6M19.2 14.5h2.6M2.2 9.5h2.6M2.2 14.5h2.6" />
-    </svg>
-);
+// How long a photograph holds before the carousel advances on its own. Long
+// enough to actually look at a frame; the filling bar under the picture is
+// what makes the wait legible rather than arbitrary.
+const HOLD_MS = 4200;
 
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+// The frame ratio a stop gets when it does not name one. Every photographic
+// frame in this section is exactly 1280x720, so 16/9 is not a guess — it is
+// the measured shape of all twenty-one of them.
+const DEFAULT_RATIO = '16 / 9';
 
-// How long a frame holds before the deck advances. Short enough that a stop
-// with five frames shows them all while the reader is still on it, long enough
-// to actually look at one.
-const HOLD_MS = 1500;
+// The widest a picture is ever drawn, in CSS pixels, unless the stop overrides
+// it. See the density note in what-we-offer-data.js: the sources are 1280px
+// wide, so 760 keeps every photograph at 1.68x on a 1x screen and never asks
+// the browser to invent detail that was never captured.
+const DEFAULT_CAP = '760px';
 
-// Which stops get their photography loaded: the active one and its immediate
-// neighbours. Arming one stop AHEAD is what buys the next deck time to fetch
-// and decode before it is ever shown, without paying for all 27 frames the
-// moment the tab opens — which is what made the tab change feel heavy.
-const PRELOAD_RADIUS = 1;
+const pad = (n) => String(n).padStart(2, '0');
 
 /**
- * The What We Offer roadmap — one vertical line from Beginner to AI Ready
- * Engineer down the left, and the active stop's photography on the right.
+ * "What We Offer" as a milestone deck.
  *
- * ── Why vertical, and why not a half-and-half split ─────────────────────
- * The modal is 1200px wide by at most 90vh, so with the header folded the
- * stage is roughly 1150x800 — wide and short. Splitting that down the middle
- * gives the picture half a ~575x780 box, which is PORTRAIT, and 36 of the 46
- * photographs in this section are 3:2 or 16:9. Every one of them would have
- * had to letterbox into ~400px of dead space or lose 60% of itself to a crop.
- * A narrow rail for the line and the rest for the picture keeps the frame at
- * the shape the photography already is.
+ * ── Why a bounded deck and not a full-screen takeover ────────────────────
+ * The previous build gave each milestone the whole viewport. It read well in
+ * the abstract and badly in practice, for a reason that is measurable rather
+ * than aesthetic: the source photographs are 1280x720. Edge to edge on a 1920
+ * screen that is a 1.5x upscale, and on a 2x laptop panel far more — which is
+ * exactly the magnification at which webp softness and compression blocking
+ * stop being invisible. These are honest documentary frames, not studio
+ * plates, and blowing them up was showing the file rather than the moment.
  *
- * ── Why the stop changes on scroll but the frames change on a timer ─────
- * The stops are a sequence the reader is walking, so scroll drives them —
- * that is the whole metaphor, and it keeps the fill honest. The frames WITHIN
- * a stop are not a sequence; they are alternative views of one moment. Giving
- * them scroll distance too would mean Project Space (five frames) demanded
- * five times the scrolling of Startup Chamber (one), which makes the fill
- * crawl on some stops and jump on others. A timer decouples the two: every
- * stop costs the same scroll, and a stop with more photography simply shows
- * more of it while you are there.
+ * So the picture is CAPPED (see DEFAULT_CAP) and the screen is filled with
+ * everything else: the milestone rail, the journey spine, the typography and
+ * the controls. Big canvas, contained photograph.
  *
- * ── Why a frame swap waits on decode() ──────────────────────────────────
- * Flipping a class and letting the browser decode the new bitmap in the same
- * frame is exactly the stutter this section already had once. img.decode()
- * resolves only when the bitmap is ready to paint, so the class flip happens
- * on a frame where there is no work left to do and the crossfade is pure
- * compositor. Every frame is also mounted from the start, so the bytes are
- * long since fetched by the time any of this runs.
+ * ── Why one milestone at a time, with a rail ────────────────────────────
+ * The ORDER is the argument — you pitch an idea, you build it, you exhibit it,
+ * you compete, you are handed the platforms, and it ends with your name read
+ * out. A grid of nine cards turns a year into a list of perks. A rail keeps the
+ * sequence visible while still letting a reader jump straight to the one they
+ * came for.
  *
- * ── Why the scroll handler does not call setState ───────────────────────
- * The fill is written straight onto the element's transform inside a rAF.
- * React state changes only when the reached count changes — ten times across
- * the whole section rather than sixty times a second.
+ * ── Why the gallery runs itself ─────────────────────────────────────────
+ * The frames inside one milestone are alternative views of a single moment,
+ * not a sequence, so there is nothing for a reader to decide between them —
+ * most will never click. They cycle on a timer, with arrows and a segmented
+ * bar for anyone who wants to steer, and the timer holds while a pointer is
+ * over the picture so it never moves out from under someone reading it.
+ *
+ * ── Why nothing here snaps or takes over the scroll ─────────────────────
+ * The deck is exactly the height of its window and never scrolls as a whole.
+ * The previous build's scroll-snapping was the source of most of its
+ * responsive trouble: a chapter one pixel taller than the viewport made the
+ * snap point unreachable. Fixed chrome plus one scrollable column cannot fail
+ * that way.
  */
-const OfferRoadmap = ({ stops, scrollRef, reduceMotion, onFit }) => {
-    const trackRef = useRef(null);
-    const stageRef = useRef(null);
-    const railRef = useRef(null);
-    const fillRef = useRef(null);
-    const nodeRefs = useRef([]);
-    const imgRefs = useRef({});
-    const reachedRef = useRef(0);
-    const frameRef = useRef(0);
-    const rafRef = useRef(0);
+const OfferDeck = ({ reduceMotion = false }) => {
+    const stops = OFFER_ROADMAP;
+    const N = stops.length;
 
-    // How many points on the line the fill has passed: 0 at the Beginner cap,
-    // `stops + 1` once it touches the AI Ready Engineer cap.
-    const [reached, setReached] = useState(0);
-    const [stageH, setStageH] = useState(520);
-    const [frame, setFrame] = useState(0);
-    const [held, setHeld] = useState(false);
-    const [nudge, setNudge] = useState(0);
+    const [i, setI] = useState(0);
+    const [f, setF] = useState(0);
+    const [paused, setPaused] = useState(false);
+    // Bumped on every frame change, manual or automatic. It is what restarts
+    // both the hold timer and the filling bar — a shared key, so the bar can
+    // never be mid-fill while the timer that drives it has already been reset.
+    const [tick, setTick] = useState(0);
 
-    // Stops whose photography has been requested. It only ever grows: once a
-    // frame has been fetched, dropping its src again would just make it
-    // re-fetch on the way back up.
-    const [armed, setArmed] = useState(() => new Set([0]));
-    // Nothing beyond the very first frame is requested until the tab has
-    // finished arriving. Mounting 27 images into the same frame as the modal's
-    // header-and-rail fold is what made that transition stutter.
-    const [warm, setWarm] = useState(false);
+    const stop = stops[i];
+    const gallery = stop.gallery || [];
+    const n = gallery.length;
 
-    const SEGMENTS = stops.length + 1;                  // gaps between the caps
-    const active = clamp(reached - 1, 0, stops.length - 1);
-    const finished = reached >= SEGMENTS;
-    const stop = stops[active] || stops[0];
-    const frames = stop.gallery || [];
-    const count = frames.length;
+    const fRef = useRef(0);
+    const imgs = useRef({});
+    const pills = useRef([]);
+    const touch = useRef(null);
 
+    // Photography is fetched for the milestone on screen and its two
+    // neighbours. The set only grows: dropping a src again would just re-fetch
+    // it the moment the reader stepped back.
+    const [armed, setArmed] = useState(() => new Set([0, 1]));
     useEffect(() => {
-        const ric = typeof window !== 'undefined' && window.requestIdleCallback
-            ? window.requestIdleCallback
-            : (fn) => setTimeout(fn, 180);
-        const cic = typeof window !== 'undefined' && window.cancelIdleCallback
-            ? window.cancelIdleCallback
-            : clearTimeout;
-        const id = ric(() => setWarm(true));
-        return () => cic(id);
-    }, []);
-
-    useEffect(() => {
-        if (!warm) return;
         setArmed((prev) => {
             let next = prev;
-            for (let i = active - PRELOAD_RADIUS; i <= active + PRELOAD_RADIUS; i++) {
-                if (i < 0 || i >= stops.length || prev.has(i)) continue;
+            [i - 1, i, i + 1].forEach((k) => {
+                if (k < 0 || k >= N || prev.has(k)) return;
                 if (next === prev) next = new Set(prev);
-                next.add(i);
-            }
+                next.add(k);
+            });
             return next;
         });
-    }, [active, warm, stops.length]);
+    }, [i, N]);
 
-    // A frame is requested if its stop is armed. The active stop's FIRST frame
-    // is always requested, armed or not, so the panel is never blank on
-    // arrival even before the idle callback has run.
-    const wants = useCallback(
-        (i, j) => (i === active && j === 0) || armed.has(i),
-        [active, armed]
-    );
+    const goTo = useCallback((k) => {
+        const t = Math.min(N - 1, Math.max(0, k));
+        setI((prev) => (prev === t ? prev : t));
+    }, [N]);
 
-    // ── How tall the stage should be ────────────────────────────────────
-    //
-    // It used to be "however tall the container is", and on a tall screen that
-    // is badly wrong. The picture is WIDTH-constrained — it is a fixed-ratio
-    // box in a column whose width is already decided — so handing the stage
-    // more height does not make the picture any bigger. It just spreads the
-    // same content over more space. Measured before this: 380px of nothing
-    // under a 416x234 picture on an 820x1180 tablet, 317px at 768, 241px on a
-    // phone, and rail dots pushed 88px apart. Desktop escaped it only because
-    // a 900px-tall window leaves no slack to waste.
-    //
-    // So the stage now asks for what its content needs — the picture at this
-    // width, plus the tallest caption — and takes the container only as a
-    // CEILING. Nothing here reads a height, so there is no loop: the picture's
-    // need comes from the column width, and the caption's from its own
-    // children.
-    useLayoutEffect(() => {
-        const container = scrollRef?.current;
-        if (!container || typeof ResizeObserver === 'undefined') return undefined;
+    const pick = useCallback((k) => {
+        if (n < 1) return;
+        const t = ((k % n) + n) % n;
+        fRef.current = t;
+        setF(t);
+        setTick((x) => x + 1);
+    }, [n]);
 
-        const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+    // A milestone always opens on its first frame, with a full hold ahead of
+    // it rather than whatever was left of the previous one's.
+    useEffect(() => { fRef.current = 0; setF(0); setTick((x) => x + 1); }, [i]);
 
-        // The caption's TRUE content height. `scrollHeight` is useless here:
-        // the caption is a grid item, so when its row is too tall scrollHeight
-        // reports the row back, which is how it measured 0px of dead space
-        // while sitting in 380px of it. Summing the children sidesteps that,
-        // and ignoring the ticks' `margin-top: auto` is the point — that
-        // margin is slack, not content.
-        const captionNeed = (note) => {
-            const cs = getComputedStyle(note);
-            const gap = num(cs.rowGap);
-            const kids = [...note.children];
-            return kids.reduce((h, k, i) => h + k.getBoundingClientRect().height + (i ? gap : 0), 0)
-                + num(cs.paddingTop) + num(cs.paddingBottom);
-        };
-
-        const fit = () => {
-            // The CONTENT box, not clientHeight. clientHeight includes the
-            // scroller's own padding, but the stage sits inside that padding —
-            // so using it handed the stage the padding twice and left a 50px
-            // strip of empty tint under the stage at every width instead of
-            // the 14px of scroll affordance intended.
-            //
-            // The floor must stay BELOW any realistic container height, or the
-            // stage ends up taller than the box it is measuring itself into.
-            const ccs = getComputedStyle(container);
-            const ceiling = Math.max(
-                240,
-                container.clientHeight - num(ccs.paddingTop) - num(ccs.paddingBottom) - 14
-            );
-            const stage = stageRef.current;
-            let want = ceiling;
-
-            if (stage) {
-                const scs = getComputedStyle(stage);
-                const innerW = stage.clientWidth - num(scs.paddingLeft) - num(scs.paddingRight);
-                const railW = railRef.current ? railRef.current.offsetWidth : 0;
-                const showW = Math.max(140, innerW - railW - num(scs.columnGap));
-
-                // The peek reserve is a plain CSS length on the ratio box, not
-                // a laid-out size, so reading it back cannot feed on itself.
-                const anyFit = stage.querySelector('.has-deck .vvitu-wwo-fit');
-                const peekX = anyFit ? num(getComputedStyle(anyFit).right) : 0;
-                const peekY = anyFit ? num(getComputedStyle(anyFit).top) : 0;
-
-                // Sized for 16:9, the ratio all but one stop uses. Golden Day's
-                // 8:7 cards are taller per unit width, so they come out
-                // narrower in the same row — which is right: a squarer card
-                // SHOULD take less width, not force every other stop to carry
-                // the dead space it would need.
-                const deckNeed = (showW - peekX) * 9 / 16 + peekY;
-
-                // Every panel is mounted, so the tallest caption is knowable
-                // now and stays put — sizing to the active one would make the
-                // whole stage jump each time the reader passed a stop.
-                let noteNeed = 0;
-                stage.querySelectorAll('.vvitu-wwo-note').forEach((n) => {
-                    noteNeed = Math.max(noteNeed, captionNeed(n));
-                });
-
-                const panel = stage.querySelector('.vvitu-wwo-panel');
-                const rowGap = panel ? num(getComputedStyle(panel).rowGap) : 12;
-                const padY = num(scs.paddingTop) + num(scs.paddingBottom);
-
-                want = deckNeed + rowGap + noteNeed + padY;
-            }
-
-            // Report the UNCAPPED need upward. The host window is otherwise a
-            // flat 90vh, and on a tall screen that left ~500px of blank below
-            // a stage that had already shrunk to fit its content — the stage
-            // cannot spend that height, because the picture is constrained by
-            // width, so the window has to stop asking for it.
-            //
-            // `want` is a function of WIDTH only, so feeding it to something
-            // that decides height cannot oscillate: the host resizes once, the
-            // observer fires once more, and `want` comes back the same.
-            if (onFit) onFit(Math.max(260, want));
-
-            const h = Math.round(Math.min(ceiling, Math.max(260, want)));
-            setStageH((prev) => (Math.abs(prev - h) < 2 ? prev : h));
-        };
-
-        const ro = new ResizeObserver(fit);
-        ro.observe(container);
-        if (stageRef.current) ro.observe(stageRef.current);
-        fit();
-        // A second pass after the fonts and the first images have settled: the
-        // caption's height depends on where its text wraps.
-        const t = setTimeout(fit, 350);
-        return () => { ro.disconnect(); clearTimeout(t); };
-    }, [scrollRef, stops.length, onFit]);
-
-    // ── The one piece of geometry everything here agrees on ─────────────
-    //
-    // THE RUNWAY IS THE SMALLER OF TWO THINGS, and it has to be.
-    //
-    // The obvious one is the road's own length past the viewport. On its own
-    // that is wrong here: entering this tab folds the modal's header and
-    // section rail away, which grows container.clientHeight, which grows the
-    // stage, which grows the road — and the chrome comes back on the way out.
-    // So the road can reserve more travel than the scroller will ever hand it,
-    // and the fill tops out short. Measured before the fix: it stopped between
-    // 0.73 and 0.93 depending on width, the last stop never lit at 1440, 1024,
-    // 430, 390 or 360, and the AI Ready Engineer cap never lit at ANY width.
-    //
-    // The second is the scrolling actually left below the road's top.
-    // (maxScroll - scrollTop) + passed is constant for a given layout —
-    // scrolling down by n adds n to `passed` and takes n off the remainder —
-    // so this does not wobble frame to frame; it just refuses to promise
-    // travel that does not exist.
-    const metrics = useCallback(() => {
-        const container = scrollRef?.current;
-        const trackEl = trackRef.current;
-        if (!container || !trackEl) return null;
-        const tr = trackEl.getBoundingClientRect();
-        const cr = container.getBoundingClientRect();
-        const passed = cr.top - tr.top;
-        const maxScroll = container.scrollHeight - container.clientHeight;
-        const runway = Math.min(
-            trackEl.offsetHeight - container.clientHeight,
-            (maxScroll - container.scrollTop) + passed
-        );
-        return { container, passed, runway, roadTop: container.scrollTop - passed };
-    }, [scrollRef]);
-
-    // ── Scroll → fill + reached ─────────────────────────────────────────
+    // ── The carousel runs itself ────────────────────────────────────────
     useEffect(() => {
-        const container = scrollRef?.current;
-        if (!container || !trackRef.current) return undefined;
-
-        const read = () => {
-            rafRef.current = 0;
-            const m = metrics();
-            if (!m) return;
-            const p = m.runway > 0 ? clamp(m.passed / m.runway, 0, 1) : 0;
-
-            // scaleY, not scaleX — the line runs down now. transform-origin is
-            // set in CSS so this stays a one-property write.
-            if (fillRef.current) fillRef.current.style.transform = `scaleY(${p})`;
-
-            // The epsilon is 1e-3, not 1e-6: the last boundary is only crossed
-            // when p lands on exactly 1, and a scroller that stops on a
-            // fractional pixel leaves it at 0.9999. That rounding is the
-            // difference between the end cap lighting and never lighting.
-            const next = clamp(Math.floor(p * SEGMENTS + 1e-3), 0, SEGMENTS);
-            if (next !== reachedRef.current) {
-                reachedRef.current = next;
-                setReached(next);
-            }
-        };
-
-        const onScroll = () => {
-            if (rafRef.current) return;             // one read per frame
-            rafRef.current = requestAnimationFrame(read);
-        };
-
-        read();
-        container.addEventListener('scroll', onScroll, { passive: true });
-        return () => {
-            container.removeEventListener('scroll', onScroll);
-            if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        };
-    }, [scrollRef, SEGMENTS, stageH, metrics]);
-
-    // ── Click a stop to travel to it ────────────────────────────────────
-    // Lands in the MIDDLE of that stop's segment rather than on its leading
-    // edge: the edge is the boundary the floor is computed against, so a
-    // click that lands exactly on it is one rounded pixel away from selecting
-    // the stop before. The middle is unambiguous.
-    const goTo = useCallback((i) => {
-        const m = metrics();
-        if (!m || m.runway <= 0) return;
-        const target = (i + 1.5) / SEGMENTS;
-        m.container.scrollTo({
-            top: Math.round(m.roadTop + target * m.runway),
-            behavior: reduceMotion ? 'auto' : 'smooth'
-        });
-    }, [metrics, SEGMENTS, reduceMotion]);
-
-    // A new stop always opens on its first frame, or the deck would come in
-    // mid-sequence from wherever the previous stop happened to stop.
-    useEffect(() => {
-        frameRef.current = 0;
-        setFrame(0);
-    }, [active]);
-
-    // ── Frame cycling ───────────────────────────────────────────────────
-    const show = useCallback((next) => {
-        frameRef.current = next;
-        setFrame(next);
-    }, []);
-
-    // A manual change restarts the hold, so a frame the reader just chose does
-    // not get taken away a few hundred milliseconds later by a timer that was
-    // already most of the way through its interval.
-    const pick = useCallback((next) => {
-        show(next);
-        setNudge((n) => n + 1);
-    }, [show]);
-
-    const step = useCallback((dir) => {
-        if (count < 2) return;
-        pick((frameRef.current + dir + count) % count);
-    }, [count, pick]);
-
-    useEffect(() => {
-        // One frame is not a carousel, and a reader who has asked for less
-        // motion has asked for exactly this.
-        if (count < 2 || reduceMotion || held) return undefined;
+        if (n < 2 || reduceMotion || paused) return undefined;
         let dead = false;
-        const id = setInterval(() => {
-            const next = (frameRef.current + 1) % count;
-            const img = imgRefs.current[`${active}:${next}`];
-            const go = () => { if (!dead) show(next); };
-            // Decode first, swap second. If decode is unavailable or rejects
-            // (a decoding error, a detached node), fall through and swap
-            // anyway — a hitch beats a deck that silently stops moving.
-            if (img && typeof img.decode === 'function') img.decode().then(go, go);
+        const id = setTimeout(() => {
+            const next = (fRef.current + 1) % n;
+            const im = imgs.current[`${i}:${next}`];
+            const go = () => {
+                if (dead) return;
+                fRef.current = next;
+                setF(next);
+                setTick((x) => x + 1);
+            };
+            // Decode first, swap second. Flipping the class and letting the
+            // browser decode the bitmap in the same frame is a visible hitch
+            // on the larger frames — space-5 is 162KB.
+            if (im && typeof im.decode === 'function') im.decode().then(go, go);
             else go();
         }, HOLD_MS);
-        return () => { dead = true; clearInterval(id); };
-    }, [active, count, reduceMotion, held, show, nudge]);
+        return () => { dead = true; clearTimeout(id); };
+    }, [i, n, reduceMotion, paused, tick]);
 
-    // Keep the active stop in view when the line is taller than the rail.
+    // Keep the active pill in view. `block: 'nearest'` matters: without it a
+    // horizontal rail will also scroll its ANCESTORS vertically to centre
+    // itself, which drags the whole window.
     useEffect(() => {
-        const rail = railRef.current;
-        const el = nodeRefs.current[active];
-        if (!rail || !el) return;
-        if (rail.scrollHeight <= rail.clientHeight + 4) return;   // nothing to scroll
-        const want = el.offsetTop - rail.clientHeight / 2 + el.offsetHeight / 2;
-        // A tolerance so a one-pixel difference does not start a smooth-scroll
-        // animation on every frame, which is its own kind of judder.
-        if (Math.abs(rail.scrollTop - want) < 8) return;
-        rail.scrollTo({ top: want, behavior: reduceMotion ? 'auto' : 'smooth' });
-    }, [active, reduceMotion]);
+        const el = pills.current[i];
+        if (el && el.scrollIntoView) {
+            el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }, [i, reduceMotion]);
+
+    // Left/right walk the photographs, up/down walk the milestones. Splitting
+    // them means neither gesture is ambiguous on a stop that has only one
+    // frame, where left/right falls through to the milestones instead.
+    useEffect(() => {
+        const onKey = (e) => {
+            if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+            if (e.key === 'ArrowRight') { e.preventDefault(); if (n > 1) pick(fRef.current + 1); else goTo(i + 1); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); if (n > 1) pick(fRef.current - 1); else goTo(i - 1); }
+            else if (e.key === 'ArrowDown' || e.key === 'PageDown') { e.preventDefault(); goTo(i + 1); }
+            else if (e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); goTo(i - 1); }
+            else if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+            else if (e.key === 'End') { e.preventDefault(); goTo(N - 1); }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [i, n, N, goTo, pick]);
+
+    // Swipe. A horizontal drag across the picture is the gesture a phone
+    // reader will try first, and the rail is the only other way to move.
+    const onTouchStart = useCallback((e) => {
+        const t = e.touches[0];
+        touch.current = { x: t.clientX, y: t.clientY };
+        // A finger resting on the picture holds it, exactly as a pointer does.
+        setPaused(true);
+    }, []);
+    const onTouchEnd = useCallback((e) => {
+        const s = touch.current;
+        touch.current = null;
+        // Released unconditionally, and this is the reason it is not left to
+        // mouseleave: a tap on a touchscreen fires mouseenter and then never
+        // fires the matching mouseleave until something else is tapped, so a
+        // single swipe would otherwise stop the carousel for good.
+        setPaused(false);
+        if (!s) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - s.x;
+        const dy = t.clientY - s.y;
+        // A drag that is mostly vertical is the reader scrolling the panel,
+        // not steering the carousel.
+        if (Math.abs(dx) < 44 || Math.abs(dx) < Math.abs(dy)) return;
+        const fwd = dx < 0;
+        if (n > 1) pick(fRef.current + (fwd ? 1 : -1));
+        else goTo(i + (fwd ? 1 : -1));
+    }, [n, i, pick, goTo]);
+
+    const hold = useCallback(() => setPaused(true), []);
+    const release = useCallback(() => setPaused(false), []);
+
+    // Set on the media COLUMN, not on the stage, because the filmstrip under
+    // the stage has to be cut to the same shape — a 16/9 thumbnail of an 8/7
+    // Golden Day card would crop the headline off it.
+    const mediaStyle = {
+        '--ratio': stop.ratio || DEFAULT_RATIO,
+        '--cap': stop.cap || DEFAULT_CAP,
+    };
 
     return (
-        <div
-            ref={trackRef}
-            className="vvitu-wwo-road"
-            // Scroll distance: a little under half a stage per stop, plus one
-            // stage of run-out. Every stop costs the same, whatever its frame
-            // count — see the note on the timer above.
-            style={{
-                height: `${Math.round(stageH * (0.44 * stops.length + 1))}px`,
-                '--wwo-stage-h': `${stageH}px`
-            }}
-        >
-            <div className="vvitu-wwo-stage" ref={stageRef}>
-
-                {/* ── LEFT: the line ── */}
-                <div className="vvitu-wwo-rail" ref={railRef}>
-                    {/* --wwo-rows tells the rule how far in to start and stop:
-                        two caps plus the stops, all the same height. */}
-                    <ol className="vvitu-wwo-line" style={{ '--wwo-rows': stops.length + 2 }}>
-                        <span className="vvitu-wwo-line-bg" aria-hidden="true">
-                            <span className="vvitu-wwo-line-fill" ref={fillRef} />
-                        </span>
-
-                        {/* Where the student starts. */}
-                        <li className="vvitu-wwo-cap is-start is-done">
-                            <span className="vvitu-wwo-cap-badge"><IconBeginner /></span>
-                            <span className="vvitu-wwo-cap-label">Beginner</span>
-                        </li>
-
-                        {stops.map((s, i) => {
-                            const state = i === active ? 'is-active' : i < active ? 'is-done' : 'is-next';
-                            return (
-                                <li
-                                    key={s.key}
-                                    ref={(el) => { nodeRefs.current[i] = el; }}
-                                    className={`vvitu-wwo-ms ${state}`}
-                                    aria-current={i === active ? 'step' : undefined}
-                                >
-                                    {/* The whole row is the target, dot included,
-                                        so the hit area is the full width of the
-                                        rail rather than a 13px circle. */}
-                                    <button
-                                        type="button"
-                                        className="vvitu-wwo-ms-hit"
-                                        onClick={() => goTo(i)}
-                                        aria-label={`Go to ${s.label}`}
-                                    >
-                                        <span className="vvitu-wwo-ms-dot" aria-hidden="true" />
-                                        <span className="vvitu-wwo-ms-card">
-                                            <span className="vvitu-wwo-ms-no">{String(i + 1).padStart(2, '0')}</span>
-                                            <span className="vvitu-wwo-ms-label">{s.label}</span>
-                                        </span>
-                                    </button>
-                                </li>
-                            );
-                        })}
-
-                        {/* Where they finish. The badge IS the endpoint marker,
-                            so this carries no dot — one drawn at the centre of
-                            its own row would paint straight over the icon. */}
-                        <li className={`vvitu-wwo-cap is-end ${finished ? 'is-done' : ''}`}>
-                            <span className="vvitu-wwo-cap-badge"><IconEngineer /></span>
-                            <span className="vvitu-wwo-cap-label">AI Ready Engineer</span>
-                        </li>
-                    </ol>
+        <div className="vvitu-deck">
+            {/* ── the rail: every milestone, in order, always reachable ── */}
+            <nav className="vvitu-deck-rail" aria-label="Milestones">
+                <div className="vvitu-deck-rail-track">
+                    {stops.map((s, k) => (
+                        <button
+                            key={s.key}
+                            type="button"
+                            ref={(el) => { pills.current[k] = el; }}
+                            className={`vvitu-deck-pill ${k === i ? 'is-on' : ''} ${k < i ? 'is-done' : ''}`}
+                            onClick={() => goTo(k)}
+                            aria-current={k === i ? 'true' : undefined}
+                        >
+                            <b>{pad(k + 1)}</b>
+                            <span>{s.label}</span>
+                        </button>
+                    ))}
                 </div>
+            </nav>
 
-                {/* ── RIGHT: the stage. Every panel mounted, one visible. ── */}
-                <div
-                    className="vvitu-wwo-show"
-                    onMouseEnter={() => setHeld(true)}
-                    onMouseLeave={() => setHeld(false)}
-                >
-                    {stops.map((s, i) => {
-                        const g = s.gallery || [];
-                        const n = g.length;
-                        const on = i === active;
-                        return (
-                            <div
-                                key={s.key}
-                                className={`vvitu-wwo-panel ${on ? 'is-on' : ''}`}
-                                aria-hidden={!on}
+            {/* ── the spine: the arc the nine milestones sit inside ──
+                It replaces what used to be two whole screens — a "Beginner"
+                opener and an "AI Ready Engineer" closer. The arc was worth
+                keeping; two screens of it were not. */}
+            <div className="vvitu-deck-spine" aria-hidden="true">
+                <span className="vvitu-deck-spine-end">Beginner</span>
+                <span className="vvitu-deck-spine-track">
+                    <i style={{ transform: `scaleX(${(i + 1) / N})` }} />
+                </span>
+                <span className="vvitu-deck-spine-end is-goal">AI Ready Engineer</span>
+            </div>
+
+            {/* `key` on the body restarts its entrance animation, so a
+                milestone change reads as a new page rather than as text
+                silently rewriting itself in place. */}
+            <div className="vvitu-deck-body" key={stop.key}>
+                <div className="vvitu-deck-media" style={mediaStyle}>
+                    <div className="vvitu-deck-shot">
+                        {/* Arrows FLANK the picture rather than overlay it on
+                            anything wider than a phone. A picture is drawn at
+                            its own shape inside the stage, so an overlaid arrow
+                            would sit at the stage edge and drift away from the
+                            image on any ratio that is not the stage's. In the
+                            gutter it is always the same distance from the eye. */}
+                        {n > 1 && (
+                            <button
+                                type="button"
+                                className="vvitu-deck-arrow is-prev"
+                                onClick={() => pick(f - 1)}
+                                aria-label="Previous photograph"
                             >
-                                <div className={`vvitu-wwo-deck ${n > 1 ? 'has-deck' : ''}`}>
-                                  {/* The ratio box. Frames and arrows both sit
-                                      inside it so the arrows land on the
-                                      picture's own edges, not the deck's.
-                                      16:9 unless the stop asks otherwise —
-                                      Golden Day's frames are composed cards,
-                                      not photographs, and a 16:9 crop would
-                                      take their headline off. */}
-                                  <div
-                                    className="vvitu-wwo-fit"
-                                    style={s.ratio ? { '--wwo-ratio': s.ratio } : undefined}
-                                  >
-                                    {g.map((f, j) => {
-                                        // Distance forward from the visible frame, so
-                                        // the deck always reads front -> back in the
-                                        // order the frames will actually arrive.
-                                        const off = n ? (j - (on ? frame : 0) + n) % n : 0;
-                                        const pos = off === 0 ? 'is-front'
-                                            : off === 1 ? 'is-peek1'
-                                                : off === 2 ? 'is-peek2' : 'is-back';
-                                        return (
-                                            <figure
-                                                key={f.src}
-                                                className={`vvitu-wwo-frame ${pos} ${f.fit === 'contain' ? 'is-shot' : ''}`}
-                                            >
-                                                {wants(i, j) && (
-                                                    <img
-                                                        ref={(el) => { imgRefs.current[`${i}:${j}`] = el; }}
-                                                        src={f.src}
-                                                        alt={off === 0 ? f.alt : ''}
-                                                        decoding="async"
-                                                    />
-                                                )}
-                                            </figure>
-                                        );
-                                    })}
+                                <IconLeft />
+                            </button>
+                        )}
 
-                                    {/* Arrows, so it is obvious there is more than
-                                        one photograph here. Only on a stop that has
-                                        more than one — an arrow that cannot go
-                                        anywhere is worse than no arrow. */}
-                                    {n > 1 && (
-                                        <>
-                                            <button
-                                                type="button"
-                                                className="vvitu-wwo-arrow is-prev"
-                                                onClick={() => step(-1)}
-                                                aria-label="Previous photograph"
-                                                tabIndex={on ? 0 : -1}
-                                            >
-                                                <svg viewBox="0 0 24 24" width="17" height="17" {...ic}><path d="M15 5l-7 7 7 7" /></svg>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="vvitu-wwo-arrow is-next"
-                                                onClick={() => step(1)}
-                                                aria-label="Next photograph"
-                                                tabIndex={on ? 0 : -1}
-                                            >
-                                                <svg viewBox="0 0 24 24" width="17" height="17" {...ic}><path d="M9 5l7 7-7 7" /></svg>
-                                            </button>
-                                        </>
+                        <div
+                            className="vvitu-deck-stage"
+                            onMouseEnter={hold}
+                            onMouseLeave={release}
+                            onTouchStart={onTouchStart}
+                            onTouchEnd={onTouchEnd}
+                        >
+                            {gallery.map((fr, j) => (
+                                <figure
+                                    key={fr.src}
+                                    className={`vvitu-deck-frame ${j === f ? 'is-on' : ''}`}
+                                    aria-hidden={j !== f}
+                                >
+                                    <img
+                                        ref={(el) => { imgs.current[`${i}:${j}`] = el; }}
+                                        src={fr.src}
+                                        alt={j === f ? fr.alt : ''}
+                                        decoding="async"
+                                    />
+                                </figure>
+                            ))}
+                        </div>
+
+                        {n > 1 && (
+                            <button
+                                type="button"
+                                className="vvitu-deck-arrow is-next"
+                                onClick={() => pick(f + 1)}
+                                aria-label="Next photograph"
+                            >
+                                <IconRight />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* A filmstrip only where there is more than one frame. A
+                        strip of one on a single-frame stop reads as a carousel
+                        that failed to load. */}
+                    {n > 1 && (
+                        <div className="vvitu-deck-strip" role="tablist" aria-label={`${stop.label} photographs`}>
+                            {gallery.map((fr, j) => (
+                                <button
+                                    key={fr.src}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={j === f}
+                                    aria-label={`Photograph ${j + 1} of ${n}`}
+                                    className={`vvitu-deck-thumb ${j === f ? 'is-on' : ''}`}
+                                    onClick={() => pick(j)}
+                                    onMouseEnter={hold}
+                                    onMouseLeave={release}
+                                >
+                                    {/* Same src as the stage: already fetched,
+                                        already decoded, so the strip costs
+                                        nothing beyond the paint. */}
+                                    <img src={fr.src} alt="" decoding="async" />
+                                    {j === f && (
+                                        <i
+                                            key={tick}
+                                            style={{
+                                                animationDuration: `${HOLD_MS}ms`,
+                                                animationPlayState: paused || reduceMotion ? 'paused' : 'running',
+                                            }}
+                                        />
                                     )}
-                                  </div>
-                                </div>
-
-                                <div className="vvitu-wwo-note">
-                                    <span className="vvitu-wwo-note-kicker">
-                                        {s.finale ? <IconStar /> : null}
-                                        {s.kicker}
-                                    </span>
-                                    <h4 className="vvitu-wwo-note-title">{s.label}</h4>
-                                    <p className="vvitu-wwo-note-text">{s.body}</p>
-
-                                    {s.tracked && (
-                                        <span className="vvitu-wwo-note-track">
-                                            <IconSpark />
-                                            Anthropic and OpenAI access, with an AI mentor on every team
-                                        </span>
-                                    )}
-
-                                    {s.platforms && (
-                                        <ul className="vvitu-wwo-logos">
-                                            {OFFER_PLATFORMS.map((p) => (
-                                                <li key={p.key} title={p.name}>
-                                                    <img src={p.src} alt={p.name} decoding="async" />
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-
-                                    {/* A counter only where there is something to
-                                        count. One frame renders as a plain hero. */}
-                                    {n > 1 && (
-                                        <div className="vvitu-wwo-ticks" role="tablist" aria-label={`${s.label} photographs`}>
-                                            {g.map((f, j) => (
-                                                <button
-                                                    key={f.src}
-                                                    type="button"
-                                                    role="tab"
-                                                    aria-selected={on && j === frame}
-                                                    aria-label={`Photograph ${j + 1} of ${n}`}
-                                                    className={`vvitu-wwo-tick ${on && j === frame ? 'is-on' : ''}`}
-                                                    onClick={() => pick(j)}
-                                                    tabIndex={on ? 0 : -1}
-                                                />
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
+
+                <div className="vvitu-deck-say">
+                    <span className="vvitu-deck-ghost" aria-hidden="true">{pad(i + 1)}</span>
+                    <div className="vvitu-deck-say-inner">
+                        <span className="vvitu-deck-kicker">
+                            {stop.finale ? <IconStar /> : null}
+                            {stop.kicker}
+                        </span>
+                        <h2 className="vvitu-deck-title">{stop.label}</h2>
+                        <p className="vvitu-deck-text">{stop.body}</p>
+
+                        {stop.tracked && (
+                            <span className="vvitu-deck-chip">
+                                <IconSpark />
+                                Anthropic and OpenAI access, with an AI mentor on every team
+                            </span>
+                        )}
+
+                        {stop.platforms && (
+                            <ul className="vvitu-deck-logos">
+                                {OFFER_PLATFORMS.map((p) => (
+                                    <li key={p.key} title={p.name}>
+                                        <img src={p.src} alt={p.name} decoding="async" />
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── milestone to milestone ── */}
+            <div className="vvitu-deck-foot">
+                {/* The visible label is hidden on a phone, where two milestone
+                    names plus a counter will not share one line. The button is
+                    still named — hence the aria-label, which is the only label
+                    a screen reader or a 390px screen has. */}
+                <button
+                    type="button"
+                    className="vvitu-deck-step"
+                    onClick={() => goTo(i - 1)}
+                    disabled={i === 0}
+                    aria-label={i === 0 ? 'Previous milestone' : `Previous milestone: ${stops[i - 1].label}`}
+                >
+                    <IconLeft s={15} />
+                    <span>{i === 0 ? 'Start' : stops[i - 1].label}</span>
+                </button>
+
+                <span className="vvitu-deck-of">
+                    <b>{pad(i + 1)}</b> <i>/ {pad(N)}</i>
+                </span>
+
+                <button
+                    type="button"
+                    className="vvitu-deck-step is-next"
+                    onClick={() => goTo(i + 1)}
+                    disabled={i === N - 1}
+                    aria-label={i === N - 1 ? 'Next milestone' : `Next milestone: ${stops[i + 1].label}`}
+                >
+                    <span>{i === N - 1 ? 'AI Ready Engineer' : stops[i + 1].label}</span>
+                    <IconRight s={15} />
+                </button>
+            </div>
+
+            {/* Neighbouring milestones are fetched out of sight so the first
+                frame is already decoded by the time the reader arrives. */}
+            <div className="vvitu-deck-pre" aria-hidden="true">
+                {stops.map((s, k) => (
+                    (k !== i && armed.has(k) && s.gallery && s.gallery[0])
+                        ? <img key={s.key} src={s.gallery[0].src} alt="" decoding="async" />
+                        : null
+                ))}
             </div>
         </div>
     );
 };
 
-/**
- * "What We Offer" — the closing section of the AI Ready syllabus view.
- */
-const WhatWeOffer = ({ reveal, reduceMotion, scrollRef, onFit }) => {
-    // AI ONLY (2026-11-04). VVITU dropped the Technology run, so there is no
-    // longer a choice to offer: the roadmap is the AI journey, beginning to
-    // end. The track is PINNED rather than deleted — OFFER_TRACKS is untouched,
-    // so restoring the toggle means giving `track` its state back.
-    // A toggle with one option is not a toggle, it is a label.
-    const track = 'ai';
-
-    return (
-        <div className="vvitu-wwo" data-track={track}>
-            <motion.div className="vvitu-wwo-head" {...reveal(0)}>
-                <div className="vvitu-wwo-head-intro">
-                    <span className="vvitu-wwo-eyebrow">Beginner to AI Ready Engineer</span>
-                    <h4 className="vvitu-wwo-h">The Roadmap</h4>
-                </div>
-            </motion.div>
-
-            <OfferRoadmap
-                stops={OFFER_ROADMAP}
-                scrollRef={scrollRef}
-                reduceMotion={reduceMotion}
-                onFit={onFit}
-            />
-        </div>
-    );
-};
-
-export default WhatWeOffer;
+export default OfferDeck;
