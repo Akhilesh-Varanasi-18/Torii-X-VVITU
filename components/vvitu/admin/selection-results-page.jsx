@@ -1,11 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useAdmin } from './admin-context';
 import Segmented from '../dashboard/coding/segmented';
 import { IconRefresh, IconUpload, IconSearch, IconClose, IconStar, IconCheckCircle, IconDownload } from '../dashboard/dashboard-icons';
 import { formatDateTime } from '../dashboard/coding/coding-theme';
-import { SELECTION_ROUNDS, INTERVIEW_ROUND, MAX_STARS, SCORE_FIELDS, roundByKey } from '../../../lib/selection-results';
+import { SELECTION_ROUNDS, INTERVIEW_ROUND, MAX_STARS, SCORE_FIELDS, MAX_REMARKS, roundByKey } from '../../../lib/selection-results';
+import { formatDate, formatSlot } from '../../../lib/interview-panels';
+
+// Step 3 is a monitoring surface most visitors to this page never open — they
+// came to upload a list or score one student. Loading it on demand keeps its
+// table, filters and framer-motion segmented controls out of the bundle until
+// somebody scrolls to it. `ssr: false` for the same reason the coding module
+// does it (§8.6): nothing here renders usefully on the server, and it reads
+// live data anyway.
+const PanelsView = dynamic(() => import('./selection/panels-view'), {
+    ssr: false,
+    loading: () => <p className="sr-roster__empty">Loading the panel view…</p>
+});
 
 // The AI Ready Engineers results module. Two jobs on one page, both scoped to the
 // academic year picked in the top bar:
@@ -14,7 +27,9 @@ import { SELECTION_ROUNDS, INTERVIEW_ROUND, MAX_STARS, SCORE_FIELDS, roundByKey 
 //      Final Shortlist). Preview first, then commit; the preview is the only real
 //      check that the right file went against the right round.
 //   2. Interview scores — find a student on the interview list by name or roll
-//      number and give them 1-5 stars for coding and for communication.
+//      number, give them 1-5 stars for coding and for communication, and
+//      optionally write a remark (what the stars cannot say: "suspected
+//      cheating", "strong fundamentals").
 //
 // Everything is written onto the student's own document in vvitu_hostel_roster
 // (see lib/selection-results.js for the layout).
@@ -69,10 +84,19 @@ export default function SelectionResultsPage() {
 
     // Bumped after an interview-list upload, so the scoring panel refetches.
     const [interviewVersion, setInterviewVersion] = useState(0);
+    // Bumped by anything that changes what the panel view counts: a new
+    // interview list, or a score saved above it. Kept separate from
+    // interviewVersion because that one is the scoring card's React `key` —
+    // bumping it on every save would tear the card down mid-edit and lose the
+    // panelist and remarks the person had just typed.
+    const [panelVersion, setPanelVersion] = useState(0);
 
     const onCommitted = (round) => {
         load(year);
-        if (round === INTERVIEW_ROUND) setInterviewVersion((v) => v + 1);
+        if (round === INTERVIEW_ROUND) {
+            setInterviewVersion((v) => v + 1);
+            setPanelVersion((v) => v + 1);
+        }
     };
 
     return (
@@ -149,12 +173,21 @@ export default function SelectionResultsPage() {
 
             {year && (
                 <div className="sr-stack">
-                    <RoundLists year={year} summary={summary} unauthorized={unauthorized} onCommitted={onCommitted} />
+                    <RoundLists
+                        year={year}
+                        summary={summary}
+                        unauthorized={unauthorized}
+                        onCommitted={onCommitted}
+                        panelVersion={panelVersion}
+                    />
                     <InterviewScores
                         key={`${year}:${interviewVersion}`}
                         year={year}
                         unauthorized={unauthorized}
-                        onScored={() => load(year)}
+                        onScored={() => {
+                            load(year);
+                            setPanelVersion((v) => v + 1);
+                        }}
                     />
                 </div>
             )}
@@ -164,7 +197,7 @@ export default function SelectionResultsPage() {
 
 // ── 1. Round lists ──────────────────────────────────────────────────────────
 
-function RoundLists({ year, summary, unauthorized, onCommitted }) {
+function RoundLists({ year, summary, unauthorized, onCommitted, panelVersion }) {
     const [round, setRound] = useState(SELECTION_ROUNDS[0].key);
     const [mode, setMode] = useState('replace');
     const [text, setText] = useState('');
@@ -277,8 +310,22 @@ function RoundLists({ year, summary, unauthorized, onCommitted }) {
                 })}
             </div>
 
-            {/* Clicking a tile opens who is on that round's list right now. */}
-            <RoundStudents key={`${year}:${round}`} year={year} round={round} version={listVersion} unauthorized={unauthorized} />
+            {/* Clicking a tile opens who is on that round's list right now.
+                The Interview round gets the full panel view rather than the
+                plain list: it is the same students with the same columns plus
+                panel, slot, who scored them and their remarks, so showing both
+                meant maintaining — and reading — the same table twice. */}
+            {round === INTERVIEW_ROUND ? (
+                <PanelsView
+                    key={`${year}:${listVersion}:${panelVersion}`}
+                    year={year}
+                    unauthorized={unauthorized}
+                    version={panelVersion}
+                    embedded
+                />
+            ) : (
+                <RoundStudents key={`${year}:${round}`} year={year} round={round} version={listVersion} unauthorized={unauthorized} />
+            )}
 
             <div className="sr-upload">
                 <div className="sr-upload__head">
@@ -531,6 +578,7 @@ const fold = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
 function InterviewScores({ year, unauthorized, onScored }) {
     const [students, setStudents] = useState(null);
+    const [panelists, setPanelists] = useState([]);
     const [error, setError] = useState('');
     const [query, setQuery] = useState('');
     const [open, setOpen] = useState(false);
@@ -543,6 +591,7 @@ function InterviewScores({ year, unauthorized, onScored }) {
         try {
             const json = await call(`/api/admin/selection/interviews?year=${encodeURIComponent(year)}`, {}, unauthorized);
             setStudents(json.students);
+            setPanelists(json.panelists || []);
         } catch (e) {
             setError(e.message);
         }
@@ -702,6 +751,7 @@ function InterviewScores({ year, unauthorized, onScored }) {
                             key={selected.rollKey}
                             year={year}
                             student={selected}
+                            panelists={panelists}
                             unauthorized={unauthorized}
                             onSaved={onSaved}
                             onClose={() => setSelected(null)}
@@ -769,11 +819,17 @@ function Stars({ label, value, onChange, disabled }) {
     );
 }
 
-function ScoreForm({ year, student, unauthorized, onSaved, onClose }) {
+function ScoreForm({ year, student, panelists, unauthorized, onSaved, onClose }) {
     const [scores, setScores] = useState({
         coding: student.score?.coding || 0,
         communication: student.score?.communication || 0
     });
+    const [remarks, setRemarks] = useState(student.score?.remarks || '');
+    // Who took this interview. Pre-selected from the timetable, so for the
+    // normal case — the allocated panelist is the one scoring — nobody touches
+    // it. A saved name wins over the timetable: if someone covered last time,
+    // re-opening the card should show who actually did it, not who was planned.
+    const [scoredBy, setScoredBy] = useState(student.score?.scoredBy || student.allocation?.panelist || '');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [savedAt, setSavedAt] = useState(student.score?.scoredAt || null);
@@ -790,7 +846,7 @@ function ScoreForm({ year, student, unauthorized, onSaved, onClose }) {
                 {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ year, rollKey: student.rollKey, ...scores })
+                    body: JSON.stringify({ year, rollKey: student.rollKey, ...scores, remarks, scoredBy })
                 },
                 unauthorized
             );
@@ -814,6 +870,17 @@ function ScoreForm({ year, student, unauthorized, onSaved, onClose }) {
                         {student.branch ? ` · ${student.branch}` : ''}
                         {student.gender ? ` · ${student.gender}` : ''}
                     </p>
+                    {/* The slot, when this student has one. Confirms at a glance
+                        that the card open is the interview actually happening. */}
+                    {student.allocation && (
+                        <p className="sr-score__slot">
+                            {student.allocation.panel && <span className="sr-score__panel">{student.allocation.panel}</span>}
+                            {student.allocation.date && <span>{formatDate(student.allocation.date)}</span>}
+                            {formatSlot(student.allocation.start, student.allocation.end) && (
+                                <span>{formatSlot(student.allocation.start, student.allocation.end)}</span>
+                            )}
+                        </p>
+                    )}
                 </div>
                 <button type="button" className="sr-score__close" onClick={onClose} aria-label="Close this student">
                     <IconClose />
@@ -833,6 +900,63 @@ function ScoreForm({ year, student, unauthorized, onSaved, onClose }) {
                         }}
                     />
                 ))}
+            </div>
+
+            {/* Who is scoring. A <select> of the panelists already on the
+                timetable, pre-selected to this student's own panelist, so the
+                normal case is zero clicks and a stand-in is one. Free-text would
+                give us "Rahul", "rahul" and "Rahul K" as three different people
+                in the per-panelist statistics. */}
+            <div className="sr-score__by">
+                <label htmlFor="sr-scored-by">Scored by</label>
+                <select
+                    id="sr-scored-by"
+                    value={scoredBy}
+                    disabled={busy}
+                    onChange={(e) => {
+                        setScoredBy(e.target.value);
+                        setDirty(true);
+                    }}
+                >
+                    <option value="">Not recorded</option>
+                    {/* A name saved earlier that is no longer on the timetable
+                        would otherwise vanish from the list and silently reset
+                        itself to "Not recorded" on the next save. */}
+                    {(panelists.includes(scoredBy) || !scoredBy ? panelists : [scoredBy, ...panelists]).map((p) => (
+                        <option key={p} value={p}>
+                            {p}
+                        </option>
+                    ))}
+                </select>
+                {student.allocation?.panelist && scoredBy !== student.allocation.panelist && (
+                    <span className="sr-score__by-note">Timetabled to {student.allocation.panelist}</span>
+                )}
+            </div>
+
+            {/* Optional. The stars are the decision; this is the sentence behind
+                it. Deliberately not required — most students will not need one,
+                and a mandatory box would get filled with "ok" 200 times. */}
+            <div className="sr-score__remarks">
+                <div className="sr-score__remarks-head">
+                    <label htmlFor="sr-remarks">
+                        Remarks <span className="sr-score__optional">optional</span>
+                    </label>
+                    <span className={`sr-score__count${remarks.length > MAX_REMARKS - 100 ? ' is-near' : ''}`}>
+                        {remarks.length} / {MAX_REMARKS}
+                    </span>
+                </div>
+                <textarea
+                    id="sr-remarks"
+                    rows={3}
+                    maxLength={MAX_REMARKS}
+                    value={remarks}
+                    disabled={busy}
+                    placeholder="Anything the stars do not say — strengths, concerns, suspected malpractice…"
+                    onChange={(e) => {
+                        setRemarks(e.target.value);
+                        setDirty(true);
+                    }}
+                />
             </div>
 
             {error && <p className="cp-alert cp-alert--error">{error}</p>}
@@ -1007,6 +1131,15 @@ function RoundStudents({ year, round, version, unauthorized }) {
                                 {isInterview && (
                                     <span role="cell" className={`sr-table__score${s.score ? ' is-done' : ''}`}>
                                         {s.score ? `Coding ${s.score.coding}★ · Comm ${s.score.communication}★` : 'Not scored'}
+                                        {/* A remark is shown as a marker rather than inline text: the
+                                            cell is one line in a 267-row table, and a paragraph would
+                                            wreck the grid. The full text is in the title and in the
+                                            export. */}
+                                        {s.score?.remarks && (
+                                            <span className="sr-table__remark" title={s.score.remarks}>
+                                                “{s.score.remarks}”
+                                            </span>
+                                        )}
                                     </span>
                                 )}
                                 <span role="cell" className="sr-table__when">{s.addedAt ? formatDateTime(s.addedAt) : '—'}</span>

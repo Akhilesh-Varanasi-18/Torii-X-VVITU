@@ -1711,6 +1711,172 @@
         }
     }
 
+    // The student's timetabled slot, under their roll number. A flex row with a
+    // real gap — the three spans carry no punctuation of their own, so without
+    // it they run together as "Panel 3Tue, 24 Nov6:00 PM".
+    &__slot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        margin: 7px 0 0;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--vvitu-body-alt);
+    }
+
+    &__panel {
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-coral-tint);
+        color: var(--vvitu-primary);
+        font-size: 11.5px;
+        font-weight: 700;
+    }
+
+    // Who took the interview. Sits between the stars and the remarks so the
+    // card reads rate → who → why.
+    &__by {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        margin-top: 16px;
+
+        label {
+            font-size: 12.5px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: var(--vvitu-body-alt);
+        }
+
+        select {
+            min-width: 190px;
+            padding: 8px 12px;
+            border: 1px solid var(--vvitu-border);
+            border-radius: 10px;
+            background: var(--vvitu-white);
+            color: var(--vvitu-heading);
+            font-family: var(--vvitu-font-primary);
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+
+            &:focus-visible {
+                outline: none;
+                border-color: var(--vvitu-primary);
+                box-shadow: 0 0 0 3px rgba(226, 84, 76, 0.12); // --vvitu-primary
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+        }
+
+        @media (max-width: $sh-xs) {
+            select {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+        }
+    }
+
+    // Shown only when the name picked is not the one on the timetable — a quiet
+    // confirmation that the override was deliberate, not a misclick.
+    &__by-note {
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-warm-tint);
+        color: var(--vvitu-warning-strong);
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    // Optional remarks. Sits below the two star rows and above the footer, so
+    // the reading order matches the panel's: rate, then explain, then save.
+    &__remarks {
+        margin-top: 16px;
+
+        textarea {
+            width: 100%;
+            min-height: 84px;
+            padding: 10px 12px;
+            border: 1px solid var(--vvitu-border);
+            border-radius: 12px;
+            background: var(--vvitu-bg-warm-offwhite);
+            color: var(--vvitu-body);
+            font-family: var(--vvitu-font-primary);
+            font-size: 14px;
+            line-height: 1.55;
+            resize: vertical;
+
+            &::placeholder {
+                color: var(--vvitu-muted);
+            }
+
+            &:focus-visible {
+                outline: none;
+                border-color: var(--vvitu-primary);
+                background: var(--vvitu-white);
+                box-shadow: 0 0 0 3px rgba(226, 84, 76, 0.12); // --vvitu-primary
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            // Narrow columns wrap the same remark onto far more lines, so the
+            // phone gets a taller box rather than one that clips mid-sentence.
+            @media (max-width: $sh-xs) {
+                min-height: 116px;
+            }
+        }
+    }
+
+    &__remarks-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+
+        label {
+            font-size: 12.5px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: var(--vvitu-body-alt);
+        }
+    }
+
+    // "optional" is part of the label, not a hint below it — the panel needs to
+    // know before they start typing that they can skip this.
+    &__optional {
+        margin-left: 6px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-warm-tint);
+        color: var(--vvitu-warning-strong);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: lowercase;
+    }
+
+    &__count {
+        font-size: 11.5px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: var(--vvitu-muted);
+
+        &.is-near {
+            color: var(--vvitu-danger-strong);
+        }
+    }
+
     &__foot {
         display: flex;
         flex-wrap: wrap;
@@ -2205,5 +2371,1023 @@
         font-size: 12.5px;
         line-height: 1.6;
         color: var(--vvitu-body-alt);
+    }
+}
+
+// A remark on a row of the interview list. One line, clipped — the table is a
+// scan surface and the full text belongs in the tooltip and the export, not in
+// a cell that would otherwise grow to three lines and break the grid.
+.sr-table .sr-table__remark {
+    display: block;
+    max-width: 100%;
+    margin-top: 2px;
+    overflow: hidden;
+    font-size: 11.5px;
+    font-style: italic;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--vvitu-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// =========================================================================
+// AI Ready Engineers results — Step 3: interview panels & progress  (.ip-*)
+// =========================================================================
+//
+// Built to sit directly under Steps 1 and 2 and read as the same surface:
+// white cards on --vvitu-border, coral for anything active or emphasised,
+// --vvitu-bg-coral-tint for a selected state, amber for "still outstanding".
+// No greens and no neutral greys as fills — they belong to a different system
+// and made this section look bolted on (§8.4).
+//
+// The other rule driving this file is HEIGHT. Clicking a panel re-filters the
+// table, and the first build put ~560px of tiles and cards above that table, so
+// the thing that changed was off-screen and the change was invisible. The
+// summary strip, the panel cards and the chips are all deliberately short — the
+// whole header lands in roughly 300px — and the component scrolls the table
+// into view on top of that.
+//
+// Three layouts, as every admin surface here has (§8.3):
+//   desktop  6 panel cards across, full 8-column grid table
+//   tablet   cards wrap, table drops to 5 columns
+//   phone    cards single file, every table row becomes a card
+
+.ip {
+    &-head__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    // ── Summary strip ───────────────────────────────────────────────────
+    //
+    // One short bordered row, not four tall tiles. Each cell is a label over a
+    // number, and the overall completion rides along the bottom edge as a
+    // 3px rule, so the headline reads in a single glance without costing the
+    // table its screen.
+    &-stats {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 16px;
+        border: 1px solid var(--vvitu-border);
+        border-radius: 14px;
+        background: var(--vvitu-white);
+        overflow: hidden;
+
+        @media (max-width: $sh-md) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    &-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 11px 15px 13px;
+        border-left: 1px solid var(--vvitu-border);
+
+        @media (max-width: $sh-xs) {
+            padding: 9px 12px 10px;
+        }
+
+        &:first-child {
+            border-left: 0;
+        }
+
+        @media (max-width: $sh-md) {
+            &:nth-child(odd) {
+                border-left: 0;
+            }
+            &:nth-child(n + 3) {
+                border-top: 1px solid var(--vvitu-border);
+            }
+        }
+
+        &__label {
+            margin: 0;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--vvitu-muted);
+        }
+
+        &__value {
+            margin: 0;
+            font-family: var(--vvitu-font-heading);
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.15;
+            color: var(--vvitu-heading);
+            font-variant-numeric: tabular-nums;
+        }
+
+        &__hint {
+            margin: 0;
+            font-size: 11.5px;
+            color: var(--vvitu-muted);
+        }
+
+        // The two that carry a judgement get the brand colours: coral for work
+        // done, amber for work outstanding.
+        &.is-done &__value {
+            color: var(--vvitu-primary-hover);
+        }
+
+        &.is-pending &__value {
+            color: var(--vvitu-tertiary);
+        }
+    }
+
+    &-stats__rule {
+        grid-column: 1 / -1;
+        height: 3px;
+        background: var(--vvitu-bg-coral-tint);
+
+        span {
+            display: block;
+            height: 100%;
+            background: var(--vvitu-gradient-primary);
+        }
+    }
+
+    // ── Inline notices ──────────────────────────────────────────────────
+    &-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        margin: 12px 0 0;
+        padding: 9px 13px;
+        border: 1px solid var(--vvitu-border);
+        border-radius: 12px;
+        background: var(--vvitu-bg-warm-tint);
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: var(--vvitu-warning-strong);
+
+        svg {
+            flex: none;
+            width: 16px;
+            height: 16px;
+            margin-top: 1px;
+        }
+
+        strong {
+            color: var(--vvitu-warning-strong);
+        }
+
+        &--warn {
+            border-color: var(--vvitu-danger-border);
+            background: var(--vvitu-danger-tint);
+            color: var(--vvitu-danger-strong);
+
+            strong {
+                color: var(--vvitu-danger-strong);
+            }
+        }
+    }
+
+    // ── Panel cards ─────────────────────────────────────────────────────
+    //
+    // Same shape as the Step 1 round tiles so the page reads as one family:
+    // white plate, coral border and coral tint when selected.
+    &-panels {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 9px;
+        margin-top: 14px;
+
+        @media (max-width: 1280px) {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        // Two across even on the narrowest phone: a card is four short lines,
+        // and six full-width ones put a whole extra screen between the summary
+        // and the table they filter.
+        @media (max-width: $sh-md) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+    }
+
+    &-panel {
+        appearance: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        padding: 10px 12px;
+        border: 1.5px solid var(--vvitu-border);
+        border-radius: 14px;
+        background: var(--vvitu-white);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+
+        &:hover {
+            border-color: rgba(226, 84, 76, 0.45); // --vvitu-primary
+            transform: translateY(-1px);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--vvitu-primary);
+            outline-offset: 2px;
+        }
+
+        &.is-on {
+            border-color: var(--vvitu-primary);
+            background: var(--vvitu-bg-coral-tint);
+            box-shadow: 0 8px 22px rgba(226, 84, 76, 0.16); // --vvitu-primary
+        }
+
+        &__head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        &__name {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--vvitu-heading);
+            white-space: nowrap;
+        }
+
+        &__pct {
+            font-family: var(--vvitu-font-heading);
+            font-size: 15px;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            color: var(--vvitu-muted);
+        }
+
+        &.is-on &__pct {
+            color: var(--vvitu-primary-hover);
+        }
+
+        &__who {
+            overflow: hidden;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--vvitu-body-alt);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            // "No panelist named" is a fact, not a problem — it must not read
+            // with the weight of a real name.
+            &.is-none {
+                font-weight: 500;
+                font-style: italic;
+                color: var(--vvitu-muted);
+            }
+        }
+
+        &__bar {
+            display: block;
+            height: 4px;
+            margin-top: 2px;
+            border-radius: 999px;
+            background: var(--vvitu-bg-coral-tint);
+            overflow: hidden;
+
+            span {
+                display: block;
+                height: 100%;
+                border-radius: inherit;
+                background: var(--vvitu-gradient-primary);
+            }
+        }
+
+        &__nums {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px 9px;
+            font-size: 11px;
+            color: var(--vvitu-muted);
+
+            strong {
+                color: var(--vvitu-heading);
+                font-variant-numeric: tabular-nums;
+            }
+
+            .is-pending strong {
+                color: var(--vvitu-tertiary);
+            }
+        }
+    }
+
+    // ── Day chips + filters ─────────────────────────────────────────────
+    &-days {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 14px;
+    }
+
+    &-filters {
+        margin-top: 12px;
+
+        // The status control is wider than a phone and was having its last
+        // option clipped by the filter bar. Give it the whole row and let it
+        // scroll rather than hide "Pending" off the edge.
+        @media (max-width: $sh-md) {
+            .cp-seg {
+                grid-column: 1 / -1;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                scrollbar-width: none;
+
+                &::-webkit-scrollbar {
+                    display: none;
+                }
+            }
+
+            .cp-seg__btn {
+                flex: 1 0 auto;
+                white-space: nowrap;
+            }
+        }
+    }
+
+    &-resultbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 10px 0 8px;
+        font-size: 12.5px;
+        color: var(--vvitu-body-alt);
+
+        strong {
+            color: var(--vvitu-heading);
+        }
+    }
+
+    // ── Embedded header ─────────────────────────────────────────────────
+    //
+    // When this view is the Interview round's list inside Step 1 it has no card
+    // of its own, so it needs a quieter heading than a step title.
+    &--embedded {
+        margin-top: 4px;
+    }
+
+    &-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+
+        &__title {
+            margin: 0;
+            font-family: var(--vvitu-font-heading);
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--vvitu-heading);
+        }
+
+        &__sub {
+            margin: 2px 0 0;
+            font-size: 12.5px;
+            color: var(--vvitu-body-alt);
+        }
+    }
+
+    // ── Entries-per-page ────────────────────────────────────────────────
+    &-size {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+
+        &__label {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--vvitu-muted);
+            white-space: nowrap;
+        }
+
+        @media (max-width: $sh-md) {
+            grid-column: 1 / -1;
+        }
+    }
+
+    // ── Pager ───────────────────────────────────────────────────────────
+    //
+    // First / prev / next / last. The double chevrons are two copies of the
+    // same icon tucked together, which is how the jump-to-end buttons read
+    // without adding an icon the set does not have.
+    &-pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 14px;
+
+        &__btn {
+            appearance: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            min-width: 34px;
+            height: 34px;
+            padding: 0 8px;
+            border: 1px solid var(--vvitu-border);
+            border-radius: 10px;
+            background: var(--vvitu-white);
+            color: var(--vvitu-body-alt);
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+            svg {
+                width: 15px;
+                height: 15px;
+            }
+
+            // The second chevron of a first/last button overlaps the first so
+            // the pair reads as one glyph rather than two spaced arrows.
+            svg + svg {
+                margin-left: -7px;
+            }
+
+            &:hover:not(:disabled),
+            &:focus-visible:not(:disabled) {
+                border-color: var(--vvitu-primary);
+                background: var(--vvitu-bg-coral-tint);
+                color: var(--vvitu-primary-hover);
+            }
+
+            &:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+        }
+
+        &__num {
+            padding: 0 10px;
+            font-size: 12.5px;
+            color: var(--vvitu-body-alt);
+            font-variant-numeric: tabular-nums;
+
+            strong {
+                color: var(--vvitu-heading);
+            }
+        }
+    }
+
+    // ── The schedule table ──────────────────────────────────────────────
+    //
+    // A CSS grid rather than a <table> so the same markup can restack on a
+    // phone; role attributes keep it a table for assistive tech.
+    &-table {
+        // Nine columns now that remarks have a home of their own. Name and
+        // Remarks are the two flexible ones; everything else is fixed so the
+        // numeric columns stay put as the window changes.
+        --ip-cols: 36px 132px minmax(130px, 1fr) 70px 104px 128px 92px 96px minmax(165px, 1.5fr);
+        border: 1px solid var(--vvitu-border);
+        border-radius: 14px;
+        overflow: hidden;
+
+        &__row {
+            display: grid;
+            grid-template-columns: var(--ip-cols);
+            gap: 10px;
+            align-items: center;
+            padding: 9px 14px;
+            border-top: 1px solid var(--vvitu-border);
+            font-size: 13px;
+            color: var(--vvitu-body);
+
+            &:first-child {
+                border-top: 0;
+            }
+
+            &--head {
+                position: sticky;
+                top: 0;
+                z-index: 1;
+                background: var(--vvitu-bg-coral-tint);
+                font-size: 10.5px;
+                font-weight: 800;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--vvitu-primary-hover);
+            }
+
+            // No background fill for a scored row: two thirds of the table is
+            // unscored, and tinting the rest turned the grid into stripes. The
+            // outstanding ones carry a thin amber edge instead — scannable
+            // without shouting.
+            &.is-pending {
+                box-shadow: inset 3px 0 0 var(--vvitu-tertiary);
+            }
+        }
+
+        &__no {
+            font-variant-numeric: tabular-nums;
+            color: var(--vvitu-muted);
+        }
+
+        &__roll {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        &__name {
+            font-weight: 600;
+            color: var(--vvitu-heading);
+            overflow-wrap: anywhere;
+        }
+
+        &__branch {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--vvitu-body-alt);
+        }
+
+        &__gender {
+            font-size: 10.5px;
+            font-style: normal;
+            color: var(--vvitu-muted);
+        }
+
+        &__panel,
+        &__when,
+        &__score,
+        &__by {
+            display: flex;
+            flex-direction: column;
+            // Children hug their text instead of stretching to the column
+            // width, which is what turned the "Pending" pill into a bar.
+            align-items: flex-start;
+            gap: 1px;
+            min-width: 0;
+
+            strong {
+                font-size: 12.5px;
+                font-weight: 700;
+                color: var(--vvitu-heading);
+            }
+
+            small {
+                font-size: 11px;
+                color: var(--vvitu-muted);
+                overflow-wrap: anywhere;
+            }
+        }
+
+        &__when small {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+
+            svg {
+                width: 11px;
+                height: 11px;
+            }
+        }
+
+        &__remarks {
+            min-width: 0;
+        }
+
+        &__noremark {
+            font-size: 11px;
+            font-style: normal;
+            color: var(--vvitu-muted);
+        }
+
+        &__by small {
+            font-size: 10.5px;
+        }
+    }
+
+    // A remark is clamped to two lines and opens on click. A button rather than
+    // a div so it is reachable by keyboard and announces its expanded state —
+    // the panels will be reading these to decide a shortlist, not skimming them.
+    &-remark {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        width: 100%;
+        padding: 3px 7px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: var(--vvitu-bg-warm-offwhite);
+        color: var(--vvitu-body-alt);
+        font: inherit;
+        font-size: 11.5px;
+        font-style: italic;
+        line-height: 1.4;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+
+        &:hover,
+        &:focus-visible {
+            border-color: var(--vvitu-primary);
+            background: var(--vvitu-bg-coral-tint);
+        }
+
+        &.is-open {
+            -webkit-line-clamp: unset;
+            background: var(--vvitu-bg-coral-tint);
+            border-color: var(--vvitu-border);
+            font-style: normal;
+            color: var(--vvitu-body);
+        }
+    }
+
+    // A pill for the states that are an absence rather than a value.
+    &-tag {
+        display: inline-block;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-section);
+        color: var(--vvitu-muted);
+        font-size: 10.5px;
+        font-style: normal;
+        font-weight: 700;
+
+        &--pending {
+            background: var(--vvitu-bg-warm-tint);
+            color: var(--vvitu-warning-strong);
+        }
+
+        &--warn {
+            margin-left: 6px;
+            background: var(--vvitu-danger-tint);
+            color: var(--vvitu-danger-strong);
+        }
+    }
+
+    &-score__total {
+        color: var(--vvitu-primary-hover);
+
+        i {
+            font-size: 10.5px;
+            font-style: normal;
+            font-weight: 600;
+            color: var(--vvitu-muted);
+        }
+    }
+
+    // ── Who recorded the scores ─────────────────────────────────────────
+    &-by {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        margin-top: 14px;
+        padding: 10px 14px;
+        border: 1px solid var(--vvitu-border);
+        border-radius: 14px;
+        background: var(--vvitu-bg-warm-offwhite);
+
+        &__title {
+            margin: 0;
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: var(--vvitu-muted);
+        }
+
+        &__list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+
+            li {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 10px;
+                border: 1px solid var(--vvitu-border);
+                border-radius: 999px;
+                background: var(--vvitu-white);
+                font-size: 12px;
+            }
+        }
+
+        &__name {
+            font-weight: 600;
+            color: var(--vvitu-heading);
+        }
+
+        &__count {
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            color: var(--vvitu-primary);
+        }
+    }
+
+    // ── Timetable upload ────────────────────────────────────────────────
+    &-upload {
+        margin-top: 14px;
+        border: 1px dashed var(--vvitu-border);
+        border-radius: 14px;
+        background: var(--vvitu-bg-warm-offwhite);
+
+        > summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 15px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--vvitu-heading);
+            cursor: pointer;
+            list-style: none;
+
+            &::-webkit-details-marker {
+                display: none;
+            }
+
+            svg {
+                width: 16px;
+                height: 16px;
+                color: var(--vvitu-primary);
+            }
+        }
+
+        &__body {
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            padding: 0 15px 15px;
+        }
+
+        &__hint {
+            margin: 0;
+            font-size: 12.5px;
+            line-height: 1.55;
+            color: var(--vvitu-body-alt);
+
+            a {
+                color: var(--vvitu-primary);
+                font-weight: 600;
+            }
+        }
+
+        &__mode {
+            margin: 0;
+            font-size: 12px;
+            color: var(--vvitu-muted);
+        }
+
+        &__file input {
+            width: 100%;
+            font-size: 12.5px;
+            color: var(--vvitu-body-alt);
+        }
+
+        &__foot {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            justify-content: flex-end;
+
+            @media (max-width: $sh-xs) {
+                .cp-btn {
+                    flex: 1 1 100%;
+                    justify-content: center;
+                }
+            }
+        }
+    }
+
+    // ── Upload preview ──────────────────────────────────────────────────
+    &-pv {
+        padding: 13px 14px;
+        border: 1px solid var(--vvitu-border);
+        border-radius: 12px;
+        background: var(--vvitu-white);
+
+        &__stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        &__stat {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--vvitu-bg-section);
+            font-size: 12px;
+            color: var(--vvitu-body-alt);
+
+            strong {
+                color: var(--vvitu-heading);
+                font-variant-numeric: tabular-nums;
+            }
+
+            &.is-good {
+                background: var(--vvitu-bg-coral-tint);
+                color: var(--vvitu-primary-hover);
+
+                strong {
+                    color: var(--vvitu-primary-hover);
+                }
+            }
+
+            &.is-warn {
+                background: var(--vvitu-bg-warm-tint);
+                color: var(--vvitu-warning-strong);
+
+                strong {
+                    color: var(--vvitu-warning-strong);
+                }
+            }
+        }
+
+        &__after {
+            margin: 10px 0 0;
+            font-size: 13px;
+            color: var(--vvitu-body-alt);
+
+            strong {
+                color: var(--vvitu-heading);
+            }
+        }
+
+        &__panels {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 9px;
+
+            span {
+                padding: 3px 9px;
+                border: 1px solid var(--vvitu-border);
+                border-radius: 999px;
+                font-size: 11.5px;
+                color: var(--vvitu-body-alt);
+            }
+        }
+
+        &__warn {
+            margin: 10px 0 0;
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: var(--vvitu-warning-strong);
+
+            &--strong {
+                font-weight: 600;
+                color: var(--vvitu-danger-strong);
+            }
+        }
+
+        &__more {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--vvitu-body-alt);
+
+            summary {
+                cursor: pointer;
+                font-weight: 600;
+                color: var(--vvitu-primary);
+            }
+
+            ul {
+                margin: 7px 0 0;
+                padding-left: 18px;
+                line-height: 1.5;
+            }
+
+            p {
+                margin: 7px 0 0;
+                overflow-wrap: anywhere;
+            }
+        }
+    }
+
+    // ── Laptop: the roll number goes first; the name identifies the row ──
+    @media (max-width: 1420px) {
+        .ip-table {
+            --ip-cols: 34px minmax(130px, 1fr) 68px 100px 124px 88px 92px minmax(150px, 1.4fr);
+        }
+
+        .ip-table__roll,
+        .ip-table__row--head > span:nth-child(2) {
+            display: none;
+        }
+    }
+
+    // ── Tablet: keep name, slot, score and remarks — the four that carry
+    //    the decision — and drop the rest. Remarks stay: they are the point
+    //    of the column, and hiding them here would mean the only place to
+    //    read one is a desktop.
+    @media (max-width: 1180px) {
+        .ip-table {
+            --ip-cols: 32px minmax(120px, 1fr) 100px 118px 86px minmax(150px, 1.3fr);
+        }
+
+        .ip-table__roll,
+        .ip-table__branch,
+        .ip-table__by,
+        .ip-table__row--head > span:nth-child(2),
+        .ip-table__row--head > span:nth-child(4),
+        .ip-table__row--head > span:nth-child(8) {
+            display: none;
+        }
+    }
+
+    // ── Phone: every row is a card ──────────────────────────────────────
+    @media (max-width: $sh-md) {
+        .ip-table {
+            border: 0;
+            border-radius: 0;
+            overflow: visible;
+        }
+
+        // Both classes sit on the same element, so a bare
+        // `.ip .ip-table__row--head` would lose to `.ip .ip-table__row` below
+        // at equal specificity and the header would come back as a card
+        // (§8.4b — later wins at equal weight). Doubling the class makes the
+        // hide independent of order.
+        .ip-table__row.ip-table__row--head {
+            display: none;
+        }
+
+        .ip-table__row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 4px 10px;
+            margin-bottom: 9px;
+            padding: 12px 13px;
+            border: 1px solid var(--vvitu-border);
+            border-radius: 13px;
+            background: var(--vvitu-white);
+        }
+
+        .ip-table__no {
+            display: none;
+        }
+
+        .ip-table__roll,
+        .ip-table__branch,
+        .ip-table__by {
+            display: flex;
+        }
+
+        .ip-table__name {
+            grid-column: 1;
+            font-size: 14.5px;
+        }
+
+        .ip-table__score {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            align-items: flex-end;
+            text-align: right;
+        }
+
+        .ip-table__roll,
+        .ip-table__branch {
+            grid-column: 1;
+            font-size: 11.5px;
+        }
+
+        .ip-table__panel,
+        .ip-table__when,
+        .ip-table__by,
+        .ip-table__remarks {
+            grid-column: 1 / -1;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 6px;
+            padding-top: 5px;
+            border-top: 1px dashed var(--vvitu-border);
+        }
+
+        .ip-table__remarks {
+            display: block;
+        }
+
+        // A card has the width a grid row does not, so a remark gets three
+        // lines here before it needs opening.
+        .ip-remark {
+            -webkit-line-clamp: 3;
+            font-size: 12px;
+        }
+
+        .ip-table__noremark {
+            display: none;
+        }
     }
 }

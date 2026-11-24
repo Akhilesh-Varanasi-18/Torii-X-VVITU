@@ -3,6 +3,8 @@ import ExcelJS from 'exceljs';
 import { isAuthenticated } from '../../../../../lib/dashboard-auth';
 import { isValidYear, roundByKey, SELECTION_ROUNDS, INTERVIEW_ROUND, MAX_STARS } from '../../../../../lib/selection-results';
 import { roundStudents, funnelStudents } from '../../../../../lib/selection-results-store';
+import { panelOverview } from '../../../../../lib/interview-panels-store';
+import { formatDate, formatSlot } from '../../../../../lib/interview-panels';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -89,13 +91,24 @@ const IDENTITY = [
 const SCORE_COLUMNS = [
     { header: `Coding (/${MAX_STARS})`, key: 'coding', width: 13, center: true },
     { header: `Communication (/${MAX_STARS})`, key: 'communication', width: 19, center: true },
-    { header: `Total (/${MAX_STARS * 2})`, key: 'total', width: 12, center: true }
+    { header: `Total (/${MAX_STARS * 2})`, key: 'total', width: 12, center: true },
+    { header: 'Scored By', key: 'scoredBy', width: 14 },
+    // Last, and wide with wrapping: remarks are free text and would otherwise
+    // push the numbers off the first screen of the sheet. §8.2 — a field the
+    // form collects has to leave by the same door as the rest.
+    { header: 'Remarks', key: 'remarks', width: 52, style: { alignment: { wrapText: true, vertical: 'top' } } }
 ];
 
 const scoreCells = (score) =>
     score
-        ? { coding: score.coding, communication: score.communication, total: score.coding + score.communication }
-        : { coding: '', communication: '', total: '' };
+        ? {
+              coding: score.coding,
+              communication: score.communication,
+              total: score.coding + score.communication,
+              scoredBy: score.scoredBy || '',
+              remarks: score.remarks || ''
+          }
+        : { coding: '', communication: '', total: '', scoredBy: '', remarks: '' };
 
 const identityCells = (s, i) => ({ sno: i + 1, rollNo: s.rollNo || '', name: s.name || '', branch: branchCell(s.branch), gender: s.gender || '' });
 
@@ -122,13 +135,106 @@ function roundSheet(wb, year, round, students, generated) {
     });
 }
 
+
+// ── Panel sheets ─────────────────────────────────────────────────
+
+const SLOT_COLUMNS = [
+    { header: 'Panel', key: 'panel', width: 12 },
+    { header: 'Panelist', key: 'panelist', width: 14 },
+    { header: 'Date', key: 'date', width: 16 },
+    { header: 'Slot', key: 'slot', width: 18 }
+];
+
+const slotCells = (a) => ({
+    panel: (a && a.panel) || '',
+    panelist: (a && a.panelist) || '',
+    date: a && a.date ? formatDate(a.date, { withYear: true }) : '',
+    slot: a ? formatSlot(a.start, a.end) : ''
+});
+
+/**
+ * Three sheets answering the three questions the panel view is built around:
+ * how is each panel doing, who sits when, and who is still outstanding.
+ *
+ * `students` is the chronological roster from panelOverview — one row per
+ * student who is on the interview list or holds a slot.
+ */
+function addPanelSheets(wb, year, overview, generated) {
+    const { totals, panels, students } = overview;
+
+    addSheet(wb, 'Panels', {
+        title: `AI Ready Engineers ${year} — Interview panels`,
+        meta: [
+            `${totals.scheduled} scheduled`,
+            `${totals.completed} completed`,
+            `${totals.pending} pending`,
+            totals.avgTotal !== null ? `average ${totals.avgTotal} / ${MAX_STARS * 2}` : null,
+            `Generated ${generated} IST`
+        ]
+            .filter(Boolean)
+            .join('   •   '),
+        columns: [
+            { header: 'Panel', key: 'panel', width: 14 },
+            { header: 'Panelist(s)', key: 'panelists', width: 24 },
+            { header: 'Days', key: 'days', width: 32 },
+            { header: 'Assigned', key: 'assigned', width: 10, center: true },
+            { header: 'Completed', key: 'completed', width: 11, center: true },
+            { header: 'Pending', key: 'pending', width: 10, center: true },
+            { header: 'Done %', key: 'pct', width: 9, center: true },
+            { header: `Avg Coding (/${MAX_STARS})`, key: 'avgCoding', width: 17, center: true },
+            { header: `Avg Communication (/${MAX_STARS})`, key: 'avgComm', width: 24, center: true },
+            { header: `Avg Total (/${MAX_STARS * 2})`, key: 'avgTotal', width: 16, center: true }
+        ],
+        rows: panels.map((p) => ({
+            panel: p.panel,
+            panelists: p.panelists.join(', ') || '—',
+            days: p.dates.map((d) => formatDate(d)).join(', '),
+            assigned: p.assigned,
+            completed: p.completed,
+            pending: p.pending,
+            // A plain number, not a string, so the column sorts properly.
+            pct: p.assigned ? Math.round((p.completed / p.assigned) * 100) : 0,
+            avgCoding: p.avgCoding === null ? '' : p.avgCoding,
+            avgComm: p.avgCommunication === null ? '' : p.avgCommunication,
+            avgTotal: p.avgTotal === null ? '' : p.avgTotal
+        }))
+    });
+
+    const scheduled = students.filter((s) => s.allocation);
+    addSheet(wb, 'Schedule', {
+        title: `AI Ready Engineers ${year} — Interview schedule`,
+        meta: [`${scheduled.length} scheduled student(s)`, 'In slot order', `Generated ${generated} IST`].join('   •   '),
+        columns: [...IDENTITY, ...SLOT_COLUMNS, ...SCORE_COLUMNS],
+        rows: scheduled.map((s, i) => ({ ...identityCells(s, i), ...slotCells(s.allocation), ...scoreCells(s.score) }))
+    });
+
+    // Everyone still outstanding: scheduled but unscored, plus anyone on the
+    // interview list with no slot at all — they are pending too, and leaving them
+    // out would make the chase list quietly incomplete.
+    const pending = students.filter((s) => !s.score && (s.allocation || s.onList));
+    addSheet(wb, 'Pending', {
+        title: `AI Ready Engineers ${year} — Pending interviews`,
+        meta: [`${pending.length} still to score`, `${totals.unscheduled} of them have no slot yet`, `Generated ${generated} IST`].join(
+            '   •   '
+        ),
+        columns: [...IDENTITY, ...SLOT_COLUMNS, { header: 'Status', key: 'status', width: 24 }],
+        rows: pending.map((s, i) => ({
+            ...identityCells(s, i),
+            ...slotCells(s.allocation),
+            status: s.allocation ? 'Scheduled · not scored' : 'On the list · no slot yet'
+        }))
+    });
+}
+
 /**
  * GET ?year=&round= — the selection results as a workbook.
  *
- *   round=<key>  that round's list only (what is open under the round tile).
- *   no round     everything: a "Funnel" sheet first — one row per student on any
- *                list, a column per round, how far they got and their interview
- *                stars — then one sheet per round, in order.
+ *   round=<key>   that round's list only (what is open under the round tile).
+ *   view=panels   the three panel sheets only — Panels, Schedule, Pending.
+ *   neither       everything: a "Funnel" sheet first — one row per student on
+ *                 any list, a column per round, how far they got and their
+ *                 interview stars — then one sheet per round, then the panel
+ *                 sheets.
  *
  * Identity only, no contact details (§8.10). Exports the whole list regardless of
  * the page's search/branch filter; the sheet's own autofilter does that job.
@@ -142,6 +248,8 @@ export async function GET(request) {
     if (!isValidYear(year)) return NextResponse.json({ success: false, message: 'Pick an academic year.' }, { status: 400 });
     const round = roundKey ? roundByKey(roundKey) : null;
     if (roundKey && !round) return NextResponse.json({ success: false, message: 'Unknown round.' }, { status: 400 });
+    const view = request.nextUrl.searchParams.get('view') || '';
+    if (view && view !== 'panels') return NextResponse.json({ success: false, message: 'Unknown view.' }, { status: 400 });
 
     const now = new Date();
     const generated = formatIST(now);
@@ -150,7 +258,9 @@ export async function GET(request) {
     wb.created = now;
 
     try {
-        if (round) {
+        if (view === 'panels') {
+            addPanelSheets(wb, year, await panelOverview(year), generated);
+        } else if (round) {
             roundSheet(wb, year, round, await roundStudents(year, round.key), generated);
         } else {
             const [funnel, lists] = await Promise.all([
@@ -190,6 +300,7 @@ export async function GET(request) {
             });
 
             SELECTION_ROUNDS.forEach((r, i) => roundSheet(wb, year, r, lists[i], generated));
+            addPanelSheets(wb, year, await panelOverview(year), generated);
         }
     } catch (error) {
         console.error('[admin/selection/export] failed:', error);
@@ -197,7 +308,8 @@ export async function GET(request) {
     }
 
     const buffer = await wb.xlsx.writeBuffer();
-    const filename = `VVITU_AI_Ready_Results_${year}_${round ? round.key : 'all-rounds'}_${generated.replace(/[ :]/g, '-')}.xlsx`;
+    const scope = view === 'panels' ? 'panels' : round ? round.key : 'all-rounds';
+    const filename = `VVITU_AI_Ready_Results_${year}_${scope}_${generated.replace(/[ :]/g, '-')}.xlsx`;
     return new NextResponse(buffer, {
         status: 200,
         headers: {
