@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useAdmin } from './admin-context';
 import { IconTrophy, IconChart, IconArrowLeft, IconExternal } from '../dashboard/coding/coding-icons';
-import { IconMegaphone, IconRefresh } from '../dashboard/dashboard-icons';
+import { IconMegaphone, IconRefresh, IconAward } from '../dashboard/dashboard-icons';
 import { formatDate, formatDateTime } from '../dashboard/coding/coding-theme';
 
 // The landing page: one card per module, each carrying the two or three numbers
@@ -53,6 +53,7 @@ export default function AdminHome() {
     const reg = data?.registrations || null;
     const cod = data?.coding || null;
     const ann = data?.announcements || null;
+    const sel = data?.selection || null;
     const intake = reg?.openIntake || null;
 
     const modules = [
@@ -74,6 +75,22 @@ export default function AdminHome() {
                 : null,
             cta: 'Open analytics',
             secondary: { label: 'Download Excel', href: '/admin/analytics?download=1' }
+        },
+        {
+            key: 'selection',
+            href: '/admin/selection-results',
+            tone: 'green',
+            Icon: IconAward,
+            title: 'AI Ready Engineer Results',
+            blurb: 'Upload each round’s shortlist — Demo Test to Final Shortlist — and score the one-on-one interviews for coding and communication.',
+            stats: sel
+                ? [
+                      { label: 'Academic year', value: sel.year || 'No roster' },
+                      { label: 'Latest list', value: sel.stage ? `${sel.stage.label} · ${num(sel.stage.count)}` : 'None yet' },
+                      { label: 'Interviews scored', value: sel.interview?.qualified ? `${num(sel.interview.scored)} / ${num(sel.interview.qualified)}` : '—' }
+                  ]
+                : null,
+            cta: 'Open results'
         },
         {
             key: 'coding',
@@ -151,8 +168,8 @@ export default function AdminHome() {
                     What would you like to work on?
                 </h2>
                 <p className="ad-hero__sub">
-                    Three modules, one place. Registrations, coding profiles and the home-page announcement — no developer needed for
-                    the day-to-day.
+                    Four modules, one place. Registrations, AI Ready selection results, coding profiles and the home-page
+                    announcement — no developer needed for the day-to-day.
                 </p>
             </section>
 

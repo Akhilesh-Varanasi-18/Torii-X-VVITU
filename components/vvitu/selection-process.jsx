@@ -268,7 +268,7 @@ const SelectionProcess = () => {
                                         {s.badges && (
                                             <ul className="vvitu-sp-badges">
                                                 {s.badges.map((b) => (
-                                                    <li key={b.label}>
+                                                    <li key={b.label} className={b.tone ? `is-${b.tone}` : undefined}>
                                                         <small>{b.label}</small>
                                                         <strong>{b.value}</strong>
                                                     </li>

@@ -2,11 +2,17 @@
 // ToriiMinds x VVITU — AI Ready Engineers selection process
 // =========================================================================
 //
-// The eight stages a student passes through, in order. Deliberately NO dates,
-// venues or time windows anywhere in this file: none of them are confirmed yet,
-// and a stale date on a public page is worse than no date at all. Each stage
-// that depends on a schedule says how the schedule will reach the student
-// instead (`channels`), which is information that stays true.
+// The eight stages a student passes through, in order. The schedule was
+// confirmed on 2026-11-12 and each dated stage carries it as its FIRST badge
+// (`Date`; registration leads with its closed `Status`, then `Closed on`), so
+// it reads before mode/duration.
+// Orientation has no confirmed date and so shows none — a guessed date on a
+// public page is worse than no date at all. Venues and time windows are still
+// unannounced; `channels` says how those will reach the student.
+//
+// Dates are written as text ("Tue, 17 Nov 2026"), never as Date objects: they
+// are calendar days in Guntur, and rendering them through the browser's
+// timezone could shift a day for a student whose device clock is set abroad.
 //
 // `tier` drives the funnel. It counts how many shortlisting gates the student
 // has already passed, and the UI uses it to narrow the rail, pull the cards in
@@ -39,9 +45,16 @@ export const SELECTION_STEPS = [
         kicker: 'AI Ready Engineers',
         icon: 'form',
         tier: 0,
+        // Closed 2026-11-15. The date stays on the card — it is still the true
+        // record of when the window shut — and a `Status` badge in the danger
+        // tone (`tone: 'closed'`) leads the row so the state reads first.
+        badges: [
+            { label: 'Status', value: 'Closed', tone: 'closed' },
+            { label: 'Closed on', value: 'Sun, 15 Nov 2026' }
+        ],
         summary:
-            'Registration opens for AI Ready Engineers — 2nd year, 2029 passouts. You submit your branch, your CGPA (or diploma CGPA, if you joined through lateral entry), your active backlogs and, optionally, your entrance ranks.',
-        note: 'The registration closing date is announced ahead of time — watch the website announcements and the WhatsApp community.',
+            'Registration for AI Ready Engineers — 2nd year, 2029 passouts — is now closed. Students submitted their branch, their CGPA (or diploma CGPA, if they joined through lateral entry), their active backlogs and, optionally, their entrance ranks.',
+        note: 'Registrations closed on Sunday, 15 November 2026. If you registered before the deadline, there is nothing more to do — updates are posted on the website announcements and the WhatsApp community.',
         channels: ['Website Announcements', 'WhatsApp Community']
     },
     {
@@ -52,6 +65,7 @@ export const SELECTION_STEPS = [
         icon: 'monitor',
         tier: 0,
         badges: [
+            { label: 'Date', value: 'Mon, 16 Nov 2026' },
             { label: 'Mode', value: 'Online' },
             { label: 'Access', value: '24-hour window' }
         ],
@@ -69,6 +83,7 @@ export const SELECTION_STEPS = [
         tier: 0,
         accent: true,
         badges: [
+            { label: 'Date', value: 'Tue, 17 Nov 2026' },
             { label: 'Mode', value: 'Online' },
             { label: 'Duration', value: '1 Hour' },
             { label: 'Pattern', value: '3 Coding Questions' }
@@ -88,6 +103,7 @@ export const SELECTION_STEPS = [
         accent: true,
         gate: 'Only Round 1 shortlisted students continue',
         badges: [
+            { label: 'Date', value: 'Wed, 18 Nov 2026' },
             { label: 'Mode', value: 'Offline · Proctored' },
             { label: 'Duration', value: '1 Hour' },
             { label: 'Pattern', value: '4 Coding Questions' }
@@ -106,6 +122,7 @@ export const SELECTION_STEPS = [
         accent: true,
         gate: 'Only Round 2 shortlisted students continue',
         badges: [
+            { label: 'Date', value: 'Thu, 19 Nov 2026' },
             { label: 'Mode', value: 'Online · Myna app' },
             { label: 'Duration', value: '20 Minutes' }
         ],
@@ -121,7 +138,10 @@ export const SELECTION_STEPS = [
         icon: 'chat',
         tier: 3,
         gate: 'Only students shortlisted after the communication assessment continue',
-        badges: [{ label: 'Mode', value: 'Offline or Online · to be confirmed' }],
+        badges: [
+            { label: 'Dates', value: 'Fri, 20 – Tue, 24 Nov 2026' },
+            { label: 'Mode', value: 'Offline or Online · to be confirmed' }
+        ],
         summary:
             'Shortlisted students sit a one-on-one interview with the ToriiMinds panel.'
     },
@@ -133,6 +153,7 @@ export const SELECTION_STEPS = [
         icon: 'trophy',
         tier: 3,
         isFinal: true,
+        badges: [{ label: 'Date', value: 'Wed, 25 Nov 2026' }],
         summary: 'The students selected for the AI Ready Engineers programme are announced.',
         note: 'The list reaches you three ways — a mail to your registered address, the list posted in the WhatsApp community, and the announcement on this website.',
         channels: ['Email', 'WhatsApp Community', 'Website Announcement']

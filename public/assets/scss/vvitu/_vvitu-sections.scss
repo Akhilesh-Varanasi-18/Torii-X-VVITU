@@ -10266,3 +10266,28 @@
   .vvitu-gift-halo { animation: none !important; }
   .vvitu-gift-halo { opacity: 0; }
 }
+
+// ── Closed intake: the disabled Register Now on a program card ─────────
+// Qualified to match the nested base (.vvitu-program-card .vvitu-program-btn
+// .vvitu-program-btn--register, 0,3,0) — a flat selector here would lose and
+// the button would stay green while being unclickable (§8.4b).
+.vvitu-program-card .vvitu-program-btn.vvitu-program-btn--register.is-disabled,
+.vvitu-program-card .vvitu-program-btn.vvitu-program-btn--register.is-disabled:hover {
+  background: var(--vvitu-bg-section-alt);
+  color: var(--vvitu-muted);
+  border-color: var(--vvitu-border);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.85;
+  transform: none;
+}
+
+// ── Selection process: a badge carrying a status (registration closed) ──
+// Base is `.vvitu-sp-badges li` (0,1,1); `.vvitu-sp-badges li.is-closed` outranks it.
+.vvitu-sp-badges li.is-closed {
+  background: var(--vvitu-danger-tint);
+  border-color: var(--vvitu-danger-border);
+
+  small,
+  strong { color: var(--vvitu-danger-strong); }
+}

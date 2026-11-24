@@ -1904,11 +1904,14 @@ const programsData = [
         badge: 'Career & Industry Track',
         themeColor: 'var(--vvitu-tertiary)',
         accentBg: 'var(--vvitu-bg-warm-offwhite)',
-        // The only intake VVITU is running again, now that Moon Coder is back
-        // to Coming Soon (2026-10-30). Paired with `open: true` on the aiready
-        // program in lib/registration-schema.js, which is what the API enforces
-        // (§8.1). The card id 'aiready' already matches the schema key.
-        registrationsOpen: true,
+        // CLOSED 2026-11-15 (registration deadline passed). Paired with
+        // `open: false` on the aiready program in lib/registration-schema.js,
+        // which is what the API enforces (§8.1). The card shows the red
+        // "Registrations Closed" badge and a disabled Register Now button.
+        // TO REOPEN: swap this back to `registrationsOpen: true` and set
+        // `open: true` in the schema — both, never one.
+        // registrationsOpen: true,
+        registrationsClosed: true,
         // Turns on the "What We Offer" section at the foot of this programme's
         // syllabus view — the project journey, contests, platforms, startup
         // chamber, certifications and Golden Day. Content lives in

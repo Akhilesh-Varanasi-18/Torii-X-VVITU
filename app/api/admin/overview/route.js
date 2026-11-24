@@ -5,14 +5,17 @@ import { startOfISTDay } from '../../../../lib/analytics-range';
 import { REGISTRATION_PROGRAMS, ROSTER_ELIGIBILITY } from '../../../../lib/registration-schema';
 import { eligibleRoster } from '../../../../lib/registration-eligibility';
 import { listPrograms, programStats } from '../../../../lib/coding-profiles/program-store';
+import { listYears, yearSummary } from '../../../../lib/selection-results-store';
+import { SELECTION_ROUNDS } from '../../../../lib/selection-results';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
- * The admin landing page's three module cards, in one round trip: headline
+ * The admin landing page's module cards, in one round trip: headline
  * registration figures and the open intake, the coding programs with their latest
- * capture, and whichever announcement is live. Each block fails soft so one slow
+ * capture, whichever announcement is live, and how far the AI Ready selection
+ * has got. Each block fails soft so one slow
  * collection never blanks the whole page.
  */
 export async function GET(request) {
@@ -75,16 +78,31 @@ export async function GET(request) {
         };
     })();
 
+    // The newest academic year's selection: the furthest round with a list, and
+    // how far the interview panel has got.
+    const selection = (async () => {
+        const [year] = await listYears();
+        if (!year) return { year: null };
+        const summary = await yearSummary(year);
+        const reached = [...summary.rounds].reverse().find((r) => r.count > 0) || null;
+        return {
+            year,
+            stage: reached ? { key: reached.key, label: SELECTION_ROUNDS.find((r) => r.key === reached.key).short, count: reached.count } : null,
+            interview: summary.interview
+        };
+    })();
+
     const settle = (promise, label) =>
         promise.catch((error) => {
             console.error(`[admin/overview] ${label} failed:`, error);
             return null;
         });
 
-    const [reg, cod, ann] = await Promise.all([
+    const [reg, cod, ann, sel] = await Promise.all([
         settle(registrations, 'registrations'),
         settle(coding, 'coding'),
-        settle(announcements, 'announcements')
+        settle(announcements, 'announcements'),
+        settle(selection, 'selection')
     ]);
 
     return NextResponse.json({
@@ -92,6 +110,7 @@ export async function GET(request) {
         generatedAt: now.toISOString(),
         registrations: reg,
         coding: cod,
-        announcements: ann
+        announcements: ann,
+        selection: sel
     });
 }

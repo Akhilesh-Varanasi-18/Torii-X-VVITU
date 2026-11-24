@@ -63,7 +63,14 @@
   // ── Status / Feedback ──
   --vvitu-success:             #10B981;
   --vvitu-danger:              #EF4444;
+  --vvitu-danger-tint:         rgba(239, 68, 68, 0.08);  // closed-state fills
+  --vvitu-danger-border:       rgba(239, 68, 68, 0.28);
+  --vvitu-danger-strong:       #B91C1C;                  // closed-state text on tint
+  --vvitu-success-tint:        rgba(16, 185, 129, 0.1);  // "saved", "on the list" fills
+  --vvitu-success-strong:      #047857;                  // success text on its tint / on white
   --vvitu-warning:             #F59E0B;
+  --vvitu-warning-strong:      #8A5A10;                  // amber text on --vvitu-bg-warm-tint
+  --vvitu-star:                #F5B301;                  // interview rating stars, lit
   --vvitu-info:                #0EA5E9;
 
   // ── WhatsApp ──

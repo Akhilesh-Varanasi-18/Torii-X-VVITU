@@ -21,7 +21,7 @@
 }
 
 @media (max-width: $sh-md) {
-    // Five tabs (four modules + sign out) share ~70px each on a 390px phone.
+    // Six tabs (five modules + sign out) share ~58px each on a 390px phone.
     .cp-nav--admin {
         .cp-nav__label-full {
             display: none;
@@ -908,5 +908,1302 @@
 
     .ann-mgr-body {
         overflow: visible;
+    }
+}
+
+// ── AI Ready Engineers results (/admin/selection-results) ───────────────────
+// Prefix .sr-*. Two glass cards stacked: the round lists (a six-tile funnel plus
+// the upload/preview) and the interview scoring (search → star form).
+
+// The landing page now has four module cards: two-up until there is room for
+// all four on one row, rather than three-and-an-orphan.
+.ad-modules {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    @media (min-width: 1560px) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    @media (max-width: $sh-md) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.ad-module--green .ad-module__glow {
+    background: radial-gradient(420px 240px at 18% 0%, rgba(16, 185, 129, 0.16), transparent 70%); // --vvitu-success
+}
+
+.ad-module--green .ad-module__icon {
+    background: linear-gradient(135deg, var(--vvitu-success), var(--vvitu-extra-sky));
+    box-shadow: 0 12px 28px rgba(16, 185, 129, 0.3); // --vvitu-success
+}
+
+// Six tabs on the phone bar now (five modules + sign out): a touch smaller.
+@media (max-width: $sh-md) {
+    .cp-nav--admin {
+        .cp-nav__icon {
+            width: 34px;
+            height: 34px;
+        }
+
+        .cp-nav__glow,
+        &.is-closed .cp-nav__glow {
+            width: 34px;
+            height: 34px;
+            margin-left: -17px;
+        }
+    }
+}
+
+.sr-year {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    &__label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--vvitu-muted);
+        white-space: nowrap;
+    }
+
+    &__select {
+        height: 36px;
+        padding: 0 30px 0 12px;
+        border-radius: var(--vvitu-radius);
+        border: 1px solid var(--vvitu-border);
+        background: var(--vvitu-white);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--vvitu-heading);
+        cursor: pointer;
+
+        &:focus-visible {
+            outline: 2px solid var(--vvitu-primary);
+            outline-offset: 2px;
+        }
+    }
+
+    @media (max-width: $sh-xs) {
+        &__label {
+            display: none;
+        }
+    }
+}
+
+.sr-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 24px;
+}
+
+.sr-card {
+    border-radius: 22px;
+    padding: 22px;
+    @include glass(0.9, 0.78);
+
+    &__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+
+        @media (max-width: $sh-sm) {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+
+    &__eyebrow {
+        margin: 0 0 4px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--vvitu-secondary);
+    }
+
+    &__title {
+        margin: 0;
+        font-family: var(--vvitu-font-heading);
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--vvitu-heading);
+    }
+
+    &__sub {
+        margin: 6px 0 0;
+        max-width: 640px;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--vvitu-body);
+    }
+
+    &__meta {
+        margin: 0;
+        flex: none;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-section-alt);
+        font-size: 12.5px;
+        color: var(--vvitu-body-alt);
+
+        strong {
+            color: var(--vvitu-heading);
+        }
+    }
+
+    @media (max-width: $sh-xs) {
+        padding: 16px 14px;
+        border-radius: 18px;
+    }
+}
+
+// The funnel: six tiles, the selected one coral.
+.sr-rounds {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+
+    @media (max-width: 1280px) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @media (max-width: $sh-xs) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+}
+
+.sr-round {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1.5px solid var(--vvitu-border);
+    background: var(--vvitu-white);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+
+    &:hover {
+        border-color: rgba(226, 84, 76, 0.45); // --vvitu-primary
+        transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--vvitu-primary);
+        outline-offset: 2px;
+    }
+
+    &__no {
+        font-size: 10.5px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--vvitu-muted);
+    }
+
+    &__label {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--vvitu-heading);
+    }
+
+    &__count {
+        margin-top: 4px;
+        font-family: var(--vvitu-font-heading);
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--vvitu-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__when {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+        color: var(--vvitu-muted);
+    }
+
+    &.has-list &__count {
+        color: var(--vvitu-heading);
+    }
+
+    &.is-active {
+        border-color: var(--vvitu-primary);
+        background: var(--vvitu-bg-coral-tint);
+        box-shadow: 0 8px 22px rgba(226, 84, 76, 0.16); // --vvitu-primary
+    }
+
+    &.is-active &__no,
+    &.is-active &__count {
+        color: var(--vvitu-primary-hover);
+    }
+}
+
+.sr-upload {
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid var(--vvitu-border);
+    background: var(--vvitu-white);
+
+    &__title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--vvitu-heading);
+    }
+
+    &__hint {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: var(--vvitu-body-alt);
+    }
+
+    &__mode {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        margin: 14px 0;
+    }
+
+    &__mode-note {
+        font-size: 12.5px;
+        color: var(--vvitu-muted);
+    }
+
+    &__inputs {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr);
+        gap: 14px;
+        align-items: stretch;
+
+        @media (max-width: $sh-md) {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+
+        @media (max-width: $sh-xs) {
+            .cp-btn {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+        }
+    }
+
+    @media (max-width: $sh-xs) {
+        padding: 14px 12px;
+    }
+}
+
+.sr-paste textarea {
+    width: 100%;
+    min-height: 140px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--vvitu-border);
+    background: var(--vvitu-bg-section);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--vvitu-heading);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+
+    &:focus {
+        background: var(--vvitu-white);
+        border-color: var(--vvitu-primary);
+        box-shadow: 0 0 0 3px rgba(226, 84, 76, 0.12); // --vvitu-primary
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.sr-or {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--vvitu-muted);
+
+    span {
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-section-alt);
+    }
+}
+
+.sr-drop {
+    display: flex;
+    min-height: 140px;
+    border-radius: 12px;
+    border: 1.5px dashed var(--vvitu-border);
+    background: var(--vvitu-bg-section);
+    transition: border-color 0.2s, background 0.2s;
+
+    &:hover,
+    &:focus-within {
+        border-color: var(--vvitu-primary);
+        background: var(--vvitu-bg-coral-tint);
+    }
+
+    &.has-file {
+        border-style: solid;
+        border-color: var(--vvitu-success);
+        background: var(--vvitu-success-tint);
+    }
+
+    &__pick {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        color: var(--vvitu-body);
+        font-size: 13.5px;
+        font-weight: 700;
+
+        svg {
+            width: 22px;
+            height: 22px;
+            color: var(--vvitu-primary);
+        }
+
+        small {
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--vvitu-muted);
+        }
+    }
+
+    &__file {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px;
+        min-width: 0;
+        color: var(--vvitu-success-strong);
+
+        svg {
+            flex: none;
+        }
+    }
+
+    &__name {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--vvitu-heading);
+    }
+
+    &__clear {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 50%;
+        background: var(--vvitu-white);
+        color: var(--vvitu-body-alt);
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            color: var(--vvitu-danger);
+        }
+    }
+
+    @media (max-width: $sh-md) {
+        min-height: 96px;
+    }
+}
+
+.sr-preview {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--vvitu-border);
+
+    &__stats {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        margin: 0 0 10px;
+
+        @media (max-width: 1280px) {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        @media (max-width: $sh-xs) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        > div {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: var(--vvitu-bg-section);
+        }
+
+        dt {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--vvitu-muted);
+        }
+
+        dd {
+            margin: 2px 0 0;
+            font-family: var(--vvitu-font-heading);
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--vvitu-heading);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .is-good dd {
+            color: var(--vvitu-success-strong);
+        }
+
+        .is-warn {
+            background: var(--vvitu-bg-warm-tint);
+
+            dd {
+                color: var(--vvitu-warning-strong);
+            }
+        }
+
+        .is-bad {
+            background: var(--vvitu-danger-tint);
+
+            dd {
+                color: var(--vvitu-danger-strong);
+            }
+        }
+
+        .is-total {
+            background: var(--vvitu-bg-coral-tint);
+
+            dd {
+                color: var(--vvitu-primary-hover);
+            }
+        }
+    }
+
+    &__note {
+        margin: 0 0 8px;
+        font-size: 12.5px;
+        color: var(--vvitu-body-alt);
+    }
+
+    &__ignored,
+    &__added {
+        margin: 10px 0;
+        font-size: 13px;
+        color: var(--vvitu-body-alt);
+
+        summary {
+            cursor: pointer;
+            font-weight: 600;
+        }
+    }
+}
+
+.sr-codes {
+    margin: 8px 0 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.sr-list {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    max-height: 240px;
+    overflow-y: auto;
+
+    li {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 10px;
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.05); // --vvitu-heading
+        font-size: 12.5px;
+        color: var(--vvitu-body);
+    }
+
+    &__roll {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        color: var(--vvitu-heading);
+    }
+
+    &__name {
+        font-weight: 600;
+    }
+
+    &__branch,
+    &__tag {
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-section-alt);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--vvitu-body-alt);
+    }
+}
+
+// ── Interview scoring ───────────────────────────────────────────────────────
+
+.sr-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+
+    &__text {
+        font-size: 12.5px;
+        color: var(--vvitu-body-alt);
+
+        strong {
+            font-size: 16px;
+            color: var(--vvitu-heading);
+        }
+    }
+
+    &__bar {
+        height: 8px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-section-alt);
+        overflow: hidden;
+
+        span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: var(--vvitu-gradient-primary);
+            transition: width 0.4s $sh-ease;
+        }
+    }
+
+    @media (max-width: $sh-sm) {
+        width: 100%;
+    }
+}
+
+.sr-iv {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    &__empty {
+        margin: 0;
+        padding: 18px;
+        border-radius: 14px;
+        border: 1.5px dashed var(--vvitu-border);
+        text-align: center;
+        font-size: 13px;
+        color: var(--vvitu-muted);
+    }
+}
+
+.sr-search {
+    position: relative;
+
+    &__icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: grid;
+        color: var(--vvitu-muted);
+        pointer-events: none;
+    }
+
+    &__input {
+        width: 100%;
+        height: 48px;
+        padding: 0 14px 0 40px;
+        border-radius: 12px;
+        border: 1.5px solid var(--vvitu-border);
+        background: var(--vvitu-white);
+        font: inherit;
+        font-size: 14px;
+        color: var(--vvitu-heading);
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+
+        &:focus {
+            border-color: var(--vvitu-primary);
+            box-shadow: 0 0 0 3px rgba(226, 84, 76, 0.12); // --vvitu-primary
+        }
+    }
+
+    &__list {
+        position: absolute;
+        z-index: 20;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        margin: 0;
+        padding: 6px;
+        list-style: none;
+        max-height: 340px;
+        overflow-y: auto;
+        border-radius: 14px;
+        border: 1px solid var(--vvitu-border);
+        background: var(--vvitu-white);
+        box-shadow: var(--vvitu-shadow-hover);
+    }
+
+    &__opt {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'name badge'
+            'meta badge';
+        gap: 2px 12px;
+        align-items: center;
+        padding: 9px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+
+        &.is-cursor {
+            background: var(--vvitu-bg-coral-tint);
+        }
+    }
+
+    &__name {
+        grid-area: name;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--vvitu-heading);
+        overflow-wrap: anywhere;
+    }
+
+    &__meta {
+        grid-area: meta;
+        font-size: 12px;
+        color: var(--vvitu-muted);
+        overflow-wrap: anywhere;
+    }
+
+    &__badge {
+        grid-area: badge;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-section-alt);
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        color: var(--vvitu-muted);
+
+        &.is-done {
+            background: var(--vvitu-success-tint);
+            color: var(--vvitu-success-strong);
+        }
+    }
+
+    &__empty {
+        padding: 12px 10px;
+        font-size: 13px;
+        color: var(--vvitu-muted);
+    }
+}
+
+.sr-score {
+    padding: 18px;
+    border-radius: 16px;
+    border: 1.5px solid var(--vvitu-primary);
+    background: var(--vvitu-white);
+    box-shadow: 0 10px 30px rgba(226, 84, 76, 0.1); // --vvitu-primary
+
+    &__who {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 14px;
+        margin-bottom: 14px;
+        border-bottom: 1px dashed var(--vvitu-border);
+    }
+
+    &__name {
+        margin: 0;
+        font-family: var(--vvitu-font-heading);
+        font-size: 19px;
+        font-weight: 800;
+        color: var(--vvitu-heading);
+        overflow-wrap: anywhere;
+    }
+
+    &__meta {
+        margin: 3px 0 0;
+        font-size: 12.5px;
+        color: var(--vvitu-muted);
+    }
+
+    &__close {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--vvitu-border);
+        border-radius: 50%;
+        background: var(--vvitu-white);
+        color: var(--vvitu-body-alt);
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            color: var(--vvitu-primary);
+            border-color: var(--vvitu-primary);
+        }
+    }
+
+    &__fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+
+        @media (max-width: $sh-md) {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    &__foot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 16px;
+
+        @media (max-width: $sh-xs) {
+            .cp-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    }
+
+    &__status {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--vvitu-muted);
+    }
+
+    @media (max-width: $sh-xs) {
+        padding: 14px 12px;
+    }
+}
+
+.sr-stars {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--vvitu-bg-section);
+
+    &__label {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--vvitu-body-alt);
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    &__value {
+        margin-left: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--vvitu-heading);
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.sr-star {
+    appearance: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--vvitu-border);
+    cursor: pointer;
+    transition: color 0.15s, transform 0.15s;
+
+    svg {
+        width: 28px;
+        height: 28px;
+        fill: currentColor;
+        stroke-width: 1.5;
+    }
+
+    &:hover:not(:disabled) {
+        transform: scale(1.12);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--vvitu-primary);
+        outline-offset: 1px;
+    }
+
+    &.is-lit {
+        color: var(--vvitu-star);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+    }
+
+    @media (max-width: $sh-xs) {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+// ── Round list (opens under the tiles) ──────────────────────────────────────
+
+// The upload head now carries the Sample Excel button on the right. Qualified
+// with .sr-upload to match the nested base rules (§8.4b).
+.sr-upload .sr-upload__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+
+    @media (max-width: $sh-xs) {
+        flex-direction: column;
+    }
+}
+
+.sr-upload .sr-upload__template {
+    flex: none;
+    text-decoration: none;
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+.sr-roster {
+    margin-bottom: 18px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 1px solid var(--vvitu-border);
+    background: var(--vvitu-white);
+
+    &__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        @media (max-width: $sh-sm) {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+
+    &__title {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--vvitu-heading);
+    }
+
+    &__count {
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: var(--vvitu-bg-coral-tint);
+        font-size: 12.5px;
+        color: var(--vvitu-primary-hover);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__sub {
+        margin: 4px 0 0;
+        font-size: 12.5px;
+        color: var(--vvitu-muted);
+    }
+
+    &__tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        @media (max-width: $sh-sm) {
+            width: 100%;
+        }
+    }
+
+    &__search {
+        width: min(320px, 100%);
+
+        @media (max-width: $sh-sm) {
+            flex: 1;
+            min-width: 0;
+            width: auto;
+        }
+    }
+
+    &__empty {
+        margin: 6px 0;
+        font-size: 13px;
+        color: var(--vvitu-muted);
+    }
+
+    &__foot {
+        margin: 8px 0 0;
+        font-size: 12px;
+        color: var(--vvitu-muted);
+    }
+
+    @media (max-width: $sh-xs) {
+        padding: 14px 12px;
+    }
+}
+
+// The export links are <a>s styled as buttons — keep them from underlining or
+// wrapping, and size the icon like the Sample Excel link's.
+.cp-btn.sr-export {
+    flex: none;
+    white-space: nowrap;
+    text-decoration: none;
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+.sr-roster .sr-search .sr-search__input {
+    height: 40px;
+    font-size: 13.5px;
+}
+
+.sr-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.sr-chip {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--vvitu-border);
+    background: var(--vvitu-bg-section);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--vvitu-body);
+    cursor: pointer;
+
+    span {
+        color: var(--vvitu-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &:hover,
+    &:focus-visible {
+        border-color: var(--vvitu-primary);
+    }
+
+    &.is-on {
+        border-color: var(--vvitu-primary);
+        background: var(--vvitu-bg-coral-tint);
+        color: var(--vvitu-primary-hover);
+
+        span {
+            color: var(--vvitu-primary-hover);
+        }
+    }
+}
+
+// A div grid rather than a <table> so that on phones each row can fold into a
+// two-line card without fighting table layout.
+.sr-table {
+    max-height: 420px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid var(--vvitu-border);
+
+    &__row {
+        display: grid;
+        grid-template-columns: 44px minmax(120px, 1fr) minmax(160px, 2fr) 80px 64px minmax(130px, 1fr);
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--vvitu-border);
+        font-size: 13px;
+        color: var(--vvitu-body);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+
+        &:nth-child(odd):not(.sr-table__row--head) {
+            background: var(--vvitu-bg-section);
+        }
+
+        &--head {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: var(--vvitu-bg-section-alt);
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--vvitu-muted);
+        }
+    }
+
+    &--iv &__row {
+        grid-template-columns: 44px minmax(120px, 1fr) minmax(160px, 2fr) 80px 64px minmax(170px, 1.3fr) minmax(130px, 1fr);
+    }
+
+    &__no {
+        color: var(--vvitu-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__roll {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12.5px;
+        color: var(--vvitu-heading);
+    }
+
+    &__name {
+        font-weight: 600;
+        color: var(--vvitu-heading);
+        overflow-wrap: anywhere;
+    }
+
+    &__branch {
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    &__score {
+        font-size: 12px;
+        color: var(--vvitu-muted);
+
+        &.is-done {
+            color: var(--vvitu-success-strong);
+            font-weight: 700;
+        }
+    }
+
+    &__when {
+        font-size: 12px;
+        color: var(--vvitu-muted);
+    }
+
+    .sr-roster__empty {
+        padding: 10px 12px;
+    }
+
+    // Tablet: drop the "added" timestamp, it is the least useful column.
+    @media (max-width: $sh-md) {
+        &__row,
+        &--iv &__row {
+            grid-template-columns: 36px minmax(110px, 1fr) minmax(140px, 2fr) 64px 52px;
+        }
+
+        &--iv &__row {
+            grid-template-columns: 36px minmax(110px, 1fr) minmax(140px, 2fr) 64px 52px minmax(150px, 1.2fr);
+        }
+
+        &__when,
+        &__row--head > :last-child {
+            display: none;
+        }
+    }
+
+    // Phone: each student becomes a two-line card — name on top, roll and
+    // branch underneath.
+    @media (max-width: $sh-xs) {
+        max-height: 480px;
+
+        &__row--head {
+            display: none;
+        }
+
+        &__row,
+        &--iv &__row {
+            grid-template-columns: 28px minmax(0, 1fr) auto;
+            grid-template-areas:
+                'no name gender'
+                'no roll branch'
+                'no score score';
+            gap: 2px 8px;
+            padding: 10px;
+        }
+
+        &__no {
+            grid-area: no;
+            align-self: start;
+        }
+
+        &__name {
+            grid-area: name;
+        }
+
+        &__roll {
+            grid-area: roll;
+        }
+
+        &__branch {
+            grid-area: branch;
+            justify-self: end;
+        }
+
+        &__gender {
+            grid-area: gender;
+            justify-self: end;
+        }
+
+        &__score {
+            grid-area: score;
+        }
+    }
+}
+
+// The miniature sample sheet in the upload panel.
+.sr-format {
+    margin-top: 12px;
+    font-size: 13px;
+
+    summary {
+        cursor: pointer;
+        font-weight: 700;
+        color: var(--vvitu-body-alt);
+    }
+
+    &__body {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        margin-top: 10px;
+    }
+
+    &__sheet {
+        flex: 0 1 auto;
+        max-width: 100%;
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid var(--vvitu-border);
+        font-size: 12px;
+    }
+
+    &__row {
+        display: grid;
+        grid-template-columns: 48px 110px 160px 64px;
+        border-bottom: 1px solid var(--vvitu-border);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+
+        span {
+            padding: 6px 8px;
+            border-right: 1px solid var(--vvitu-border);
+            white-space: nowrap;
+            color: var(--vvitu-muted);
+
+            &:last-child {
+                border-right: 0;
+            }
+        }
+
+        .is-key {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: var(--vvitu-heading);
+            background: var(--vvitu-bg-coral-tint);
+        }
+
+        &--head span {
+            font-family: inherit;
+            font-weight: 800;
+            color: var(--vvitu-white);
+            background: var(--vvitu-primary);
+        }
+
+        &--head .is-key {
+            font-family: inherit;
+            color: var(--vvitu-white);
+            background: var(--vvitu-primary-hover);
+        }
+    }
+
+    &__notes {
+        flex: 1 1 240px;
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: var(--vvitu-body-alt);
     }
 }

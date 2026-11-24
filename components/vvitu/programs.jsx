@@ -246,7 +246,20 @@ const Programs = ({ onOpenRegister }) => {
                                         <p className="vvitu-program-desc">{program.description}</p>
 
                                         {/* Action Buttons — an open intake gets a Register CTA beside the syllabus link */}
-                                        <div className={`vvitu-program-card-footer ${program.registrationsOpen ? 'is-dual' : ''}`}>
+                                        <div className={`vvitu-program-card-footer ${program.registrationsOpen || (!program.comingSoon && program.registrationsClosed) ? 'is-dual' : ''}`}>
+                                            {/* Closed intake: the Register Now button stays in place
+                                                but disabled, so the card keeps its shape and plainly
+                                                says the window has shut rather than just losing a CTA. */}
+                                            {!program.comingSoon && program.registrationsClosed && (
+                                                <button
+                                                    type="button"
+                                                    className="vvitu-program-btn vvitu-program-btn--register is-disabled"
+                                                    disabled
+                                                    aria-label={`Registrations are closed for ${program.name}`}
+                                                >
+                                                    Register Now
+                                                </button>
+                                            )}
                                             {program.registrationsOpen && (
                                                 <button
                                                     type="button"

@@ -3,6 +3,7 @@
  *
  *   node scripts/seed-hostel-roster.mjs "2nd Year Hostel.xlsx"
  *   node scripts/seed-hostel-roster.mjs "<file>" --dry-run
+ *   node scripts/seed-hostel-roster.mjs "<file>" --drop-results   (see below)
  *
  * The college sends a spreadsheet of the students who may register. This loads
  * it into `vvitu_hostel_roster`, which /api/register/lookup searches and
@@ -20,6 +21,12 @@
  * eligibility list. Registrations are a different collection and are never
  * touched — a student who already registered keeps their record even if they
  * later leave the roster.
+ *
+ * ── Selection results survive a re-seed ──────────────────────────────────
+ * The admin panel stores AI Ready Engineers round lists and interview scores on
+ * these same documents, under `results`. A re-seed updates the roster fields and
+ * leaves `results` alone, and it will not delete a no-longer-listed student who
+ * holds results unless --drop-results is given.
  *
  * ⚠️ The spreadsheet holds real student names. `.gitignore` blocks *.xlsx —
  * keep it that way, and do not commit any file this script reads.
@@ -208,17 +215,35 @@ async function main() {
         const before = await col.countDocuments();
         // Replace, not merge. A student removed from the college's list must
         // stop being eligible, which a merge could never express.
+        //
+        // The roster's OWN fields are replaced; `results` is not. The admin panel's
+        // AI Ready Engineers results page writes each student's round lists and
+        // interview stars onto this same document (results.<academicYear>), and a
+        // replaceOne here used to rebuild the document from the spreadsheet alone —
+        // silently erasing every shortlist and score on the next re-seed. $set
+        // touches only the fields the spreadsheet supplies.
         const ops = rows.map((doc) => ({
-            replaceOne: { filter: { rollKey: doc.rollKey }, replacement: doc, upsert: true }
+            updateOne: { filter: { rollKey: doc.rollKey }, update: { $set: doc }, upsert: true }
         }));
         for (let i = 0; i < ops.length; i += 500) {
             await col.bulkWrite(ops.slice(i, i + 500), { ordered: false });
         }
         const keep = rows.map((r) => r.rollKey);
-        const removed = await col.deleteMany({ rollKey: { $nin: keep } });
+
+        // A student dropped from the college's list stops being eligible — but if
+        // they already carry selection results, deleting the document would delete
+        // those too. They are kept (and reported) unless --drop-results is passed.
+        const dropResults = process.argv.includes('--drop-results');
+        const goneFilter = { rollKey: { $nin: keep } };
+        const withResults = await col.countDocuments({ ...goneFilter, results: { $exists: true } });
+        const removed = await col.deleteMany(dropResults ? goneFilter : { ...goneFilter, results: { $exists: false } });
         const after = await col.countDocuments();
 
         console.log(`\nroster: ${before} -> ${after} documents (${removed.deletedCount} removed as no longer listed)`);
+        if (withResults && !dropResults) {
+            console.log(`  kept ${withResults} no-longer-listed student(s) because they hold selection results;`);
+            console.log('  re-run with --drop-results to remove them and their results as well.');
+        }
     } finally {
         await client.close();
     }

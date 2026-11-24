@@ -1106,7 +1106,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                                 <small>{p.audience}</small>
                                             </span>
                                             <span className={`vvitu-reg-closed-list__tag ${p.open ? 'is-open' : ''}`}>
-                                                {p.open ? 'Open' : 'Coming Soon'}
+                                                {p.open ? 'Open' : p.intakeClosed ? 'Closed' : 'Coming Soon'}
                                             </span>
                                         </li>
                                     ))}
@@ -1409,7 +1409,7 @@ const RegistrationModal = ({ isOpen, onClose, initialProgramKey }) => {
                                                 }}
                                             >
                                                 {isClosed
-                                                    ? <span className="vvitu-reg-year-closed-tag">Coming Soon</span>
+                                                    ? <span className="vvitu-reg-year-closed-tag">{p.intakeClosed ? 'Closed' : 'Coming Soon'}</span>
                                                     : <span className="vvitu-reg-year-open-tag">Open</span>}
                                                 <div className="vvitu-reg-year-radio">
                                                     <span className={`vvitu-radio-dot ${isSelected ? 'checked' : ''}`} />
