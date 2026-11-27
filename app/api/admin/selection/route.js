@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isAuthenticated } from '../../../../lib/dashboard-auth';
-import { isValidYear } from '../../../../lib/selection-results';
+import { isValidYear, isValidProgramCode, DEFAULT_PROGRAM_CODE, SELECTION_PROGRAMS } from '../../../../lib/selection-results';
 import { listYears, yearSummary } from '../../../../lib/selection-results-store';
 
 export const dynamic = 'force-dynamic';
@@ -22,8 +22,15 @@ export async function GET(request) {
             return NextResponse.json({ success: false, message: 'Invalid academic year.' }, { status: 400 });
         }
         const year = asked || years[0] || null;
-        const summary = year ? await yearSummary(year) : null;
-        return NextResponse.json({ success: true, years, year, summary });
+        // The page is no longer AI Ready's alone: every figure below belongs to
+        // one programme, and the catalogue travels with the response so the
+        // picker does not need a second request to render.
+        const code = request.nextUrl.searchParams.get('program') || DEFAULT_PROGRAM_CODE;
+        if (!isValidProgramCode(code)) {
+            return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
+        }
+        const summary = year ? await yearSummary(year, code) : null;
+        return NextResponse.json({ success: true, years, year, program: code, programs: SELECTION_PROGRAMS, summary });
     } catch (error) {
         console.error('[admin/selection] summary failed:', error);
         return NextResponse.json({ success: false, message: 'Could not load the selection results.' }, { status: 500 });

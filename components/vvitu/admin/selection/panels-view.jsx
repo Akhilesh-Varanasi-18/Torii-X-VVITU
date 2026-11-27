@@ -48,7 +48,7 @@ async function call(url, options, unauthorized) {
 
 const SIZE_OPTIONS = PAGE_SIZES.map((n) => ({ key: n, label: String(n) }));
 
-export default function PanelsView({ year, unauthorized, version = 0, embedded = false }) {
+export default function PanelsView({ year, program, unauthorized, version = 0, embedded = false }) {
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -86,7 +86,7 @@ export default function PanelsView({ year, unauthorized, version = 0, embedded =
         setBusy(true);
         setError('');
         try {
-            const qs = new URLSearchParams({ year, page: String(page), limit: String(pageSize), sort, status });
+            const qs = new URLSearchParams({ year, program, page: String(page), limit: String(pageSize), sort, status });
             if (debouncedQuery) qs.set('q', debouncedQuery);
             if (panel) qs.set('panel', panel);
             if (day) qs.set('day', day);
@@ -98,7 +98,7 @@ export default function PanelsView({ year, unauthorized, version = 0, embedded =
         } finally {
             setBusy(false);
         }
-    }, [year, unauthorized, page, pageSize, sort, status, debouncedQuery, panel, day, branch]);
+    }, [year, program, unauthorized, page, pageSize, sort, status, debouncedQuery, panel, day, branch]);
 
     useEffect(() => {
         load();
@@ -129,7 +129,7 @@ export default function PanelsView({ year, unauthorized, version = 0, embedded =
     };
 
     const totals = data?.totals;
-    const exportHref = `/api/admin/selection/export?year=${encodeURIComponent(year)}&view=panels`;
+    const exportHref = `/api/admin/selection/export?year=${encodeURIComponent(year)}&program=${encodeURIComponent(program)}&view=panels`;
 
     // Embedded, this IS the Interview round's list inside Step 1, so it drops
     // the card shell and the step heading and keeps only its own controls —
@@ -324,7 +324,7 @@ export default function PanelsView({ year, unauthorized, version = 0, embedded =
                         </div>
                     )}
 
-                    <AllocationUpload year={year} unauthorized={unauthorized} onCommitted={load} />
+                    <AllocationUpload year={year} program={program} unauthorized={unauthorized} onCommitted={load} />
                 </>
             )}
         </Shell>
@@ -624,7 +624,7 @@ function ScheduleTable({ rows }) {
 
 // ── Timetable upload ────────────────────────────────────────────────────────
 
-function AllocationUpload({ year, unauthorized, onCommitted }) {
+function AllocationUpload({ year, program, unauthorized, onCommitted }) {
     const [mode, setMode] = useState('replace');
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
@@ -639,6 +639,7 @@ function AllocationUpload({ year, unauthorized, onCommitted }) {
         try {
             const body = new FormData();
             body.append('year', year);
+            body.append('program', program);
             body.append('mode', mode);
             body.append('file', file);
             const json = await call(`/api/admin/selection/allocation${dry ? '?dryRun=1' : ''}`, { method: 'POST', body }, unauthorized);

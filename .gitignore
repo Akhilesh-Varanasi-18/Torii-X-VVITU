@@ -54,3 +54,8 @@ next-env.d.ts
 # set the site actually loads is built from them by hand into
 # public/assets/images/vvitu/whatweoffer/ (~1MB total) and IS committed.
 public/assets/images/vvitu/WhatweOffer/
+
+# Resume bundles pulled from the registration form (Drive uploads). Same PII as
+# the workbooks: names, roll numbers, contact details. The PDFs themselves are
+# already covered by *.pdf above; this covers the archive we hand to the team.
+*.zip

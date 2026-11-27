@@ -4,6 +4,7 @@ import { getRegistrationsCollection } from '../../../../../lib/mongodb';
 import { isAuthenticated } from '../../../../../lib/dashboard-auth';
 import { resolveRange, rangeMatch, IST_TZ } from '../../../../../lib/analytics-range';
 import { PROGRAM_BY_KEY } from '../../../../../lib/registration-schema';
+import { buildQuery, branchShort, isFiltered } from '../../../../../lib/registrations-directory';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -71,16 +72,25 @@ export async function GET(request) {
         return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    const range = resolveRange(request.nextUrl.searchParams.get('range'));
-    // ?program=<key> narrows the sheet to one intake; anything else is every program.
-    const program = PROGRAM_BY_KEY[request.nextUrl.searchParams.get('program')] || null;
-    const match = { ...rangeMatch(range), ...(program ? { programCode: program.code } : {}) };
+    const params = request.nextUrl.searchParams;
     const now = new Date();
+
+    // `view=directory` means "the rows I am looking at": the registrations tab
+    // sends its own filters and the sheet must match them exactly, or Export
+    // quietly hands back a different population than the screen showed.
+    const directory = params.get('view') === 'directory';
+    const built = directory ? buildQuery(params, { now }) : null;
+
+    // The analytics page's older contract: ?range= and ?program= only.
+    const range = resolveRange(params.get('range'));
+    const program = directory ? built.meta.program : PROGRAM_BY_KEY[params.get('program')] || null;
+    const match = directory ? built.match : { ...rangeMatch(range), ...(program ? { programCode: program.code } : {}) };
+    const sort = directory ? built.sort : { createdAt: -1 };
 
     let rows;
     try {
         const collection = await getRegistrationsCollection();
-        rows = await collection.find(match).sort({ createdAt: -1 }).toArray();
+        rows = await collection.find(match).sort(sort).toArray();
     } catch (error) {
         console.error('[export] query failed:', error);
         return NextResponse.json({ success: false, message: 'Could not read registrations.' }, { status: 503 });
@@ -103,7 +113,26 @@ export async function GET(request) {
 
     sheet.mergeCells(2, 1, 2, COLUMNS.length);
     const metaCell = sheet.getCell(2, 1);
-    metaCell.value = `Program: ${program ? program.programName : 'All programs'}   •   Filter: ${RANGE_LABEL[range.key]}   •   ${rows.length} registration(s)   •   Generated ${formatIST(now)} IST`;
+    // Spell the filters out on the sheet. A workbook outlives the screen it was
+    // taken from, and "327 registrations" means nothing six weeks later if
+    // nobody can tell which 327.
+    const m = built ? built.meta : null;
+    const applied = m
+        ? [
+              m.q ? `search "${m.q}"` : null,
+              m.branch ? `branch ${branchShort(m.branch)}` : null,
+              m.gender ? `gender ${m.gender}` : null,
+              m.admission ? `admission ${m.admission}` : null,
+              m.laptop ? `laptop ${m.laptop}` : null,
+              m.range !== 'all' ? RANGE_LABEL[m.range] : null
+          ].filter(Boolean)
+        : [];
+    metaCell.value = [
+        `Program: ${program ? program.programName : 'All programs'}`,
+        directory ? (applied.length ? `Filters: ${applied.join(', ')}` : 'Filters: none') : `Filter: ${RANGE_LABEL[range.key]}`,
+        `${rows.length} registration(s)`,
+        `Generated ${formatIST(now)} IST`
+    ].join('   •   ');
     metaCell.font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
     metaCell.alignment = { vertical: 'middle' };
 
@@ -159,7 +188,8 @@ export async function GET(request) {
     sheet.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: COLUMNS.length } };
 
     const buffer = await workbook.xlsx.writeBuffer();
-    const filename = `VVITU_Registrations_${program ? `${program.key}_` : ''}${range.key}_${formatIST(now).replace(/[ :]/g, '-')}.xlsx`;
+    const scope = directory ? (isFiltered(built.meta) ? 'filtered' : 'all') : range.key;
+    const filename = `VVITU_Registrations_${program ? `${program.key}_` : ''}${scope}_${formatIST(now).replace(/[ :]/g, '-')}.xlsx`;
 
     return new NextResponse(buffer, {
         status: 200,

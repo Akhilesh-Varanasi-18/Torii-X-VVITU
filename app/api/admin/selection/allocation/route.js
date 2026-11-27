@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isAuthenticated } from '../../../../../lib/dashboard-auth';
-import { isValidYear, UPLOAD_MODES } from '../../../../../lib/selection-results';
+import { isValidYear, UPLOAD_MODES, isValidProgramCode, DEFAULT_PROGRAM_CODE } from '../../../../../lib/selection-results';
 import {
     readAllocationInput,
     planAllocationUpload,
@@ -53,10 +53,12 @@ export async function POST(request) {
 
     const year = String(form.get('year') || '');
     const mode = String(form.get('mode') || 'replace');
+    const code = String(form.get('program') || DEFAULT_PROGRAM_CODE);
     const rawFile = form.get('file');
     const file = rawFile && typeof rawFile.arrayBuffer === 'function' && rawFile.size ? rawFile : null;
 
     if (!isValidYear(year)) return NextResponse.json({ success: false, message: 'Pick an academic year.' }, { status: 400 });
+    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
     if (!UPLOAD_MODES.includes(mode)) return NextResponse.json({ success: false, message: 'Unknown upload mode.' }, { status: 400 });
     if (!file) return NextResponse.json({ success: false, message: 'Attach the allocation sheet.' }, { status: 400 });
     if (file.size > MAX_BYTES) {
@@ -84,7 +86,7 @@ export async function POST(request) {
     }
 
     try {
-        const plan = await planAllocationUpload({ year, mode, rows: input.rows });
+        const plan = await planAllocationUpload({ year, code, mode, rows: input.rows });
         const parse = {
             columns: input.columns,
             ignored: input.ignored.slice(0, 50),

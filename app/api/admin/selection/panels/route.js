@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isAuthenticated } from '../../../../../lib/dashboard-auth';
-import { isValidYear } from '../../../../../lib/selection-results';
+import { isValidYear, isValidProgramCode, DEFAULT_PROGRAM_CODE } from '../../../../../lib/selection-results';
 import { resolveLimit, PANEL_SORT_KEYS, PANEL_STATUSES, isValidDate } from '../../../../../lib/interview-panels';
 import { panelOverview, listPanelists } from '../../../../../lib/interview-panels-store';
 
@@ -35,6 +35,9 @@ export async function GET(request) {
     const year = params.get('year') || '';
     if (!isValidYear(year)) return NextResponse.json({ success: false, message: 'Pick an academic year.' }, { status: 400 });
 
+    const code = params.get('program') || DEFAULT_PROGRAM_CODE;
+    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
+
     const day = params.get('day') || '';
     if (day && !isValidDate(day)) return NextResponse.json({ success: false, message: 'Bad day filter.' }, { status: 400 });
 
@@ -57,8 +60,8 @@ export async function GET(request) {
     };
 
     try {
-        const [overview, panelists] = await Promise.all([panelOverview(year, opts), listPanelists(year)]);
-        return NextResponse.json({ success: true, ...overview, panelists, sort: opts.sort, status: opts.status });
+        const [overview, panelists] = await Promise.all([panelOverview(year, code, opts), listPanelists(year, code)]);
+        return NextResponse.json({ success: true, ...overview, program: code, panelists, sort: opts.sort, status: opts.status });
     } catch (error) {
         console.error('[admin/selection/panels] load failed:', error);
         return NextResponse.json({ success: false, message: 'Could not load the panel view.' }, { status: 500 });

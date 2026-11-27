@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { isAuthenticated } from '../../../../../lib/dashboard-auth';
-import { isValidYear, isValidScore, normaliseRoll, isValidRemarks, MAX_REMARKS } from '../../../../../lib/selection-results';
+import {
+    isValidYear,
+    isValidScore,
+    normaliseRoll,
+    isValidRemarks,
+    MAX_REMARKS,
+    isValidProgramCode,
+    DEFAULT_PROGRAM_CODE
+} from '../../../../../lib/selection-results';
 import { MAX_PANELIST } from '../../../../../lib/interview-panels';
 import { interviewCandidates, saveInterviewScore } from '../../../../../lib/selection-results-store';
 import { listPanelists } from '../../../../../lib/interview-panels-store';
@@ -20,9 +28,11 @@ export async function GET(request) {
     }
     const year = request.nextUrl.searchParams.get('year') || '';
     if (!isValidYear(year)) return NextResponse.json({ success: false, message: 'Pick an academic year.' }, { status: 400 });
+    const code = request.nextUrl.searchParams.get('program') || DEFAULT_PROGRAM_CODE;
+    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
     try {
-        const [students, panelists] = await Promise.all([interviewCandidates(year), listPanelists(year)]);
-        return NextResponse.json({ success: true, year, students, panelists });
+        const [students, panelists] = await Promise.all([interviewCandidates(year, code), listPanelists(year, code)]);
+        return NextResponse.json({ success: true, year, program: code, students, panelists });
     } catch (error) {
         console.error('[admin/selection/interviews] list failed:', error);
         return NextResponse.json({ success: false, message: 'Could not load the interview list.' }, { status: 500 });
@@ -61,6 +71,7 @@ export async function PUT(request) {
     }
 
     const year = String(body?.year || '');
+    const code = String(body?.program || DEFAULT_PROGRAM_CODE);
     const rollKey = normaliseRoll(body?.rollKey);
     const coding = Number(body?.coding);
     const communication = Number(body?.communication);
@@ -68,6 +79,7 @@ export async function PUT(request) {
     const scoredBy = body?.scoredBy;
 
     if (!isValidYear(year)) return NextResponse.json({ success: false, message: 'Pick an academic year.' }, { status: 400 });
+    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
     if (!rollKey) return NextResponse.json({ success: false, message: 'Pick a student.' }, { status: 400 });
     if (!isValidScore(coding) || !isValidScore(communication)) {
         return NextResponse.json({ success: false, message: 'Give both scores, 1 to 5 stars each.' }, { status: 400 });
@@ -85,10 +97,10 @@ export async function PUT(request) {
     }
 
     try {
-        const score = await saveInterviewScore({ year, rollKey, coding, communication, remarks, scoredBy });
+        const score = await saveInterviewScore({ year, code, rollKey, coding, communication, remarks, scoredBy });
         if (!score) {
             return NextResponse.json(
-                { success: false, message: `That student is not on the ${year} interview list.` },
+                { success: false, message: `That student is not on the ${year} ${code} interview list.` },
                 { status: 404 }
             );
         }

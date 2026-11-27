@@ -20,7 +20,7 @@ import { IconHome, IconMegaphone, IconLogout, IconAward } from '../dashboard/das
 export const MODULES = [
     { key: 'home', href: '/admin', label: 'Overview', short: 'Home', hint: 'Every module at a glance', Icon: IconHome, exact: true },
     { key: 'analytics', href: '/admin/analytics', label: 'Analytics', short: 'Analytics', hint: 'Registrations by program', Icon: IconChart },
-    { key: 'selection', href: '/admin/selection-results', label: 'AI Ready Engineer Results', short: 'Results', hint: 'Round lists & interview scores', Icon: IconAward },
+    { key: 'selection', href: '/admin/selection-results', label: 'Selection Process', short: 'Selection', hint: 'Registrations, rounds & results', Icon: IconAward },
     { key: 'coding', href: '/admin/coding-profiles', label: 'Coding Profiles', short: 'Coding', hint: 'Leaderboards & captures', Icon: IconTrophy },
     { key: 'announcements', href: '/admin/announcements', label: 'Announcements', short: 'Announce', hint: 'The home-page pop-up', Icon: IconMegaphone }
 ];

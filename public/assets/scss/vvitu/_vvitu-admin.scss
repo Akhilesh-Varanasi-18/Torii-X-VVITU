@@ -3391,3 +3391,201 @@
         }
     }
 }
+
+// =========================================================================
+// Registrations register — Step 1  (.rg-*)
+// =========================================================================
+//
+// Reuses the .ip-* table, stats strip, filters and pager wholesale: it is the
+// same kind of surface and should not look like a second opinion. Only the
+// column widths and the three cells unique to a registration live here.
+
+.rg {
+    &-filters {
+        // Five controls plus the page size, so it wraps rather than squeezing
+        // the search box down to nothing.
+        flex-wrap: wrap;
+    }
+
+    &-table {
+        // #, Student, Roll, Contact, Branch, Academics, Entrance, Registered.
+        --ip-cols: 34px minmax(150px, 1.25fr) 132px minmax(170px, 1.3fr) 104px 118px 120px 124px;
+
+        .rg-who,
+        .rg-contact,
+        .rg-acad,
+        .rg-rank {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1px;
+            min-width: 0;
+
+            strong {
+                font-size: 12.5px;
+                font-weight: 700;
+                color: var(--vvitu-heading);
+                overflow-wrap: anywhere;
+            }
+
+            small {
+                font-size: 10.5px;
+                color: var(--vvitu-muted);
+                overflow-wrap: anywhere;
+            }
+        }
+
+        .rg-who strong {
+            font-size: 13px;
+        }
+
+        .rg-contact {
+            // Each line is icon + value. `align-items: start` rather than
+            // center so the icon stays level with the FIRST line when a long
+            // address wraps, instead of floating to the middle of two lines.
+            a,
+            small {
+                display: inline-flex;
+                align-items: start;
+                gap: 5px;
+                min-width: 0;
+                font-size: 11.5px;
+                text-decoration: none;
+            }
+
+            a {
+                color: var(--vvitu-primary);
+
+                &:hover,
+                &:focus-visible {
+                    text-decoration: underline;
+                }
+            }
+
+            // The number is a quieter line than the address above it.
+            &__tel,
+            small {
+                color: var(--vvitu-muted);
+            }
+
+            &__tel:hover,
+            &__tel:focus-visible {
+                color: var(--vvitu-primary);
+            }
+
+            svg {
+                flex: none;
+                width: 12px;
+                height: 12px;
+                margin-top: 2px;
+                opacity: 0.75;
+            }
+
+            span {
+                min-width: 0;
+                overflow-wrap: anywhere;
+            }
+        }
+
+        .rg-acad strong {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .rg-rank strong,
+        .rg-rank small {
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    // Laptop: desktop widths stop fitting before the phone breakpoint, so the
+    // entrance ranks go first — they are the least-used column of the eight.
+    @media (max-width: 1460px) {
+        .rg-table {
+            --ip-cols: 32px minmax(140px, 1.2fr) 124px minmax(160px, 1.2fr) 96px 112px 118px;
+        }
+
+        .rg-rank,
+        .ip-table__row--head > span:nth-child(7) {
+            display: none;
+        }
+    }
+
+    // Tablet: identity, branch and when. Contact and academics are a tap away
+    // in the export; the grid is not where you read an email address.
+    @media (max-width: 1180px) {
+        .rg-table {
+            --ip-cols: 30px minmax(130px, 1.3fr) 118px 92px 112px;
+        }
+
+        .rg-contact,
+        .rg-acad,
+        .ip-table__row--head > span:nth-child(4),
+        .ip-table__row--head > span:nth-child(6) {
+            display: none;
+        }
+    }
+
+    // Phone: every row is a card, like the schedule table.
+    @media (max-width: $sh-md) {
+        .rg-table .ip-table__row.ip-table__row--head {
+            display: none;
+        }
+
+        .rg-table .ip-table__row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 4px 10px;
+            margin-bottom: 9px;
+            padding: 12px 13px;
+            border: 1px solid var(--vvitu-border);
+            border-radius: 13px;
+            background: var(--vvitu-white);
+        }
+
+        .rg-table .ip-table__no {
+            display: none;
+        }
+
+        .rg-table .rg-who {
+            grid-column: 1;
+        }
+
+        .rg-table .ip-table__roll {
+            grid-column: 2;
+            grid-row: 1;
+            text-align: right;
+        }
+
+        // Everything hidden on tablet comes back on a card, where there is
+        // width for it.
+        .rg-table .rg-contact,
+        .rg-table .rg-acad,
+        .rg-table .rg-rank,
+        .rg-table .ip-table__panel,
+        .rg-table .ip-table__when {
+            display: flex;
+            grid-column: 1 / -1;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 4px 10px;
+            padding-top: 5px;
+            border-top: 1px dashed var(--vvitu-border);
+        }
+    }
+}
+
+// The programme picker beside the academic-year one. Wider, because a
+// programme name is words where a year is six characters.
+.sr-year--program {
+    .sr-year__select {
+        min-width: 190px;
+    }
+
+    @media (max-width: $sh-md) {
+        .sr-year__select {
+            min-width: 0;
+            width: 100%;
+        }
+    }
+}

@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { isAuthenticated } from '../../../../../lib/dashboard-auth';
-import { isValidYear, roundByKey, SELECTION_ROUNDS, INTERVIEW_ROUND, MAX_STARS } from '../../../../../lib/selection-results';
+import {
+    isValidYear,
+    roundByKey,
+    SELECTION_ROUNDS,
+    INTERVIEW_ROUND,
+    MAX_STARS,
+    isValidProgramCode,
+    DEFAULT_PROGRAM_CODE,
+    programByCode
+} from '../../../../../lib/selection-results';
 import { roundStudents, funnelStudents } from '../../../../../lib/selection-results-store';
 import { panelOverview } from '../../../../../lib/interview-panels-store';
 import { formatDate, formatSlot } from '../../../../../lib/interview-panels';
@@ -117,7 +126,7 @@ function roundSheet(wb, year, round, students, generated) {
     const columns = [...IDENTITY, ...(isInterview ? SCORE_COLUMNS : []), { header: 'Added to List (IST)', key: 'addedAt', width: 20 }];
     const scored = isInterview ? students.filter((s) => s.score).length : 0;
     addSheet(wb, round.short, {
-        title: `AI Ready Engineers ${year} — ${round.label}`,
+        title: `${programName} ${year} — ${round.label}`,
         meta: [
             `${students.length} student(s)`,
             isInterview ? `${scored} scored` : null,
@@ -163,7 +172,7 @@ function addPanelSheets(wb, year, overview, generated) {
     const { totals, panels, students } = overview;
 
     addSheet(wb, 'Panels', {
-        title: `AI Ready Engineers ${year} — Interview panels`,
+        title: `${programName} ${year} — Interview panels`,
         meta: [
             `${totals.scheduled} scheduled`,
             `${totals.completed} completed`,
@@ -202,7 +211,7 @@ function addPanelSheets(wb, year, overview, generated) {
 
     const scheduled = students.filter((s) => s.allocation);
     addSheet(wb, 'Schedule', {
-        title: `AI Ready Engineers ${year} — Interview schedule`,
+        title: `${programName} ${year} — Interview schedule`,
         meta: [`${scheduled.length} scheduled student(s)`, 'In slot order', `Generated ${generated} IST`].join('   •   '),
         columns: [...IDENTITY, ...SLOT_COLUMNS, ...SCORE_COLUMNS],
         rows: scheduled.map((s, i) => ({ ...identityCells(s, i), ...slotCells(s.allocation), ...scoreCells(s.score) }))
@@ -213,7 +222,7 @@ function addPanelSheets(wb, year, overview, generated) {
     // out would make the chase list quietly incomplete.
     const pending = students.filter((s) => !s.score && (s.allocation || s.onList));
     addSheet(wb, 'Pending', {
-        title: `AI Ready Engineers ${year} — Pending interviews`,
+        title: `${programName} ${year} — Pending interviews`,
         meta: [`${pending.length} still to score`, `${totals.unscheduled} of them have no slot yet`, `Generated ${generated} IST`].join(
             '   •   '
         ),
@@ -249,6 +258,9 @@ export async function GET(request) {
     const round = roundKey ? roundByKey(roundKey) : null;
     if (roundKey && !round) return NextResponse.json({ success: false, message: 'Unknown round.' }, { status: 400 });
     const view = request.nextUrl.searchParams.get('view') || '';
+    const code = request.nextUrl.searchParams.get('program') || DEFAULT_PROGRAM_CODE;
+    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
+    const programName = (programByCode(code) || {}).name || code;
     if (view && view !== 'panels') return NextResponse.json({ success: false, message: 'Unknown view.' }, { status: 400 });
 
     const now = new Date();
@@ -259,13 +271,13 @@ export async function GET(request) {
 
     try {
         if (view === 'panels') {
-            addPanelSheets(wb, year, await panelOverview(year), generated);
+            addPanelSheets(wb, year, await panelOverview(year, code), generated);
         } else if (round) {
-            roundSheet(wb, year, round, await roundStudents(year, round.key), generated);
+            roundSheet(wb, year, round, await roundStudents(year, code, round.key), generated);
         } else {
             const [funnel, lists] = await Promise.all([
-                funnelStudents(year),
-                Promise.all(SELECTION_ROUNDS.map((r) => roundStudents(year, r.key)))
+                funnelStudents(year, code),
+                Promise.all(SELECTION_ROUNDS.map((r) => roundStudents(year, code, r.key)))
             ]);
 
             // "Furthest stage" is the LAST list a student is on, in round order —
@@ -279,7 +291,7 @@ export async function GET(request) {
             };
 
             addSheet(wb, 'Funnel', {
-                title: `AI Ready Engineers ${year} — Selection Funnel`,
+                title: `${programName} ${year} — Selection Funnel`,
                 meta: [
                     `${funnel.length} student(s) on at least one list`,
                     ...SELECTION_ROUNDS.map((r, i) => `${r.short}: ${lists[i].length}`),
@@ -300,7 +312,7 @@ export async function GET(request) {
             });
 
             SELECTION_ROUNDS.forEach((r, i) => roundSheet(wb, year, r, lists[i], generated));
-            addPanelSheets(wb, year, await panelOverview(year), generated);
+            addPanelSheets(wb, year, await panelOverview(year, code), generated);
         }
     } catch (error) {
         console.error('[admin/selection/export] failed:', error);
@@ -309,7 +321,7 @@ export async function GET(request) {
 
     const buffer = await wb.xlsx.writeBuffer();
     const scope = view === 'panels' ? 'panels' : round ? round.key : 'all-rounds';
-    const filename = `VVITU_AI_Ready_Results_${year}_${scope}_${generated.replace(/[ :]/g, '-')}.xlsx`;
+    const filename = `VVITU_${code}_Results_${year}_${scope}_${generated.replace(/[ :]/g, '-')}.xlsx`;
     return new NextResponse(buffer, {
         status: 200,
         headers: {

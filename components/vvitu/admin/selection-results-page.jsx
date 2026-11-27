@@ -6,7 +6,17 @@ import { useAdmin } from './admin-context';
 import Segmented from '../dashboard/coding/segmented';
 import { IconRefresh, IconUpload, IconSearch, IconClose, IconStar, IconCheckCircle, IconDownload } from '../dashboard/dashboard-icons';
 import { formatDateTime } from '../dashboard/coding/coding-theme';
-import { SELECTION_ROUNDS, INTERVIEW_ROUND, MAX_STARS, SCORE_FIELDS, MAX_REMARKS, roundByKey } from '../../../lib/selection-results';
+import {
+    SELECTION_ROUNDS,
+    INTERVIEW_ROUND,
+    MAX_STARS,
+    SCORE_FIELDS,
+    MAX_REMARKS,
+    roundByKey,
+    SELECTION_PROGRAMS,
+    DEFAULT_PROGRAM_CODE,
+    programByCode
+} from '../../../lib/selection-results';
 import { formatDate, formatSlot } from '../../../lib/interview-panels';
 
 // Step 3 is a monitoring surface most visitors to this page never open — they
@@ -15,6 +25,14 @@ import { formatDate, formatSlot } from '../../../lib/interview-panels';
 // somebody scrolls to it. `ssr: false` for the same reason the coding module
 // does it (§8.6): nothing here renders usefully on the server, and it reads
 // live data anyway.
+// The register is the first thing on the page, but it is a large table most
+// visits do not need — somebody opening this page to score one student never
+// scrolls to it. Lazy, like the panel view, for the same reason (§8.6).
+const RegistrationsView = dynamic(() => import('./selection/registrations-view'), {
+    ssr: false,
+    loading: () => <p className="sr-roster__empty">Loading the register…</p>
+});
+
 const PanelsView = dynamic(() => import('./selection/panels-view'), {
     ssr: false,
     loading: () => <p className="sr-roster__empty">Loading the panel view…</p>
@@ -55,19 +73,25 @@ export default function SelectionResultsPage() {
     const { unauthorized } = useAdmin();
     const [years, setYears] = useState([]);
     const [year, setYear] = useState('');
+    // Which intake the whole page is showing. Everything below — the register,
+    // the round lists, the scores and the panels — is scoped to this.
+    const [program, setProgram] = useState(DEFAULT_PROGRAM_CODE);
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     const load = useCallback(
-        async (wanted) => {
+        async (wanted, wantedProgram) => {
             setLoading(true);
             setError('');
             try {
-                const q = wanted ? `?year=${encodeURIComponent(wanted)}` : '';
-                const json = await call(`/api/admin/selection${q}`, {}, unauthorized);
+                const qs = new URLSearchParams();
+                if (wanted) qs.set('year', wanted);
+                qs.set('program', wantedProgram || program);
+                const json = await call(`/api/admin/selection?${qs.toString()}`, {}, unauthorized);
                 setYears(json.years || []);
                 setYear(json.year || '');
+                if (json.program) setProgram(json.program);
                 setSummary(json.summary);
             } catch (e) {
                 setError(e.message);
@@ -75,6 +99,10 @@ export default function SelectionResultsPage() {
                 setLoading(false);
             }
         },
+        // `program` is read, not watched: load() is always called with the value
+        // it should use, and watching it would fire a second request on every
+        // change on top of the one the handler already makes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [unauthorized]
     );
 
@@ -111,17 +139,38 @@ export default function SelectionResultsPage() {
                         height="240"
                     />
                     <div className="cp-topbar__titles">
-                        <h1 className="cp-topbar__title">AI Ready Engineers Results</h1>
-                        <p className="cp-topbar__sub">Round-by-round shortlists and one-on-one interview scores · hostel roster</p>
+                        <h1 className="cp-topbar__title">Selection Process</h1>
+                        <p className="cp-topbar__sub">
+                            {programByCode(program)?.name || program} · registrations, round-by-round shortlists and interview scores
+                        </p>
                     </div>
                 </div>
                 <div className="cp-topbar__actions">
+                    {/* Programme first: it decides what the year even means. */}
+                    <label className="sr-year sr-year--program">
+                        <span className="sr-year__label">Programme</span>
+                        <select
+                            className="sr-year__select"
+                            value={program}
+                            onChange={(e) => {
+                                setProgram(e.target.value);
+                                load(year, e.target.value);
+                            }}
+                            disabled={loading}
+                        >
+                            {SELECTION_PROGRAMS.map((p) => (
+                                <option key={p.code} value={p.code}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
                     <label className="sr-year">
                         <span className="sr-year__label">Academic year</span>
                         <select
                             className="sr-year__select"
                             value={year}
-                            onChange={(e) => load(e.target.value)}
+                            onChange={(e) => load(e.target.value, program)}
                             disabled={!years.length || loading}
                         >
                             {!years.length && <option value="">—</option>}
@@ -136,7 +185,7 @@ export default function SelectionResultsPage() {
                     {year && (
                         <a
                             className="cp-btn cp-btn--ghost cp-btn--compact sr-export"
-                            href={`/api/admin/selection/export?year=${encodeURIComponent(year)}`}
+                            href={`/api/admin/selection/export?year=${encodeURIComponent(year)}&program=${encodeURIComponent(program)}`}
                             download
                             aria-label={`Export all ${year} rounds to Excel`}
                         >
@@ -173,16 +222,35 @@ export default function SelectionResultsPage() {
 
             {year && (
                 <div className="sr-stack">
+                    <section className="sr-card" aria-labelledby="rg-title">
+                        <div className="sr-card__head">
+                            <div>
+                                <p className="sr-card__eyebrow">Step 1</p>
+                                <h2 id="rg-title" className="sr-card__title">
+                                    Registrations
+                                </h2>
+                                <p className="sr-card__sub">
+                                    Who signed up for {programByCode(program)?.name || program} — searchable, filterable, and
+                                    exportable as the rows you are looking at.
+                                </p>
+                            </div>
+                        </div>
+                        <RegistrationsView unauthorized={unauthorized} programCode={program} />
+                    </section>
+
                     <RoundLists
+                        key={program}
                         year={year}
+                        program={program}
                         summary={summary}
                         unauthorized={unauthorized}
                         onCommitted={onCommitted}
                         panelVersion={panelVersion}
                     />
                     <InterviewScores
-                        key={`${year}:${interviewVersion}`}
+                        key={`${year}:${program}:${interviewVersion}`}
                         year={year}
+                        program={program}
                         unauthorized={unauthorized}
                         onScored={() => {
                             load(year);
@@ -197,7 +265,7 @@ export default function SelectionResultsPage() {
 
 // ── 1. Round lists ──────────────────────────────────────────────────────────
 
-function RoundLists({ year, summary, unauthorized, onCommitted, panelVersion }) {
+function RoundLists({ year, program, summary, unauthorized, onCommitted, panelVersion }) {
     const [round, setRound] = useState(SELECTION_ROUNDS[0].key);
     const [mode, setMode] = useState('replace');
     const [text, setText] = useState('');
@@ -235,6 +303,7 @@ function RoundLists({ year, summary, unauthorized, onCommitted, panelVersion }) 
         try {
             const form = new FormData();
             form.set('year', year);
+            form.set('program', program);
             form.set('round', round);
             form.set('mode', mode);
             if (file) form.set('file', file);
@@ -268,7 +337,7 @@ function RoundLists({ year, summary, unauthorized, onCommitted, panelVersion }) 
         <section className="sr-card" aria-labelledby="sr-rounds-title">
             <div className="sr-card__head">
                 <div>
-                    <p className="sr-card__eyebrow">Step 1</p>
+                    <p className="sr-card__eyebrow">Step 2</p>
                     <h2 id="sr-rounds-title" className="sr-card__title">
                         Round lists
                     </h2>
@@ -317,14 +386,22 @@ function RoundLists({ year, summary, unauthorized, onCommitted, panelVersion }) 
                 meant maintaining — and reading — the same table twice. */}
             {round === INTERVIEW_ROUND ? (
                 <PanelsView
-                    key={`${year}:${listVersion}:${panelVersion}`}
+                    key={`${year}:${program}:${listVersion}:${panelVersion}`}
                     year={year}
+                    program={program}
                     unauthorized={unauthorized}
                     version={panelVersion}
                     embedded
                 />
             ) : (
-                <RoundStudents key={`${year}:${round}`} year={year} round={round} version={listVersion} unauthorized={unauthorized} />
+                <RoundStudents
+                    key={`${year}:${program}:${round}`}
+                    year={year}
+                    program={program}
+                    round={round}
+                    version={listVersion}
+                    unauthorized={unauthorized}
+                />
             )}
 
             <div className="sr-upload">
@@ -576,7 +653,7 @@ function UploadPreview({ preview }) {
 
 const fold = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-function InterviewScores({ year, unauthorized, onScored }) {
+function InterviewScores({ year, program, unauthorized, onScored }) {
     const [students, setStudents] = useState(null);
     const [panelists, setPanelists] = useState([]);
     const [error, setError] = useState('');
@@ -589,13 +666,13 @@ function InterviewScores({ year, unauthorized, onScored }) {
     const fetchList = useCallback(async () => {
         setError('');
         try {
-            const json = await call(`/api/admin/selection/interviews?year=${encodeURIComponent(year)}`, {}, unauthorized);
+            const json = await call(`/api/admin/selection/interviews?year=${encodeURIComponent(year)}&program=${encodeURIComponent(program)}`, {}, unauthorized);
             setStudents(json.students);
             setPanelists(json.panelists || []);
         } catch (e) {
             setError(e.message);
         }
-    }, [year, unauthorized]);
+    }, [year, program, unauthorized]);
 
     useEffect(() => {
         fetchList();
@@ -655,7 +732,7 @@ function InterviewScores({ year, unauthorized, onScored }) {
         <section className="sr-card" aria-labelledby="sr-iv-title">
             <div className="sr-card__head">
                 <div>
-                    <p className="sr-card__eyebrow">Step 2</p>
+                    <p className="sr-card__eyebrow">Step 3</p>
                     <h2 id="sr-iv-title" className="sr-card__title">
                         One-on-one interview scores
                     </h2>
@@ -750,6 +827,7 @@ function InterviewScores({ year, unauthorized, onScored }) {
                         <ScoreForm
                             key={selected.rollKey}
                             year={year}
+                            program={program}
                             student={selected}
                             panelists={panelists}
                             unauthorized={unauthorized}
@@ -819,7 +897,7 @@ function Stars({ label, value, onChange, disabled }) {
     );
 }
 
-function ScoreForm({ year, student, panelists, unauthorized, onSaved, onClose }) {
+function ScoreForm({ year, program, student, panelists, unauthorized, onSaved, onClose }) {
     const [scores, setScores] = useState({
         coding: student.score?.coding || 0,
         communication: student.score?.communication || 0
@@ -846,7 +924,7 @@ function ScoreForm({ year, student, panelists, unauthorized, onSaved, onClose })
                 {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ year, rollKey: student.rollKey, ...scores, remarks, scoredBy })
+                    body: JSON.stringify({ year, program, rollKey: student.rollKey, ...scores, remarks, scoredBy })
                 },
                 unauthorized
             );
@@ -977,7 +1055,7 @@ function ScoreForm({ year, student, panelists, unauthorized, onSaved, onClose })
 
 const GENDER_SHORT = { Male: 'M', Female: 'F' };
 
-function RoundStudents({ year, round, version, unauthorized }) {
+function RoundStudents({ year, program, round, version, unauthorized }) {
     const def = roundByKey(round);
     const isInterview = round === INTERVIEW_ROUND;
     const [students, setStudents] = useState(null);
@@ -988,13 +1066,13 @@ function RoundStudents({ year, round, version, unauthorized }) {
     const fetchList = useCallback(async () => {
         setError('');
         try {
-            const q = `year=${encodeURIComponent(year)}&round=${encodeURIComponent(round)}`;
+            const q = `year=${encodeURIComponent(year)}&program=${encodeURIComponent(program)}&round=${encodeURIComponent(round)}`;
             const json = await call(`/api/admin/selection/rounds?${q}`, {}, unauthorized);
             setStudents(json.students);
         } catch (e) {
             setError(e.message);
         }
-    }, [year, round, unauthorized]);
+    }, [year, program, round, unauthorized]);
 
     useEffect(() => {
         fetchList();
@@ -1062,7 +1140,7 @@ function RoundStudents({ year, round, version, unauthorized }) {
                         {/* Always the whole list — the sheet's own autofilter replaces the filters here. */}
                         <a
                             className="cp-btn cp-btn--ghost cp-btn--compact sr-export"
-                            href={`/api/admin/selection/export?year=${encodeURIComponent(year)}&round=${encodeURIComponent(round)}`}
+                            href={`/api/admin/selection/export?year=${encodeURIComponent(year)}&program=${encodeURIComponent(program)}&round=${encodeURIComponent(round)}`}
                             download
                         >
                             <IconDownload /> <span>Export Excel</span>

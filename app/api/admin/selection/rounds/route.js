@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isAuthenticated } from '../../../../../lib/dashboard-auth';
-import { isValidYear, roundByKey, UPLOAD_MODES } from '../../../../../lib/selection-results';
+import { isValidYear, roundByKey, UPLOAD_MODES, isValidProgramCode, DEFAULT_PROGRAM_CODE } from '../../../../../lib/selection-results';
 import { readRollInput, planRoundUpload, applyRoundUpload, publicPlan, roundStudents } from '../../../../../lib/selection-results-store';
 
 export const dynamic = 'force-dynamic';
@@ -24,9 +24,11 @@ export async function GET(request) {
     const round = request.nextUrl.searchParams.get('round') || '';
     if (!isValidYear(year)) return NextResponse.json({ success: false, message: 'Pick an academic year.' }, { status: 400 });
     if (!roundByKey(round)) return NextResponse.json({ success: false, message: 'Pick a round.' }, { status: 400 });
+    const code = request.nextUrl.searchParams.get('program') || DEFAULT_PROGRAM_CODE;
+    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
     try {
-        const students = await roundStudents(year, round);
-        return NextResponse.json({ success: true, year, round, students });
+        const students = await roundStudents(year, code, round);
+        return NextResponse.json({ success: true, year, program: code, round, students });
     } catch (error) {
         console.error('[admin/selection/rounds] list failed:', error);
         return NextResponse.json({ success: false, message: 'Could not load that list.' }, { status: 500 });
@@ -68,12 +70,14 @@ export async function POST(request) {
     const year = String(form.get('year') || '');
     const round = String(form.get('round') || '');
     const mode = String(form.get('mode') || 'replace');
+    const code = String(form.get('program') || DEFAULT_PROGRAM_CODE);
     const text = String(form.get('text') || '');
     const rawFile = form.get('file');
     const file = rawFile && typeof rawFile.arrayBuffer === 'function' && rawFile.size ? rawFile : null;
 
     if (!isValidYear(year)) return NextResponse.json({ success: false, message: 'Pick an academic year.' }, { status: 400 });
     if (!roundByKey(round)) return NextResponse.json({ success: false, message: 'Pick a round.' }, { status: 400 });
+    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
     if (!UPLOAD_MODES.includes(mode)) return NextResponse.json({ success: false, message: 'Unknown upload mode.' }, { status: 400 });
     if (!file && !text.trim()) {
         return NextResponse.json({ success: false, message: 'Attach a file or paste the roll numbers.' }, { status: 400 });
@@ -108,7 +112,7 @@ export async function POST(request) {
     }
 
     try {
-        const plan = await planRoundUpload({ year, round, mode, keys: input.keys });
+        const plan = await planRoundUpload({ year, code, round, mode, keys: input.keys });
         const parse = { column: input.column, ignored: input.ignored.slice(0, 50), ignoredCount: input.ignored.length, duplicates: input.duplicates };
 
         // Nothing on the roster matched. Committing a REPLACE now would empty the
