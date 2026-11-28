@@ -59,3 +59,9 @@ public/assets/images/vvitu/WhatweOffer/
 # the workbooks: names, roll numbers, contact details. The PDFs themselves are
 # already covered by *.pdf above; this covers the archive we hand to the team.
 *.zip
+
+# Database backups. A dump of vvitu_registrations and vvitu_hostel_roster is
+# every student's name, roll number, email, mobile and interview remarks in one
+# file — the single most sensitive artefact this repo can produce (§8.10).
+# Never commit one; hand it over out of band like the .env.local credentials.
+/backups/

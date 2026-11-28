@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isAuthenticated } from '../../../../lib/dashboard-auth';
 import { isValidYear, isValidProgramCode, DEFAULT_PROGRAM_CODE, SELECTION_PROGRAMS } from '../../../../lib/selection-results';
 import { listYears, yearSummary } from '../../../../lib/selection-results-store';
+import { getRegistrationsCollection } from '../../../../lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,6 +31,12 @@ export async function GET(request) {
             return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
         }
         const summary = year ? await yearSummary(year, code) : null;
+        if (summary) {
+            // The register is the first tab in the round strip, so its count
+            // belongs in the same payload as the rounds' — one request, and the
+            // tiles cannot disagree about which programme they are describing.
+            summary.registrations = await (await getRegistrationsCollection()).countDocuments({ programCode: code });
+        }
         return NextResponse.json({ success: true, years, year, program: code, programs: SELECTION_PROGRAMS, summary });
     } catch (error) {
         console.error('[admin/selection] summary failed:', error);

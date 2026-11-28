@@ -14,12 +14,11 @@ import {
     MAX_REMARKS,
     roundByKey,
     SELECTION_PROGRAMS,
-    DEFAULT_PROGRAM_CODE,
-    programByCode
+    DEFAULT_PROGRAM_CODE
 } from '../../../lib/selection-results';
 import { formatDate, formatSlot } from '../../../lib/interview-panels';
 
-// Step 3 is a monitoring surface most visitors to this page never open — they
+// The panels view is a monitoring surface most visitors to this page never open — they
 // came to upload a list or score one student. Loading it on demand keeps its
 // table, filters and framer-motion segmented controls out of the bundle until
 // somebody scrolls to it. `ssr: false` for the same reason the coding module
@@ -53,6 +52,11 @@ const PanelsView = dynamic(() => import('./selection/panels-view'), {
 // (see lib/selection-results.js for the layout).
 
 const num = (v) => Number(v || 0).toLocaleString('en-IN');
+
+/** The pseudo-round the register sits on. Not a real round — nothing is
+ *  uploaded for it and nobody is shortlisted into it — so it is kept out of
+ *  SELECTION_ROUNDS and handled as its own tab. */
+const REGISTRATIONS_TAB = 'registrations';
 
 async function call(url, options, unauthorized) {
     const res = await fetch(url, { cache: 'no-store', ...options });
@@ -128,7 +132,9 @@ export default function SelectionResultsPage() {
     };
 
     return (
-        <>
+        // A real element rather than a fragment: the sticky top bar needs a
+        // scoped ancestor so the other admin pages keep their own behaviour.
+        <div className="sr-page">
             <header className="cp-topbar">
                 <div className="cp-topbar__brand">
                     <img
@@ -140,9 +146,11 @@ export default function SelectionResultsPage() {
                     />
                     <div className="cp-topbar__titles">
                         <h1 className="cp-topbar__title">Selection Process</h1>
-                        <p className="cp-topbar__sub">
-                            {programByCode(program)?.name || program} · registrations, round-by-round shortlists and interview scores
-                        </p>
+                        {/* The programme used to be named here too, but it is
+                            already in the dropdown an inch to the right, and the
+                            longer line pushed the whole bar onto a second row —
+                            expensive for something that never scrolls away. */}
+                        <p className="cp-topbar__sub">Registrations, shortlists and interview scores</p>
                     </div>
                 </div>
                 <div className="cp-topbar__actions">
@@ -222,22 +230,6 @@ export default function SelectionResultsPage() {
 
             {year && (
                 <div className="sr-stack">
-                    <section className="sr-card" aria-labelledby="rg-title">
-                        <div className="sr-card__head">
-                            <div>
-                                <p className="sr-card__eyebrow">Step 1</p>
-                                <h2 id="rg-title" className="sr-card__title">
-                                    Registrations
-                                </h2>
-                                <p className="sr-card__sub">
-                                    Who signed up for {programByCode(program)?.name || program} — searchable, filterable, and
-                                    exportable as the rows you are looking at.
-                                </p>
-                            </div>
-                        </div>
-                        <RegistrationsView unauthorized={unauthorized} programCode={program} />
-                    </section>
-
                     <RoundLists
                         key={program}
                         year={year}
@@ -259,14 +251,14 @@ export default function SelectionResultsPage() {
                     />
                 </div>
             )}
-        </>
+        </div>
     );
 }
 
 // ── 1. Round lists ──────────────────────────────────────────────────────────
 
 function RoundLists({ year, program, summary, unauthorized, onCommitted, panelVersion }) {
-    const [round, setRound] = useState(SELECTION_ROUNDS[0].key);
+    const [round, setRound] = useState(REGISTRATIONS_TAB);
     const [mode, setMode] = useState('replace');
     const [text, setText] = useState('');
     const [file, setFile] = useState(null);
@@ -279,7 +271,7 @@ function RoundLists({ year, program, summary, unauthorized, onCommitted, panelVe
     const fileRef = useRef(null);
 
     const counts = useMemo(() => Object.fromEntries((summary?.rounds || []).map((r) => [r.key, r])), [summary]);
-    const def = roundByKey(round);
+    const def = roundByKey(round) || SELECTION_ROUNDS[0];
 
     // Any change to the input invalidates the preview — committing must never
     // write something other than what was just shown.
@@ -337,9 +329,8 @@ function RoundLists({ year, program, summary, unauthorized, onCommitted, panelVe
         <section className="sr-card" aria-labelledby="sr-rounds-title">
             <div className="sr-card__head">
                 <div>
-                    <p className="sr-card__eyebrow">Step 2</p>
                     <h2 id="sr-rounds-title" className="sr-card__title">
-                        Round lists
+                        Rounds
                     </h2>
                     <p className="sr-card__sub">
                         Upload the roll numbers for one stage of the selection. Only students on the {year} hostel roster are
@@ -354,7 +345,25 @@ function RoundLists({ year, program, summary, unauthorized, onCommitted, panelVe
             </div>
 
             {/* The funnel: one tile per round, its list size, and which one is being uploaded. */}
-            <div className="sr-rounds" role="radiogroup" aria-label="Round to upload">
+            <div className="sr-rounds" role="tablist" aria-label="Registrations and selection rounds">
+                {/* Registrations is the first tab, not a card of its own: it is
+                    where the funnel starts, and a separate card above the strip
+                    made the page read as two unrelated things. */}
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={round === REGISTRATIONS_TAB}
+                    className={`sr-round${round === REGISTRATIONS_TAB ? ' is-active' : ''} has-list`}
+                    onClick={() => {
+                        setRound(REGISTRATIONS_TAB);
+                        reset();
+                    }}
+                >
+                    <span className="sr-round__no">00</span>
+                    <span className="sr-round__label">Registered</span>
+                    <span className="sr-round__count">{summary ? num(summary.registrations ?? 0) : '—'}</span>
+                    <span className="sr-round__when">All sign-ups</span>
+                </button>
                 {SELECTION_ROUNDS.map((r, i) => {
                     const c = counts[r.key];
                     const active = r.key === round;
@@ -384,7 +393,9 @@ function RoundLists({ year, program, summary, unauthorized, onCommitted, panelVe
                 plain list: it is the same students with the same columns plus
                 panel, slot, who scored them and their remarks, so showing both
                 meant maintaining — and reading — the same table twice. */}
-            {round === INTERVIEW_ROUND ? (
+            {round === REGISTRATIONS_TAB ? (
+                <RegistrationsView key={`${program}:reg`} unauthorized={unauthorized} programCode={program} />
+            ) : round === INTERVIEW_ROUND ? (
                 <PanelsView
                     key={`${year}:${program}:${listVersion}:${panelVersion}`}
                     year={year}
@@ -404,7 +415,10 @@ function RoundLists({ year, program, summary, unauthorized, onCommitted, panelVe
                 />
             )}
 
-            <div className="sr-upload">
+            {/* Nothing to upload against the register — students put themselves
+                on it — so the upload card belongs to the round tabs only. */}
+            {round !== REGISTRATIONS_TAB && (
+                <div className="sr-upload">
                 <div className="sr-upload__head">
                     <div>
                         <h3 className="sr-upload__title">Upload · {def.label}</h3>
@@ -531,7 +545,8 @@ function RoundLists({ year, program, summary, unauthorized, onCommitted, panelVe
                         </button>
                     )}
                 </div>
-            </div>
+                </div>
+            )}
         </section>
     );
 }
@@ -732,7 +747,6 @@ function InterviewScores({ year, program, unauthorized, onScored }) {
         <section className="sr-card" aria-labelledby="sr-iv-title">
             <div className="sr-card__head">
                 <div>
-                    <p className="sr-card__eyebrow">Step 3</p>
                     <h2 id="sr-iv-title" className="sr-card__title">
                         One-on-one interview scores
                     </h2>
@@ -1056,7 +1070,7 @@ function ScoreForm({ year, program, student, panelists, unauthorized, onSaved, o
 const GENDER_SHORT = { Male: 'M', Female: 'F' };
 
 function RoundStudents({ year, program, round, version, unauthorized }) {
-    const def = roundByKey(round);
+    const def = roundByKey(round) || SELECTION_ROUNDS[0];
     const isInterview = round === INTERVIEW_ROUND;
     const [students, setStudents] = useState(null);
     const [error, setError] = useState('');

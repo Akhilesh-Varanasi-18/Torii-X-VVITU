@@ -16,10 +16,10 @@ import {
     RANGES
 } from '../../../../lib/registrations-directory';
 
-// Step 1 of the AI Ready Engineers results page: the register — every student
+// The first tab of the selection page: the register — every student
 // who signed up for this intake, with everything the form collected.
 //
-// Same shape as the interview schedule in Step 3 on purpose: one page of rows
+// Same shape as the interview schedule on purpose: one page of rows
 // from the server, a page-size control beside the filters, a first/prev/
 // next/last pager at the foot. Somebody who has used one table here already
 // knows this one.

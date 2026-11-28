@@ -1066,9 +1066,15 @@
 // The funnel: six tiles, the selected one coral.
 .sr-rounds {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    // Seven tiles now that Registered leads the strip — six left "Final"
+    // stranded on a row of its own.
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 10px;
     margin-bottom: 18px;
+
+    @media (max-width: 1480px) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
 
     @media (max-width: 1280px) {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3588,4 +3594,83 @@
             width: 100%;
         }
     }
+}
+
+// The Selection Process bar — programme, year, export and refresh — stays put
+// while the page scrolls. The page is several thousand rows long and those four
+// controls are the only way to change WHAT you are looking at; having to scroll
+// back to the top to switch programme made them feel further away than they are.
+//
+// Scoped to this page's own class rather than .cp-topbar, so the other admin
+// screens keep the behaviour they already had.
+.sr-page .cp-topbar {
+    position: sticky;
+    // The same offset .cp-main already pads by, so the bar is ALREADY at its
+    // sticky position when the page is at rest: it never jumps as you start
+    // scrolling, it simply stops moving.
+    top: $sh-gutter;
+    // Above the table's own sticky header row, which sits at z-index 1.
+    z-index: 20;
+
+    // Deliberately translucent. The cards pass under it and you can see them
+    // move through the blur — without that, a bar that never scrolls reads as
+    // a frozen screenshot stuck to the top of the page.
+    @include glass(0.64, 0.54);
+    -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    backdrop-filter: blur(22px) saturate(1.6);
+    // Lifted a little more than the resting shell card, because it genuinely
+    // is floating over content rather than sitting beside it.
+    box-shadow:
+        0 14px 34px rgba(15, 23, 42, 0.1), // --vvitu-heading
+        0 0 0 1px rgba(15, 23, 42, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+    // ── Kept short on purpose ──────────────────────────────────────────────
+    // Every pixel of this bar is subtracted from the table underneath for the
+    // whole session, so it is tuned to clear the controls and nothing more.
+    padding: 9px 16px;
+    gap: 14px;
+
+    .cp-topbar__title {
+        font-size: clamp(18px, 1.5vw, 21px);
+    }
+
+    .cp-topbar__sub {
+        margin-top: 2px;
+        font-size: 12px;
+    }
+
+    // The four controls are tightened here rather than globally: they are the
+    // difference between one row and two on a 1366 laptop, and two rows cost
+    // ~50px of table for the rest of the session.
+    .cp-topbar__actions {
+        gap: 8px;
+    }
+
+    .sr-year {
+        gap: 6px;
+    }
+
+    .sr-year__label {
+        font-size: 11px;
+    }
+
+    .sr-year--program .sr-year__select {
+        min-width: 170px;
+    }
+
+    // Measured: one row (66px) from ~1320px up, two rows (112px) below that,
+    // three on a phone. Tablet down it is no longer worth its own height —
+    // 156px of an 800px-tall viewport, permanently — so it scrolls away there
+    // like any other header.
+    @media (max-width: $sh-lg) {
+        position: static;
+    }
+}
+
+// .cp-main spaces its own children 20px apart, and this page is now a single
+// wrapper child rather than four siblings — so it has to re-create that rhythm
+// or the bar sits flush against the first card.
+.sr-page > * + * {
+    margin-top: 20px;
 }

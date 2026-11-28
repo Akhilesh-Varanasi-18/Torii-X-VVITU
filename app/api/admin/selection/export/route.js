@@ -9,11 +9,13 @@ import {
     MAX_STARS,
     isValidProgramCode,
     DEFAULT_PROGRAM_CODE,
-    programByCode
+    programByCode,
+    normaliseRoll
 } from '../../../../../lib/selection-results';
-import { roundStudents, funnelStudents } from '../../../../../lib/selection-results-store';
+import { roundStudents } from '../../../../../lib/selection-results-store';
 import { panelOverview } from '../../../../../lib/interview-panels-store';
 import { formatDate, formatSlot } from '../../../../../lib/interview-panels';
+import { getRegistrationsCollection } from '../../../../../lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -22,9 +24,11 @@ export const maxDuration = 30;
 // Brand palette — hex because ExcelJS wants ARGB, not CSS vars (same values as
 // the registrations export and the list template).
 const CORAL = 'FFE2544C';
+const AMBER = 'FFF2A63B';
 const HEADER_TEXT = 'FFFFFFFF';
 const STRIPE = 'FFFFF3EF';
 const MUTED = 'FF64748B';
+const BORDER = 'FFE2E8F0';
 
 /** 'YYYY-MM-DD HH:mm' in IST. Vercel runs in UTC, so the offset is explicit (§8.8). */
 function formatIST(date) {
@@ -34,17 +38,23 @@ function formatIST(date) {
     return new Date(d.getTime() + 330 * 60 * 1000).toISOString().slice(0, 16).replace('T', ' ');
 }
 
-// §8.5: department columns carry the short code with no ampersand. branchCode is
-// already in that form; the raw `program` fallback ("CSE(AI&ML)") is not.
+// §8.5: department columns carry the short code with no ampersand.
 const branchCell = (b) => String(b || '').replace(/&/g, '');
+
+/** The full option string ends in its code — "…(AIML)" — which is all a column needs. */
+function branchShort(option) {
+    if (!option) return '';
+    const m = String(option).match(/\(([^)]+)\)\s*$/);
+    return branchCell(m ? m[1] : option);
+}
 
 /**
  * Lay out one styled sheet: a title band (row 1), a meta line (row 2), the coral
  * header (row 3), striped data rows, frozen header and an autofilter — the same
- * shape as the registrations export so the two read as one family.
+ * shape as the registrations export so every workbook reads as one family.
  */
 function addSheet(wb, name, { title, meta, columns, rows }) {
-    const ws = wb.addWorksheet(name.slice(0, 31), { views: [{ state: 'frozen', ySplit: 3 }] });
+    const ws = wb.addWorksheet(name.slice(0, 31), { views: [{ state: 'frozen', xSplit: 2, ySplit: 3 }] });
 
     ws.mergeCells(1, 1, 1, columns.length);
     const t = ws.getCell(1, 1);
@@ -57,6 +67,8 @@ function addSheet(wb, name, { title, meta, columns, rows }) {
     const m = ws.getCell(2, 1);
     m.value = meta;
     m.font = { name: 'Calibri', size: 10, color: { argb: MUTED } };
+    m.alignment = { vertical: 'middle' };
+    ws.getRow(2).height = 16;
 
     ws.columns = columns.map((c) => ({ key: c.key, width: c.width, style: c.style }));
     const head = ws.getRow(3);
@@ -64,203 +76,145 @@ function addSheet(wb, name, { title, meta, columns, rows }) {
         const cell = head.getCell(i + 1);
         cell.value = c.header;
         cell.font = { bold: true, color: { argb: HEADER_TEXT }, size: 11 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: CORAL } };
-        cell.alignment = { vertical: 'middle', horizontal: c.center ? 'center' : 'left' };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c.accent ? AMBER : CORAL } };
+        cell.alignment = { vertical: 'middle', horizontal: c.center ? 'center' : 'left', wrapText: true };
     });
-    head.height = 20;
+    head.height = 26;
 
     rows.forEach((data, i) => {
         const row = ws.addRow(data);
-        columns.forEach((c, ci) => {
-            if (c.center) row.getCell(ci + 1).alignment = { horizontal: 'center' };
+        row.alignment = { vertical: 'top' };
+        columns.forEach((c, j) => {
+            const cell = row.getCell(j + 1);
+            if (c.center) cell.alignment = { vertical: 'top', horizontal: 'center' };
+            cell.border = { bottom: { style: 'hair', color: { argb: BORDER } } };
         });
         if (i % 2 === 1) {
-            for (let ci = 1; ci <= columns.length; ci++) {
-                row.getCell(ci).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: STRIPE } };
-            }
+            row.eachCell((cell) => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: STRIPE } };
+            });
         }
     });
 
-    ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: columns.length } };
+    if (rows.length) {
+        ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: columns.length } };
+    } else {
+        const empty = ws.addRow({});
+        empty.getCell(1).value = 'No students on this list yet.';
+        empty.getCell(1).font = { italic: true, color: { argb: MUTED } };
+    }
     return ws;
 }
 
+// ── Columns ─────────────────────────────────────────────────────────────────
+//
+// Every sheet carries the SAME student columns. The point of the workbook is
+// that a round sheet is not a shortened list of names: if the Demo tab shows
+// ten students, the Demo sheet holds those ten students' whole registration —
+// contact, branch, academics, ranks — so nobody has to cross-reference it
+// against the register by hand.
+
 const IDENTITY = [
-    { header: 'S.No', key: 'sno', width: 7, center: true },
+    { header: 'S.No', key: 'sno', width: 6, center: true },
     // Text format: a roll number is an identifier, and Excel would otherwise
     // happily turn an all-digit one into 2.3E+13.
-    { header: 'Roll No', key: 'rollNo', width: 18, style: { numFmt: '@' } },
-    { header: 'Student Name', key: 'name', width: 32 },
-    { header: 'Branch', key: 'branch', width: 10 },
-    { header: 'Gender', key: 'gender', width: 10 }
+    { header: 'Roll Number', key: 'rollNumber', width: 17, style: { numFmt: '@' } },
+    { header: 'Student Name', key: 'fullName', width: 28 },
+    { header: 'Registration ID', key: 'registrationId', width: 16 },
+    { header: 'College Email', key: 'collegeEmail', width: 30 },
+    { header: 'Mobile Number', key: 'mobileNumber', width: 15, style: { numFmt: '@' } },
+    { header: 'Branch', key: 'branch', width: 10, center: true },
+    { header: 'Branch (typed)', key: 'branchOther', width: 24 },
+    { header: 'Gender', key: 'gender', width: 9, center: true },
+    { header: 'Residence', key: 'residenceType', width: 12 },
+    { header: 'Laptop', key: 'hasLaptop', width: 8, center: true },
+    { header: 'Admission', key: 'admissionType', width: 13 },
+    { header: 'CGPA', key: 'cgpa', width: 8, center: true },
+    { header: 'Diploma CGPA', key: 'diplomaCgpa', width: 13, center: true },
+    { header: 'Backlogs', key: 'activeBacklogs', width: 9, center: true },
+    { header: 'EAPCET Rank', key: 'eapcetRank', width: 13, center: true },
+    { header: 'JEE Mains Rank', key: 'jeeMainsRank', width: 15, center: true },
+    { header: 'JEE Adv Rank', key: 'jeeAdvancedRank', width: 14, center: true },
+    { header: 'Year / Batch', key: 'yearLabel', width: 20 },
+    { header: 'Registered At (IST)', key: 'registeredAt', width: 19 }
 ];
 
-// Stars as plain numbers, so the sheet can be sorted and summed. Blank — never
-// 0 — when the student has not been scored: "not scored" is not a score of nought.
-const SCORE_COLUMNS = [
-    { header: `Coding (/${MAX_STARS})`, key: 'coding', width: 13, center: true },
-    { header: `Communication (/${MAX_STARS})`, key: 'communication', width: 19, center: true },
-    { header: `Total (/${MAX_STARS * 2})`, key: 'total', width: 12, center: true },
-    { header: 'Scored By', key: 'scoredBy', width: 14 },
-    // Last, and wide with wrapping: remarks are free text and would otherwise
-    // push the numbers off the first screen of the sheet. §8.2 — a field the
-    // form collects has to leave by the same door as the rest.
-    { header: 'Remarks', key: 'remarks', width: 52, style: { alignment: { wrapText: true, vertical: 'top' } } }
+const LIST_COLUMN = { header: 'Added to List (IST)', key: 'addedAt', width: 19, accent: true };
+
+const INTERVIEW_COLUMNS = [
+    { header: 'Panel', key: 'panel', width: 11, accent: true },
+    { header: 'Panelist', key: 'panelist', width: 13, accent: true },
+    { header: 'Interview Date', key: 'ivDate', width: 16, accent: true },
+    { header: 'Slot', key: 'slot', width: 17, accent: true },
+    { header: `Coding (/${MAX_STARS})`, key: 'coding', width: 11, center: true, accent: true },
+    { header: `Communication (/${MAX_STARS})`, key: 'communication', width: 17, center: true, accent: true },
+    { header: `Total (/${MAX_STARS * 2})`, key: 'total', width: 11, center: true, accent: true },
+    { header: 'Scored By', key: 'scoredBy', width: 13, accent: true },
+    { header: 'Remarks', key: 'remarks', width: 52, accent: true, style: { alignment: { wrapText: true, vertical: 'top' } } }
 ];
 
-const scoreCells = (score) =>
-    score
-        ? {
-              coding: score.coding,
-              communication: score.communication,
-              total: score.coding + score.communication,
-              scoredBy: score.scoredBy || '',
-              remarks: score.remarks || ''
-          }
-        : { coding: '', communication: '', total: '', scoredBy: '', remarks: '' };
+/** A blank, not a zero: nobody gave this number, which is not the same as 0 (§6.2). */
+const num = (v) => (v === null || v === undefined || v === '' ? '' : v);
 
-const identityCells = (s, i) => ({ sno: i + 1, rollNo: s.rollNo || '', name: s.name || '', branch: branchCell(s.branch), gender: s.gender || '' });
-
-function roundSheet(wb, year, round, students, generated) {
-    const isInterview = round.key === INTERVIEW_ROUND;
-    const columns = [...IDENTITY, ...(isInterview ? SCORE_COLUMNS : []), { header: 'Added to List (IST)', key: 'addedAt', width: 20 }];
-    const scored = isInterview ? students.filter((s) => s.score).length : 0;
-    addSheet(wb, round.short, {
-        title: `${programName} ${year} — ${round.label}`,
-        meta: [
-            `${students.length} student(s)`,
-            isInterview ? `${scored} scored` : null,
-            round.listOf,
-            `Generated ${generated} IST`
-        ]
-            .filter(Boolean)
-            .join('   •   '),
-        columns,
-        rows: students.map((s, i) => ({
-            ...identityCells(s, i),
-            ...(isInterview ? scoreCells(s.score) : {}),
-            addedAt: formatIST(s.addedAt)
-        }))
-    });
-}
-
-
-// ── Panel sheets ─────────────────────────────────────────────────
-
-const SLOT_COLUMNS = [
-    { header: 'Panel', key: 'panel', width: 12 },
-    { header: 'Panelist', key: 'panelist', width: 14 },
-    { header: 'Date', key: 'date', width: 16 },
-    { header: 'Slot', key: 'slot', width: 18 }
-];
-
-const slotCells = (a) => ({
-    panel: (a && a.panel) || '',
-    panelist: (a && a.panelist) || '',
-    date: a && a.date ? formatDate(a.date, { withYear: true }) : '',
-    slot: a ? formatSlot(a.start, a.end) : ''
-});
-
-/**
- * Three sheets answering the three questions the panel view is built around:
- * how is each panel doing, who sits when, and who is still outstanding.
- *
- * `students` is the chronological roster from panelOverview — one row per
- * student who is on the interview list or holds a slot.
- */
-function addPanelSheets(wb, year, overview, generated) {
-    const { totals, panels, students } = overview;
-
-    addSheet(wb, 'Panels', {
-        title: `${programName} ${year} — Interview panels`,
-        meta: [
-            `${totals.scheduled} scheduled`,
-            `${totals.completed} completed`,
-            `${totals.pending} pending`,
-            totals.avgTotal !== null ? `average ${totals.avgTotal} / ${MAX_STARS * 2}` : null,
-            `Generated ${generated} IST`
-        ]
-            .filter(Boolean)
-            .join('   •   '),
-        columns: [
-            { header: 'Panel', key: 'panel', width: 14 },
-            { header: 'Panelist(s)', key: 'panelists', width: 24 },
-            { header: 'Days', key: 'days', width: 32 },
-            { header: 'Assigned', key: 'assigned', width: 10, center: true },
-            { header: 'Completed', key: 'completed', width: 11, center: true },
-            { header: 'Pending', key: 'pending', width: 10, center: true },
-            { header: 'Done %', key: 'pct', width: 9, center: true },
-            { header: `Avg Coding (/${MAX_STARS})`, key: 'avgCoding', width: 17, center: true },
-            { header: `Avg Communication (/${MAX_STARS})`, key: 'avgComm', width: 24, center: true },
-            { header: `Avg Total (/${MAX_STARS * 2})`, key: 'avgTotal', width: 16, center: true }
-        ],
-        rows: panels.map((p) => ({
-            panel: p.panel,
-            panelists: p.panelists.join(', ') || '—',
-            days: p.dates.map((d) => formatDate(d)).join(', '),
-            assigned: p.assigned,
-            completed: p.completed,
-            pending: p.pending,
-            // A plain number, not a string, so the column sorts properly.
-            pct: p.assigned ? Math.round((p.completed / p.assigned) * 100) : 0,
-            avgCoding: p.avgCoding === null ? '' : p.avgCoding,
-            avgComm: p.avgCommunication === null ? '' : p.avgCommunication,
-            avgTotal: p.avgTotal === null ? '' : p.avgTotal
-        }))
-    });
-
-    const scheduled = students.filter((s) => s.allocation);
-    addSheet(wb, 'Schedule', {
-        title: `${programName} ${year} — Interview schedule`,
-        meta: [`${scheduled.length} scheduled student(s)`, 'In slot order', `Generated ${generated} IST`].join('   •   '),
-        columns: [...IDENTITY, ...SLOT_COLUMNS, ...SCORE_COLUMNS],
-        rows: scheduled.map((s, i) => ({ ...identityCells(s, i), ...slotCells(s.allocation), ...scoreCells(s.score) }))
-    });
-
-    // Everyone still outstanding: scheduled but unscored, plus anyone on the
-    // interview list with no slot at all — they are pending too, and leaving them
-    // out would make the chase list quietly incomplete.
-    const pending = students.filter((s) => !s.score && (s.allocation || s.onList));
-    addSheet(wb, 'Pending', {
-        title: `${programName} ${year} — Pending interviews`,
-        meta: [`${pending.length} still to score`, `${totals.unscheduled} of them have no slot yet`, `Generated ${generated} IST`].join(
-            '   •   '
-        ),
-        columns: [...IDENTITY, ...SLOT_COLUMNS, { header: 'Status', key: 'status', width: 24 }],
-        rows: pending.map((s, i) => ({
-            ...identityCells(s, i),
-            ...slotCells(s.allocation),
-            status: s.allocation ? 'Scheduled · not scored' : 'On the list · no slot yet'
-        }))
-    });
+/** One student's registration fields, whether or not a registration exists. */
+function studentCells(reg, fallback, i) {
+    return {
+        sno: i + 1,
+        rollNumber: reg?.rollNumber || fallback?.rollNo || '',
+        fullName: reg?.fullName || fallback?.name || '',
+        registrationId: reg?.registrationId || '',
+        collegeEmail: reg?.collegeEmail || '',
+        mobileNumber: reg?.mobileNumber || '',
+        // Prefer the registration's own branch; fall back to the roster's code
+        // for a student who is on a list but never registered.
+        branch: reg ? branchShort(reg.branch) : branchCell(fallback?.branch || ''),
+        branchOther: reg?.branchOther || '',
+        gender: reg?.gender || fallback?.gender || '',
+        residenceType: reg?.residenceType || '',
+        hasLaptop: reg?.hasLaptop || '',
+        admissionType: reg?.admissionType || '',
+        cgpa: num(reg?.cgpa),
+        diplomaCgpa: num(reg?.diplomaCgpa),
+        activeBacklogs: num(reg?.activeBacklogs),
+        eapcetRank: num(reg?.eapcetRank),
+        jeeMainsRank: num(reg?.jeeMainsRank),
+        jeeAdvancedRank: num(reg?.jeeAdvancedRank),
+        yearLabel: reg?.yearLabel || '',
+        registeredAt: formatIST(reg?.createdAt)
+    };
 }
 
 /**
- * GET ?year=&round= — the selection results as a workbook.
+ * GET ?year=&program=[&round=|&view=panels]
  *
- *   round=<key>   that round's list only (what is open under the round tile).
- *   view=panels   the three panel sheets only — Panels, Schedule, Pending.
- *   neither       everything: a "Funnel" sheet first — one row per student on
- *                 any list, a column per round, how far they got and their
- *                 interview stars — then one sheet per round, then the panel
- *                 sheets.
+ *   no round / view  EVERY TAB AS A SHEET: Registrations first, then Demo,
+ *                    Round 1-3, Interview and Final — one sheet per tab on the
+ *                    page, each holding the full registration record of the
+ *                    students on that list.
+ *   round=<key>      that one round's sheet.
+ *   view=panels      the interview sheet only (what the panel view downloads).
  *
- * Identity only, no contact details (§8.10). Exports the whole list regardless of
- * the page's search/branch filter; the sheet's own autofilter does that job.
+ * Contact details are included: this is the internal workbook the team already
+ * had, and the admin panel is passcode-gated and noindex (§8.10).
  */
 export async function GET(request) {
     if (!isAuthenticated(request)) {
         return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
-    const year = request.nextUrl.searchParams.get('year') || '';
-    const roundKey = request.nextUrl.searchParams.get('round') || '';
+
+    const params = request.nextUrl.searchParams;
+    const year = params.get('year') || '';
     if (!isValidYear(year)) return NextResponse.json({ success: false, message: 'Pick an academic year.' }, { status: 400 });
+
+    const code = params.get('program') || DEFAULT_PROGRAM_CODE;
+    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
+    const programName = programByCode(code)?.name || code;
+
+    const roundKey = params.get('round') || '';
     const round = roundKey ? roundByKey(roundKey) : null;
     if (roundKey && !round) return NextResponse.json({ success: false, message: 'Unknown round.' }, { status: 400 });
-    const view = request.nextUrl.searchParams.get('view') || '';
-    const code = request.nextUrl.searchParams.get('program') || DEFAULT_PROGRAM_CODE;
-    if (!isValidProgramCode(code)) return NextResponse.json({ success: false, message: 'Pick a programme.' }, { status: 400 });
-    const programName = (programByCode(code) || {}).name || code;
+
+    const view = params.get('view') || '';
     if (view && view !== 'panels') return NextResponse.json({ success: false, message: 'Unknown view.' }, { status: 400 });
 
     const now = new Date();
@@ -270,49 +224,74 @@ export async function GET(request) {
     wb.created = now;
 
     try {
-        if (view === 'panels') {
-            addPanelSheets(wb, year, await panelOverview(year, code), generated);
-        } else if (round) {
-            roundSheet(wb, year, round, await roundStudents(year, code, round.key), generated);
-        } else {
-            const [funnel, lists] = await Promise.all([
-                funnelStudents(year, code),
-                Promise.all(SELECTION_ROUNDS.map((r) => roundStudents(year, code, r.key)))
-            ]);
+        // Every registration for this programme, once, keyed by roll. The round
+        // lists live on the hostel roster and carry only identity, so this is
+        // the join that turns "ten names" into "ten students".
+        const regs = await (await getRegistrationsCollection()).find({ programCode: code }).sort({ createdAt: -1 }).toArray();
+        const byRoll = new Map(regs.map((r) => [normaliseRoll(r.rollNumber), r]));
 
-            // "Furthest stage" is the LAST list a student is on, in round order —
-            // the column people actually sort by. It is a reading of the lists, not
-            // a verdict: absence from a later list may just mean it isn't uploaded.
-            const furthest = (s) => {
-                for (let i = SELECTION_ROUNDS.length - 1; i >= 0; i--) {
-                    if (s.rounds[SELECTION_ROUNDS[i].key]) return SELECTION_ROUNDS[i].short;
-                }
-                return '';
+        const meta = (parts) => [`Programme: ${programName}`, `Year: ${year}`, ...parts, `Generated ${generated} IST`].join('   •   ');
+
+        // Interview rows need the panel, the slot and the score, which live on
+        // the allocation rather than the round list.
+        let panelByRoll = new Map();
+        const needsPanels = view === 'panels' || !round || round.key === INTERVIEW_ROUND;
+        if (needsPanels) {
+            const overview = await panelOverview(year, code);
+            panelByRoll = new Map(overview.students.map((s) => [normaliseRoll(s.rollNo), s]));
+        }
+
+        const interviewCells = (rollKey) => {
+            const p = panelByRoll.get(rollKey);
+            const a = p?.allocation;
+            const sc = p?.score;
+            return {
+                panel: a?.panel || '',
+                panelist: a?.panelist || '',
+                ivDate: a?.date ? formatDate(a.date, { withYear: true }) : '',
+                slot: a ? formatSlot(a.start, a.end) : '',
+                coding: sc ? sc.coding : '',
+                communication: sc ? sc.communication : '',
+                total: sc ? sc.total : '',
+                scoredBy: sc?.scoredBy || '',
+                remarks: sc?.remarks || ''
             };
+        };
 
-            addSheet(wb, 'Funnel', {
-                title: `${programName} ${year} — Selection Funnel`,
-                meta: [
-                    `${funnel.length} student(s) on at least one list`,
-                    ...SELECTION_ROUNDS.map((r, i) => `${r.short}: ${lists[i].length}`),
-                    `Generated ${generated} IST`
-                ].join('   •   '),
-                columns: [
-                    ...IDENTITY,
-                    ...SELECTION_ROUNDS.map((r) => ({ header: r.short, key: `r_${r.key}`, width: 11, center: true })),
-                    { header: 'Furthest Stage', key: 'furthest', width: 15 },
-                    ...SCORE_COLUMNS
-                ],
-                rows: funnel.map((s, i) => ({
-                    ...identityCells(s, i),
-                    ...Object.fromEntries(SELECTION_ROUNDS.map((r) => [`r_${r.key}`, s.rounds[r.key] ? 'Yes' : ''])),
-                    furthest: furthest(s),
-                    ...scoreCells(s.score)
-                }))
+        /** One round's sheet, with every student's full registration beside them. */
+        const addRoundSheet = async (def) => {
+            const students = await roundStudents(year, code, def.key);
+            const isInterview = def.key === INTERVIEW_ROUND;
+            const columns = [...IDENTITY, ...(isInterview ? INTERVIEW_COLUMNS : []), LIST_COLUMN];
+            const scored = isInterview ? students.filter((s) => s.score).length : 0;
+            addSheet(wb, def.short, {
+                title: `${programName} ${year} — ${def.label}`,
+                meta: meta([`${students.length} student(s)`, isInterview ? `${scored} scored` : null, def.listOf].filter(Boolean)),
+                columns,
+                rows: students.map((s, i) => {
+                    const rk = normaliseRoll(s.rollNo);
+                    return {
+                        ...studentCells(byRoll.get(rk), s, i),
+                        ...(isInterview ? interviewCells(rk) : {}),
+                        addedAt: formatIST(s.addedAt)
+                    };
+                })
             });
+        };
 
-            SELECTION_ROUNDS.forEach((r, i) => roundSheet(wb, year, r, lists[i], generated));
-            addPanelSheets(wb, year, await panelOverview(year, code), generated);
+        if (view === 'panels') {
+            await addRoundSheet(roundByKey(INTERVIEW_ROUND));
+        } else if (round) {
+            await addRoundSheet(round);
+        } else {
+            // The whole page, tab by tab: Registrations, then every round.
+            addSheet(wb, 'Registrations', {
+                title: `${programName} ${year} — Registrations`,
+                meta: meta([`${regs.length} registration(s)`, 'Everyone who signed up for this intake']),
+                columns: IDENTITY,
+                rows: regs.map((r, i) => studentCells(r, null, i))
+            });
+            for (const def of SELECTION_ROUNDS) await addRoundSheet(def);
         }
     } catch (error) {
         console.error('[admin/selection/export] failed:', error);
@@ -320,8 +299,9 @@ export async function GET(request) {
     }
 
     const buffer = await wb.xlsx.writeBuffer();
-    const scope = view === 'panels' ? 'panels' : round ? round.key : 'all-rounds';
-    const filename = `VVITU_${code}_Results_${year}_${scope}_${generated.replace(/[ :]/g, '-')}.xlsx`;
+    const scope = view === 'panels' ? 'interview' : round ? round.key : 'all-tabs';
+    const filename = `VVITU_${code}_${year}_${scope}_${generated.replace(/[ :]/g, '-')}.xlsx`;
+
     return new NextResponse(buffer, {
         status: 200,
         headers: {

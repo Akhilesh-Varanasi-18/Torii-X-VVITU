@@ -16,11 +16,11 @@ import {
     NO_PANEL
 } from '../../../../lib/interview-panels';
 
-// Step 3 of the AI Ready Engineers results page: what actually happened in the
+// The monitoring half of the selection page: what actually happened in the
 // one-on-one interviews.
 //
 // Deliberately a separate component from the scoring card above it, and
-// lazy-loaded. The two have opposite jobs: Step 2 is a TASK surface — one
+// lazy-loaded. The two have opposite jobs: the Rounds card is a TASK surface — one
 // student, keyboard-driven, as little on screen as possible for a panelist
 // mid-interview — while this is a MONITORING surface that wants every row at
 // once. Merging them would make the scoring card hostile to the person using
@@ -131,8 +131,8 @@ export default function PanelsView({ year, program, unauthorized, version = 0, e
     const totals = data?.totals;
     const exportHref = `/api/admin/selection/export?year=${encodeURIComponent(year)}&program=${encodeURIComponent(program)}&view=panels`;
 
-    // Embedded, this IS the Interview round's list inside Step 1, so it drops
-    // the card shell and the step heading and keeps only its own controls —
+    // Embedded, this IS the Interview tab's list inside the Rounds card, so it
+    // drops the card shell and its own heading and keeps only its controls —
     // the surrounding card already says what it is.
     const Shell = embedded ? 'div' : 'section';
 
@@ -143,12 +143,9 @@ export default function PanelsView({ year, program, unauthorized, version = 0, e
                     {embedded ? (
                         <p className="ip-head__title">Panels &amp; progress</p>
                     ) : (
-                        <>
-                            <p className="sr-card__eyebrow">Step 3</p>
-                            <h2 id="ip-title" className="sr-card__title">
-                                Interview panels &amp; progress
-                            </h2>
-                        </>
+                        <h2 id="ip-title" className="sr-card__title">
+                            Interview panels &amp; progress
+                        </h2>
                     )}
                     <p className={embedded ? 'ip-head__sub' : 'sr-card__sub'}>
                         Who sits with which panel and when, how far each panel has got, and who is still to be scored.
